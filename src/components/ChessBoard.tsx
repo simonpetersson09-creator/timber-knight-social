@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import type { Chess, Square } from "chess.js";
+import { Piece } from "./Piece";
 
-const GLYPH: Record<string, string> = { k: "♚", q: "♛", r: "♜", b: "♝", n: "♞", p: "♟" };
 const FILES = "abcdefgh";
 
 type Props = {
@@ -71,9 +71,9 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
                     initial={{ scale: 0.6, opacity: 0 }}
                     animate={{ scale: selected === sq ? 1.12 : 1, opacity: 1, y: selected === sq ? -4 : 0 }}
                     transition={{ type: "spring", stiffness: 420, damping: 24 }}
-                    className={`piece ${p.color === "w" ? "piece-wood" : "piece-ebony"}`}
+                    className="piece-slot"
                   >
-                    {GLYPH[p.type]}{"\uFE0E"}
+                    <Piece color={p.color} type={p.type} />
                   </motion.span>
                 )}
               </button>

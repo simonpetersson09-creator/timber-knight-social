@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Chess, type Square } from "chess.js";
 import { ArrowLeft, RotateCcw, Undo2 } from "lucide-react";
 import { ChessBoard } from "@/components/ChessBoard";
+import { Piece } from "@/components/Piece";
 import { bestMove, type Level } from "@/lib/engine";
 
 type Search = { mode: "ai" | "local"; level: Level };
@@ -27,7 +28,6 @@ export const Route = createFileRoute("/play")({
 });
 
 const LEVEL = { easy: "Lätt", medium: "Medel", hard: "Svår" };
-const GLYPH: Record<string, string> = { q: "♛", r: "♜", b: "♝", n: "♞", p: "♟" };
 
 function Play() {
   const { mode, level } = Route.useSearch();
@@ -117,7 +117,7 @@ function Play() {
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <motion.div className="panel w-full max-w-xs space-y-4 p-6 text-center"
               initial={{ scale: 0.85, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: "spring", stiffness: 260, damping: 20 }}>
-              <div className={`piece ${game.turn() === "w" ? "piece-ebony" : "piece-wood"} text-7xl`}>♚{"\uFE0E"}</div>
+              <Piece color={game.turn() === "w" ? "b" : "w"} type="k" className="mx-auto size-20" />
               <h2 className="brand-wordmark text-3xl">{game.isCheckmate() ? "Schack matt" : "Remi"}</h2>
               <p className="text-muted-foreground">{status}</p>
               <button onClick={reset} className="action-btn action-gold">Spela igen</button>
@@ -133,11 +133,11 @@ function Play() {
 function PlayerBar({ name, color, active, captured }: { name: string; color: "w" | "b"; active: boolean; captured: string[] }) {
   return (
     <div className={`panel flex w-full max-w-[560px] items-center gap-3 px-3 py-2 transition-shadow ${active ? "ring-2 ring-primary" : ""}`}>
-      <span className={`piece ${color === "w" ? "piece-wood" : "piece-ebony"} text-3xl`}>♚{"\uFE0E"}</span>
+      <Piece color={color} type="k" className="size-8" />
       <span className="font-semibold">{name}</span>
       <span className="ml-auto flex flex-wrap justify-end text-lg leading-none">
         {captured.map((c, i) => (
-          <span key={i} className={`piece ${color === "w" ? "piece-ebony" : "piece-wood"}`}>{GLYPH[c]}{"\uFE0E"}</span>
+          <Piece key={i} color={color === "w" ? "b" : "w"} type={c} className="-ml-1 size-5" />
         ))}
       </span>
     </div>

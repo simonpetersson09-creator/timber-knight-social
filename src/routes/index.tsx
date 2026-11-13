@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { Bot, Globe, Users, UserPlus } from "lucide-react";
 import type { Level } from "@/lib/engine";
+import { Piece } from "@/components/Piece";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -32,11 +33,11 @@ function Home() {
       >
         <motion.div variants={item} className="text-center">
           <motion.div
-            className="piece piece-wood mx-auto mb-3 inline-block text-[110px]"
+            className="mx-auto mb-3 size-32 drop-shadow-2xl"
             animate={{ rotate: [0, 0, 5, -4, 0], y: [0, 0, -6, 0, 0] }}
             transition={{ duration: 1.4, repeat: Infinity, repeatDelay: 2.5 }}
           >
-            ♚{"\uFE0E"}
+            <Piece color="w" type="k" className="size-full" />
           </motion.div>
           <h1 className="brand-wordmark text-5xl">Mr B Chess</h1>
           <p className="brand-tagline mt-2">Handgjort schack</p>
