@@ -46,7 +46,7 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
         {rows.map((r, ri) =>
           cols.map((c, ci) => {
             const sq = `${FILES[c]}${8 - r}` as Square;
-            const p = board[r][c];
+            const p = board[r]?.[c];
             const light = (r + c) % 2 === 0;
             const isTarget = targets.has(sq);
             return (
@@ -68,7 +68,6 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
                 {p && (
                   <motion.span
                     key={`${sq}-${p.color}${p.type}`}
-                    layoutId={undefined}
                     initial={{ scale: 0.6, opacity: 0 }}
                     animate={{ scale: selected === sq ? 1.12 : 1, opacity: 1, y: selected === sq ? -4 : 0 }}
                     transition={{ type: "spring", stiffness: 420, damping: 24 }}
