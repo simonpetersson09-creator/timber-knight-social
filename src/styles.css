@@ -157,8 +157,8 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .board-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; height: 100%; border-radius: 4px; overflow: hidden;
   box-shadow: 0 0 0 2px var(--wood-frame-deep), inset 0 0 12px oklch(0 0 0 / 35%); }
 .board-square { position: relative; display: flex; align-items: center; justify-content: center; container-type: size; }
-.sq-light { background: url("./assets/wood-light.jpg") center/400% ; }
-.sq-dark { background: url("./assets/wood-dark.jpg") center/400%; filter: brightness(1.25) saturate(1.05); }
+.sq-light { background: url("./assets/wood-light.jpg") center/400%; filter: brightness(1.08) saturate(0.85); }
+.sq-dark { background: linear-gradient(oklch(0.6 0.1 55 / 0.6), oklch(0.6 0.1 55 / 0.6)), url("./assets/wood-dark.jpg") center/400%; }
 .sq-last::before, .sq-selected::before, .sq-check::before { content: ""; position: absolute; inset: 0; }
 .sq-last::before { background: var(--highlight); opacity: .55; }
 .sq-selected::before { background: var(--highlight); }
@@ -170,12 +170,13 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .board-square .piece { font-size: 82cqmin; }
 .piece { position: relative; z-index: 3; line-height: 1; user-select: none; font-family: "Segoe UI Symbol", "DejaVu Sans", serif; }
 .piece-ebony { color: var(--ebony);
-  background: linear-gradient(160deg, var(--ebony-shine) 0%, var(--ebony) 45%, var(--ebony) 100%);
+  background: linear-gradient(160deg, var(--ebony-shine) 0%, var(--ebony) 40%, var(--ebony) 100%);
   -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 0.6px oklch(0.9 0.03 80 / 70%)) drop-shadow(0 3px 2px oklch(0 0 0 / 55%)); }
-.piece-wood { background: url("./assets/wood-light.jpg") center/300%, linear-gradient(160deg, oklch(0.9 0.08 80), oklch(0.7 0.12 60));
+  filter: drop-shadow(0 0 0.7px oklch(0.95 0.03 80 / 85%)) drop-shadow(0 2px 2px oklch(0 0 0 / 50%)); }
+.piece-wood { background: linear-gradient(160deg, oklch(0.98 0.03 90) 0%, oklch(0.9 0.07 80) 55%, oklch(0.8 0.1 70) 100%);
   -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 0.8px oklch(0.25 0.06 45)) drop-shadow(0 0 0.5px oklch(0.25 0.06 45)) drop-shadow(0 3px 2px oklch(0 0 0 / 50%)) saturate(1.2); }
+  -webkit-text-stroke: 0.9px oklch(0.3 0.07 45);
+  filter: drop-shadow(0 2px 2px oklch(0 0 0 / 55%)); }
 
 .panel { background: color-mix(in oklab, var(--card) 85%, transparent); border: 1px solid var(--border); border-radius: var(--radius); backdrop-filter: blur(8px); }
 .chip-gold { background: var(--gradient-gold); color: var(--primary-foreground); }
