@@ -1,19 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { KEYS, LANGUAGES, type Key } from "./keys";
-import { EUROPE } from "./locales-europe";
-import { ASIA } from "./locales-asia";
+import { LANGUAGES, type Key } from "./keys";
+import { translate } from "./translate";
 import { getSettings, saveSettings } from "../storage";
 
-export { LANGUAGES, type Key };
-const RAW: Record<string, string[]> = { ...EUROPE, ...ASIA };
+export { LANGUAGES, translate, type Key };
 const CODES: string[] = LANGUAGES.map((l) => l.code);
-
-export function translate(lang: string, key: Key, params?: Record<string, string | number>): string {
-  const i = KEYS.indexOf(key);
-  let s = RAW[lang]?.[i] ?? RAW["en"]?.[i] ?? RAW["sv"]?.[i] ?? key;
-  if (params) for (const [k, v] of Object.entries(params)) s = s.replaceAll(`{${k}}`, String(v));
-  return s;
-}
 
 /** Maps device language tags (e.g. "nb-NO", "pt-BR") to a supported language, English as fallback. */
 export function resolveDeviceLang(tags: readonly string[]): string {

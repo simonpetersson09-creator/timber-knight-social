@@ -10,6 +10,7 @@ export const KEYS = [
   "drawDeclined", "drawOffer", "accept", "decline", "undo", "promote", "playAgain", "home",
   "youWon", "youLost", "unlocked", "newGame",
   "profile", "name", "nameHint", "avatar", "country", "noCountry", "save", "saved", "nameTaken", "nameTooLong", "yourCode", "addFriend", "enterCode", "send", "requestSent", "notFound", "selfCode", "alreadyFriends", "nowFriends", "requests", "sentRequests", "withdraw", "remove", "online", "offline", "noFriends", "scanToAdd", "error",
+  "adChoices", "adChoicesApp", "confirmDeleteData", "createLobby", "dataDeleted", "deleteMyData", "downloadText", "drawOffered", "expired", "gamesThisMonth", "inactiveLoss", "inviteFriend", "inviteValid", "invitedBy", "join", "joinMe", "joinWeb", "leaderboards", "legal", "lobby", "lobbyCode", "lobbyValid", "monthActive", "noOpponent", "noRanking", "notifications", "onlineStats", "opponentTurn", "pickCountry", "playerNumber", "quickChat", "quickMatch", "resignNoStats", "searching", "shareLink", "waitingFor", "weekTop", "winsThisWeek", "winsThisYear", "world", "pushTurn", "pushInvite", "pushRemindMove", "pushPlayReminder", "pushLobbyJoined", "chat0", "chat1", "chat2", "chat3", "chat4", "chat5", "chat6", "chat7",
 ] as const;
 export type Key = (typeof KEYS)[number];
 

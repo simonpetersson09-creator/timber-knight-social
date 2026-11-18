@@ -9,6 +9,8 @@ import { Modal } from "@/components/Modal";
 import { bestMove, evaluateFen } from "@/lib/engine";
 import { useI18n } from "@/lib/i18n";
 import { celebrate, feedback } from "@/lib/feedback";
+import { showGameEndAd } from "@/lib/ads";
+import { onGameFinished } from "@/lib/rate";
 import { createGame, deleteGame, getGame, recordResult, saveGame, type Color, type SavedGame } from "@/lib/storage";
 
 export const Route = createFileRoute("/play")({
@@ -47,6 +49,7 @@ function Play() {
   const [promo, setPromo] = useState<{ from: Square; to: Square } | null>(null);
   const [ask, setAsk] = useState<"resign" | "draw" | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const [showEnd, setShowEnd] = useState(false);
   const turnStart = useRef(Date.now());
   const savedRef = useRef<SavedGame | null>(null);
   savedRef.current = saved;
@@ -80,6 +83,8 @@ function Play() {
     if (!s) return;
     setResult(res);
     deleteGame(s.id);
+    setShowEnd(false);
+    void showGameEndAd().then(() => { setShowEnd(true); void onGameFinished(); });
     if (s.mode === "ai") {
       const outcome = res.winner === null ? "draw" : res.winner === s.human ? "win" : "loss";
       const unlocked = recordResult(s.id, outcome, s.level);
@@ -309,7 +314,7 @@ function Play() {
         </div>
       </Modal>
 
-      <Modal open={!!result}>
+      <Modal open={!!result && showEnd}>
         <div className="space-y-4 text-center">
           <Piece color={result?.winner ?? "w"} type="k" className="mx-auto size-20" />
           <h2 className="brand-wordmark text-3xl">{title}</h2>

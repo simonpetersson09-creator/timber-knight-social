@@ -14,6 +14,70 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_days: {
+        Row: {
+          day: string
+          platform: string
+          player: string
+        }
+        Insert: {
+          day: string
+          platform: string
+          player: string
+        }
+        Update: {
+          day?: string
+          platform?: string
+          player?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_days_player_fkey"
+            columns: ["player"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_events: {
+        Row: {
+          created_at: string
+          detail: string | null
+          id: number
+          kind: string
+          name: string
+          platform: string
+          player: string | null
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          id?: never
+          kind: string
+          name: string
+          platform: string
+          player?: string | null
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          id?: never
+          kind?: string
+          name?: string
+          platform?: string
+          player?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_events_player_fkey"
+            columns: ["player"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       friendships: {
         Row: {
           addressee: string
@@ -53,9 +117,141 @@ export type Database = {
           },
         ]
       }
+      game_chat: {
+        Row: {
+          created_at: string
+          game_id: string
+          id: number
+          phrase: number
+          player: string
+        }
+        Insert: {
+          created_at?: string
+          game_id: string
+          id?: never
+          phrase: number
+          player: string
+        }
+        Update: {
+          created_at?: string
+          game_id?: string
+          id?: never
+          phrase?: number
+          player?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_chat_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_chat_player_fkey"
+            columns: ["player"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      games: {
+        Row: {
+          black: string | null
+          code: string | null
+          created_at: string
+          draw_offer: string | null
+          end_reason: string | null
+          expires_at: string
+          fen: string
+          host: string
+          id: string
+          invitee: string | null
+          kind: string
+          last_move_at: string
+          pgn: string
+          reminded: boolean
+          result: string | null
+          status: string
+          updated_at: string
+          white: string | null
+        }
+        Insert: {
+          black?: string | null
+          code?: string | null
+          created_at?: string
+          draw_offer?: string | null
+          end_reason?: string | null
+          expires_at: string
+          fen?: string
+          host: string
+          id?: string
+          invitee?: string | null
+          kind: string
+          last_move_at?: string
+          pgn?: string
+          reminded?: boolean
+          result?: string | null
+          status?: string
+          updated_at?: string
+          white?: string | null
+        }
+        Update: {
+          black?: string | null
+          code?: string | null
+          created_at?: string
+          draw_offer?: string | null
+          end_reason?: string | null
+          expires_at?: string
+          fen?: string
+          host?: string
+          id?: string
+          invitee?: string | null
+          kind?: string
+          last_move_at?: string
+          pgn?: string
+          reminded?: boolean
+          result?: string | null
+          status?: string
+          updated_at?: string
+          white?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "games_black_fkey"
+            columns: ["black"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_host_fkey"
+            columns: ["host"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_invitee_fkey"
+            columns: ["invitee"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_white_fkey"
+            columns: ["white"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matches: {
         Row: {
           black: string
+          counts: boolean
           finished_at: string
           id: string
           result: string
@@ -63,6 +259,7 @@ export type Database = {
         }
         Insert: {
           black: string
+          counts?: boolean
           finished_at?: string
           id?: string
           result: string
@@ -70,6 +267,7 @@ export type Database = {
         }
         Update: {
           black?: string
+          counts?: boolean
           finished_at?: string
           id?: string
           result?: string
@@ -99,10 +297,18 @@ export type Database = {
           created_at: string
           friend_code: string
           id: string
+          is_test: boolean
+          lang: string
+          last_played: string | null
+          last_reminder: string | null
           last_seen: string
           name: string | null
+          notify: boolean
+          platform: string
           player_number: number
+          push_token: string | null
           secret_hash: string
+          tz: string | null
         }
         Insert: {
           avatar?: string
@@ -110,10 +316,18 @@ export type Database = {
           created_at?: string
           friend_code: string
           id?: string
+          is_test?: boolean
+          lang?: string
+          last_played?: string | null
+          last_reminder?: string | null
           last_seen?: string
           name?: string | null
+          notify?: boolean
+          platform?: string
           player_number?: never
+          push_token?: string | null
           secret_hash: string
+          tz?: string | null
         }
         Update: {
           avatar?: string
@@ -121,10 +335,18 @@ export type Database = {
           created_at?: string
           friend_code?: string
           id?: string
+          is_test?: boolean
+          lang?: string
+          last_played?: string | null
+          last_reminder?: string | null
           last_seen?: string
           name?: string | null
+          notify?: boolean
+          platform?: string
           player_number?: never
+          push_token?: string | null
           secret_hash?: string
+          tz?: string | null
         }
         Relationships: []
       }
@@ -133,7 +355,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      leaderboard: {
+        Args: { p_country: string; p_kind: string }
+        Returns: {
+          avatar: string
+          country: string
+          name: string
+          player: string
+          player_number: number
+          score: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

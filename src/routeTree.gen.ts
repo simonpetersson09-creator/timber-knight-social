@@ -11,10 +11,16 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AddRouteImport } from './routes/add'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as FriendsRouteImport } from './routes/friends'
+import { Route as JoinRouteImport } from './routes/join'
+import { Route as LeaderboardRouteImport } from './routes/leaderboard'
+import { Route as LegalRouteImport } from './routes/legal'
+import { Route as MatchRouteImport } from './routes/match'
 import { Route as PlayRouteImport } from './routes/play'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ApiPublicJobsHourlyRouteImport } from './routes/api/public/jobs/hourly'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -26,9 +32,34 @@ const AddRoute = AddRouteImport.update({
   path: '/add',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FriendsRoute = FriendsRouteImport.update({
   id: '/friends',
   path: '/friends',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JoinRoute = JoinRouteImport.update({
+  id: '/join',
+  path: '/join',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LeaderboardRoute = LeaderboardRouteImport.update({
+  id: '/leaderboard',
+  path: '/leaderboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalRoute = LegalRouteImport.update({
+  id: '/legal',
+  path: '/legal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MatchRoute = MatchRouteImport.update({
+  id: '/match',
+  path: '/match',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlayRoute = PlayRouteImport.update({
@@ -46,48 +77,113 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicJobsHourlyRoute = ApiPublicJobsHourlyRouteImport.update({
+  id: '/api/public/jobs/hourly',
+  path: '/api/public/jobs/hourly',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/add': typeof AddRoute
+  '/admin': typeof AdminRoute
   '/friends': typeof FriendsRoute
+  '/join': typeof JoinRoute
+  '/leaderboard': typeof LeaderboardRoute
+  '/legal': typeof LegalRoute
+  '/match': typeof MatchRoute
   '/play': typeof PlayRoute
   '/profile': typeof ProfileRoute
   '/settings': typeof SettingsRoute
+  '/api/public/jobs/hourly': typeof ApiPublicJobsHourlyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/add': typeof AddRoute
+  '/admin': typeof AdminRoute
   '/friends': typeof FriendsRoute
+  '/join': typeof JoinRoute
+  '/leaderboard': typeof LeaderboardRoute
+  '/legal': typeof LegalRoute
+  '/match': typeof MatchRoute
   '/play': typeof PlayRoute
   '/profile': typeof ProfileRoute
   '/settings': typeof SettingsRoute
+  '/api/public/jobs/hourly': typeof ApiPublicJobsHourlyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/add': typeof AddRoute
+  '/admin': typeof AdminRoute
   '/friends': typeof FriendsRoute
+  '/join': typeof JoinRoute
+  '/leaderboard': typeof LeaderboardRoute
+  '/legal': typeof LegalRoute
+  '/match': typeof MatchRoute
   '/play': typeof PlayRoute
   '/profile': typeof ProfileRoute
   '/settings': typeof SettingsRoute
+  '/api/public/jobs/hourly': typeof ApiPublicJobsHourlyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/add' | '/friends' | '/play' | '/profile' | '/settings'
+  fullPaths:
+    | '/'
+    | '/add'
+    | '/admin'
+    | '/friends'
+    | '/join'
+    | '/leaderboard'
+    | '/legal'
+    | '/match'
+    | '/play'
+    | '/profile'
+    | '/settings'
+    | '/api/public/jobs/hourly'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/add' | '/friends' | '/play' | '/profile' | '/settings'
+  to:
+    | '/'
+    | '/add'
+    | '/admin'
+    | '/friends'
+    | '/join'
+    | '/leaderboard'
+    | '/legal'
+    | '/match'
+    | '/play'
+    | '/profile'
+    | '/settings'
+    | '/api/public/jobs/hourly'
   id:
-    '__root__' | '/' | '/add' | '/friends' | '/play' | '/profile' | '/settings'
+    | '__root__'
+    | '/'
+    | '/add'
+    | '/admin'
+    | '/friends'
+    | '/join'
+    | '/leaderboard'
+    | '/legal'
+    | '/match'
+    | '/play'
+    | '/profile'
+    | '/settings'
+    | '/api/public/jobs/hourly'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AddRoute: typeof AddRoute
+  AdminRoute: typeof AdminRoute
   FriendsRoute: typeof FriendsRoute
+  JoinRoute: typeof JoinRoute
+  LeaderboardRoute: typeof LeaderboardRoute
+  LegalRoute: typeof LegalRoute
+  MatchRoute: typeof MatchRoute
   PlayRoute: typeof PlayRoute
   ProfileRoute: typeof ProfileRoute
   SettingsRoute: typeof SettingsRoute
+  ApiPublicJobsHourlyRoute: typeof ApiPublicJobsHourlyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -106,11 +202,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AddRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/friends': {
       id: '/friends'
       path: '/friends'
       fullPath: '/friends'
       preLoaderRoute: typeof FriendsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/join': {
+      id: '/join'
+      path: '/join'
+      fullPath: '/join'
+      preLoaderRoute: typeof JoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leaderboard': {
+      id: '/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof LeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal': {
+      id: '/legal'
+      path: '/legal'
+      fullPath: '/legal'
+      preLoaderRoute: typeof LegalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/match': {
+      id: '/match'
+      path: '/match'
+      fullPath: '/match'
+      preLoaderRoute: typeof MatchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/play': {
@@ -134,16 +265,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/jobs/hourly': {
+      id: '/api/public/jobs/hourly'
+      path: '/api/public/jobs/hourly'
+      fullPath: '/api/public/jobs/hourly'
+      preLoaderRoute: typeof ApiPublicJobsHourlyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AddRoute: AddRoute,
+  AdminRoute: AdminRoute,
   FriendsRoute: FriendsRoute,
+  JoinRoute: JoinRoute,
+  LeaderboardRoute: LeaderboardRoute,
+  LegalRoute: LegalRoute,
+  MatchRoute: MatchRoute,
   PlayRoute: PlayRoute,
   ProfileRoute: ProfileRoute,
   SettingsRoute: SettingsRoute,
+  ApiPublicJobsHourlyRoute: ApiPublicJobsHourlyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

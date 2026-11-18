@@ -1,7 +1,9 @@
 import { AnimatePresence, motion } from "framer-motion";
 import type { ReactNode } from "react";
+import { useBackHandler } from "@/lib/back-handler";
 
 export function Modal({ open, onClose, children }: { open: boolean; onClose?: () => void; children: ReactNode }) {
+  useBackHandler(open && !!onClose, () => onClose?.());
   return (
     <AnimatePresence>
       {open && (

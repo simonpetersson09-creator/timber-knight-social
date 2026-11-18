@@ -209,7 +209,7 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .round-btn { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 9999px; background: var(--gradient-gold); color: var(--primary-foreground); box-shadow: var(--shadow-gold); transition: transform .15s, filter .2s; }
 .round-btn:active { transform: scale(.94); }
 .round-btn:disabled { filter: saturate(.3); opacity: .55; }
-.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
 .stat-cell { text-align: center; padding: 10px 4px; border-radius: 10px; background: var(--secondary); }
 .stat-num { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--primary); }
 .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted-foreground); }
@@ -270,3 +270,11 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .result-pip { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 5px; font-size: 11px; font-weight: 800; background: var(--muted); }
 .result-pip[data-r="w"] { background: oklch(0.62 0.16 150); color: var(--background); }
 .result-pip[data-r="l"] { background: var(--destructive); color: var(--background); }
+.searching { display: grid; place-items: center; width: 96px; height: 96px; border-radius: 9999px; background: color-mix(in oklab, var(--primary) 18%, transparent); animation: search-pulse 1.6s ease-in-out infinite; }
+@keyframes search-pulse { 0%,100% { transform: scale(1); box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 40%, transparent); } 50% { transform: scale(1.06); box-shadow: 0 0 0 18px transparent; } }
+.chat-bubble { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 0.6rem 1rem; border-radius: 1rem; font-weight: 700; background: var(--gradient-gold); color: var(--primary-foreground); box-shadow: var(--shadow-gold); pointer-events: none; animation: bubble-in .25s ease-out; z-index: 5; }
+.chat-bubble[data-mine="false"] { background: var(--gradient-invite); color: var(--accent-foreground); }
+@keyframes bubble-in { from { opacity: 0; transform: translate(-50%, -30%) scale(.9); } }
+.rank-num { width: 28px; text-align: center; font-weight: 800; color: var(--muted-foreground); }
+.rank-num[data-top="true"] { color: var(--primary); font-size: 1.15rem; }
+.friend-row[data-me="true"] { background: color-mix(in oklab, var(--primary) 14%, transparent); }

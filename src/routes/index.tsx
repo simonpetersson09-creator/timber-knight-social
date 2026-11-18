@@ -1,7 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Bot, Globe, Languages, Lock, Settings, Users, UserPlus, UserRound, X, Cpu, Infinity as InfinityIcon } from "lucide-react";
+import { Bot, Globe, Languages, Lock, Settings, Users, UserPlus, UserRound, X, Cpu, Infinity as InfinityIcon, Trophy, Zap, Send, Hash, Mail } from "lucide-react";
+import { toast } from "sonner";
+import { getCred } from "@/lib/identity";
+import { useMe } from "@/hooks/use-me";
+import { cancelGame, createLobby, inviteFriend, joinGame, myOnline, quickMatch } from "@/lib/online.functions";
+import { getFriends } from "@/lib/players.functions";
+import { askPushOnFirstOnline } from "@/lib/push";
+import { displayName, isOnline } from "@/lib/profile";
 import { Piece } from "@/components/Piece";
 import { LanguageSheet } from "@/components/LanguageSheet";
 import { LEVELS, type Level } from "@/lib/engine";
@@ -33,7 +40,12 @@ function Home() {
   const navigate = useNavigate();
   const [games, setGames] = useState<SavedGame[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
-  const [open, setOpen] = useState<"ai" | "local" | null>(null);
+  const [open, setOpen] = useState<"ai" | "local" | "online" | null>(null);
+  const { me } = useMe();
+  const [online, setOnline] = useState<OnlineRow[]>([]);
+  const [friends, setFriends] = useState<FriendRow[]>([]);
+  const [joinCode, setJoinCode] = useState("");
+  const [picking, setPicking] = useState(false);
   const [level, setLevel] = useState<Level>("easy");
   const [clock, setClock] = useState(0);
   const [color, setColor] = useState<"w" | "b" | "r">("w");
@@ -45,6 +57,29 @@ function Home() {
     setStats(s);
     setLevel([...LEVELS].reverse().find((l) => isUnlocked(l, s.levelWins)) ?? "easy");
   }, []);
+
+  useEffect(() => {
+    if (!me) return;
+    const load = () => { void myOnline({ data: getCred() }).then(setOnline).catch(() => {}); };
+    load();
+    const i = setInterval(load, 15_000);
+    return () => clearInterval(i);
+  }, [me]);
+  useEffect(() => { if (open === "online") { void askPushOnFirstOnline(); void getFriends({ data: getCred() }).then((r) => setFriends(r.filter((x) => x.kind === "friend"))).catch(() => {}); } }, [open]);
+
+  async function quick() { const r = await quickMatch({ data: getCred() }); void navigate({ to: "/match", search: { id: r.id } }); }
+  async function lobby() { const r = await createLobby({ data: getCred() }); void navigate({ to: "/match", search: { id: r.id } }); }
+  async function invite(friend: string) { setPicking(false); const r = await inviteFriend({ data: { ...getCred(), friend } }); void navigate({ to: "/match", search: { id: r.id } }); }
+  async function join() {
+    const r = await joinGame({ data: { ...getCred(), code: joinCode } });
+    if (r.result === "ok") void navigate({ to: "/match", search: { id: r.id } });
+    else toast.error(r.result === "expired" ? t("expired") : t("notFound"));
+  }
+  async function acceptInvite(id: string) {
+    const r = await joinGame({ data: { ...getCred(), gameId: id } });
+    if (r.result === "ok") void navigate({ to: "/match", search: { id: r.id } }); else toast.error(t("expired"));
+  }
+  async function decline(id: string) { await cancelGame({ data: { ...getCred(), gameId: id } }); setOnline((o) => o.filter((x) => x.id !== id)); }
 
   const full = games.length >= MAX_SAVED;
   const unlocked = (l: Level) => isUnlocked(l, stats?.levelWins ?? {});
@@ -72,6 +107,13 @@ function Home() {
           <h1 className="brand-wordmark text-5xl">Mr B Chess</h1>
           <p className="brand-tagline mt-2">{t("tagline")}</p>
         </motion.div>
+
+        {online.length > 0 && (
+          <motion.div variants={item} className="flex flex-col gap-2">
+            <p className="field-label text-center">{t("playOnline")}</p>
+            {online.map((g) => <OnlineCard key={g.id} g={g} onAccept={() => acceptInvite(g.id)} onDecline={() => decline(g.id)} />)}
+          </motion.div>
+        )}
 
         {games.length > 0 && (
           <motion.div variants={item} className="flex flex-col gap-2">
@@ -126,9 +168,35 @@ function Home() {
             )}
           </AnimatePresence>
 
-          <button disabled className="action-btn action-ghost">
-            <Globe className="size-5" /> {t("playOnline")} <span className="chip-gold rounded-full px-2 py-0.5 text-[10px] uppercase">{t("soon")}</span>
+          <button className="action-btn action-blue" onClick={() => setOpen(open === "online" ? null : "online")}>
+            <Globe className="size-5" /> {t("playOnline")}
           </button>
+          <AnimatePresence initial={false}>
+            {open === "online" && (
+              <Expand>
+                <button className="action-btn action-gold" disabled={!me} onClick={quick}><Zap className="size-5" /> {t("quickMatch")}</button>
+                <button className="action-btn action-ghost" disabled={!me} onClick={() => setPicking(!picking)}><Send className="size-5" /> {t("inviteFriend")}</button>
+                {picking && (
+                  <div className="flex flex-col gap-1">
+                    {friends.length === 0 && <Link to="/friends" className="text-center text-sm underline">{t("noFriends")}</Link>}
+                    {friends.map((f) => (
+                      <button key={f.id} className="friend-row text-left" onClick={() => invite(f.player.id)}>
+                        <span className="friend-avatar">{f.player.avatar}<span className="status-dot" data-on={isOnline(f.player.last_seen)} /></span>
+                        <span className="flex-1 truncate font-semibold">{displayName(f.player)}</span>
+                        <Mail className="size-4" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <button className="action-btn action-ghost" disabled={!me} onClick={lobby}><Hash className="size-5" /> {t("createLobby")}</button>
+                <div className="flex gap-2">
+                  <input className="text-field flex-1 uppercase tracking-[0.3em]" maxLength={6} value={joinCode} placeholder={t("lobbyCode")}
+                    onChange={(e) => setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} />
+                  <button className="action-btn action-gold !w-auto px-5" disabled={joinCode.length !== 6 || !me} onClick={join}>{t("join")}</button>
+                </div>
+              </Expand>
+            )}
+          </AnimatePresence>
         </motion.div>
 
         <motion.div variants={item} className="my-2 flex justify-center gap-4">
@@ -136,6 +204,7 @@ function Home() {
           <Link to="/settings" className="round-btn" aria-label={t("settings")}><Settings className="size-5" /></Link>
           <Link to="/profile" className="round-btn" aria-label={t("profile")}><UserRound className="size-5" /></Link>
           <Link to="/friends" className="round-btn" aria-label={t("friends")}><UserPlus className="size-5" /></Link>
+          <Link to="/leaderboard" className="round-btn" aria-label={t("leaderboards")}><Trophy className="size-5" /></Link>
         </motion.div>
 
         {stats && (
@@ -144,6 +213,7 @@ function Home() {
             <div className="stat-grid">
               <Stat n={stats.played} l={t("played")} />
               <Stat n={stats.wins} l={t("wins")} />
+              <Stat n={stats.draws} l={t("draws")} />
               <Stat n={`${winRate}%`} l={t("winRate")} />
               <Stat n={stats.streak} l={t("streak")} />
             </div>
@@ -152,6 +222,30 @@ function Home() {
       </motion.div>
       <LanguageSheet open={langOpen} onClose={() => setLangOpen(false)} />
     </main>
+  );
+}
+
+type OnlineRow = Awaited<ReturnType<typeof myOnline>>[number];
+type FriendRow = Awaited<ReturnType<typeof getFriends>>[number];
+
+function OnlineCard({ g, onAccept, onDecline }: { g: OnlineRow; onAccept: () => void; onDecline: () => void }) {
+  const { t } = useI18n();
+  const name = g.opponent ? displayName(g.opponent) : g.kind === "lobby" ? `${t("lobby")} ${g.code ?? ""}` : "…";
+  if (g.role === "invited") return (
+    <div className="game-card card-invite">
+      <span className="card-chip">{g.opponent?.avatar ?? "♞"}</span>
+      <span className="min-w-0 flex-1"><span className="block truncate">{t("invitedBy", { name })}</span></span>
+      <button className="icon-btn icon-ok" aria-label={t("accept")} onClick={onAccept}>✓</button>
+      <button className="card-x" aria-label={t("decline")} onClick={onDecline}><X className="size-4" /></button>
+    </div>
+  );
+  const cls = g.role === "host" ? "card-invite" : g.myTurn ? "card-you" : "card-opp";
+  const label = g.role === "host" ? t("waitingFor", { name }) : g.myTurn ? t("yourTurn") : t("opponentTurn");
+  return (
+    <Link to="/match" search={{ id: g.id }} className={`game-card ${cls}`}>
+      <span className="card-chip">{g.opponent?.avatar ?? "♞"}</span>
+      <span className="min-w-0 flex-1"><span className="block truncate">{label}</span><span className="block truncate text-xs font-medium opacity-80">{name}</span></span>
+    </Link>
   );
 }
 
