@@ -29,3 +29,5 @@ use the editor.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
 - Chess rules via chess.js; computer opponent is local minimax in src/lib/engine.ts (no server needed for offline play).
+- UI text lives in src/lib/i18n as ordered string arrays per language matching KEYS; add a key to KEYS and every locale array together (i18n.test.ts checks lengths).
+- Saved games, stats and settings are device-local (src/lib/storage.ts, localStorage) until online play adds a backend.

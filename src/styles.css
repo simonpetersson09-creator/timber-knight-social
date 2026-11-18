@@ -187,3 +187,67 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .piece-slot { position: relative; z-index: 3; width: 92%; height: 92%; display: flex; }
 .piece-img { display: block; user-select: none; -webkit-user-drag: none; filter: drop-shadow(0 2px 1.5px oklch(0 0 0 / 50%)); }
 .piece-slot .piece-img { width: 100%; height: 100%; }
+
+/* ---------- Mr B shared UI ---------- */
+:root {
+  --success: oklch(0.66 0.15 150);
+  --success-glow: oklch(0.76 0.14 150);
+  --invite: oklch(0.58 0.15 295);
+  --invite-glow: oklch(0.68 0.14 295);
+  --gradient-success: linear-gradient(90deg, var(--success-glow), var(--success));
+  --gradient-invite: linear-gradient(90deg, var(--invite-glow), var(--invite));
+  --shadow-success: 0 6px 18px color-mix(in oklab, var(--success) 35%, transparent);
+}
+.home-stack { width: 100%; max-width: 380px; margin-inline: auto; display: flex; flex-direction: column; gap: 10px; }
+@media (min-width: 768px) { .home-stack { max-width: 460px; } }
+.game-card { display: flex; align-items: center; gap: 10px; height: 56px; padding: 0 8px 0 12px; border-radius: 12px; font-weight: 700; font-size: 14px; }
+.card-you { background: var(--gradient-success); color: var(--primary-foreground); box-shadow: var(--shadow-success); }
+.card-opp { background: var(--gradient-gold); color: var(--primary-foreground); box-shadow: var(--shadow-gold); }
+.card-invite { background: var(--gradient-invite); color: var(--accent-foreground); }
+.card-chip { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 9px; background: oklch(1 0 0 / 22%); }
+.card-x { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; background: oklch(0 0 0 / 14%); }
+.round-btn { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 9999px; background: var(--gradient-gold); color: var(--primary-foreground); box-shadow: var(--shadow-gold); transition: transform .15s, filter .2s; }
+.round-btn:active { transform: scale(.94); }
+.round-btn:disabled { filter: saturate(.3); opacity: .55; }
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.stat-cell { text-align: center; padding: 10px 4px; border-radius: 10px; background: var(--secondary); }
+.stat-num { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--primary); }
+.stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted-foreground); }
+.level-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.level-btn { position: relative; padding: 10px 4px; border-radius: 10px; background: var(--secondary); font-weight: 600; font-size: 13px; color: var(--secondary-foreground); border: 1px solid transparent; transition: all .2s; }
+.level-btn[data-active="true"] { background: var(--gradient-gold); color: var(--primary-foreground); box-shadow: var(--shadow-gold); }
+.level-btn[data-locked="true"] { color: var(--muted-foreground); border-style: dashed; border-color: var(--border); }
+.setup-panel { display: flex; flex-direction: column; gap: 10px; padding: 12px; }
+.field-label { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted-foreground); }
+.modal-backdrop { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 20px; background: color-mix(in oklab, var(--background) 70%, transparent); backdrop-filter: blur(6px); }
+.modal-panel { width: 100%; max-width: 340px; max-height: 85dvh; overflow: auto; padding: 20px; }
+.lang-list { display: flex; flex-direction: column; gap: 4px; }
+.lang-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; font-weight: 500; }
+.lang-row[data-active="true"] { background: var(--secondary); color: var(--primary); }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; }
+
+/* Play screen */
+.play-layout { display: flex; flex-direction: column; align-items: center; gap: 12px; min-height: 100dvh; padding: calc(16px + env(safe-area-inset-top)) 12px calc(16px + env(safe-area-inset-bottom)); }
+.play-col { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+.play-side { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 560px; }
+.player-bar { width: 100%; max-width: 560px; display: flex; align-items: center; gap: 10px; padding: 8px 12px; transition: box-shadow .25s; }
+.player-bar[data-active="you"] { box-shadow: 0 0 0 2px var(--success), var(--shadow-success); }
+.player-bar[data-active="opp"] { box-shadow: 0 0 0 2px var(--primary), var(--shadow-gold); }
+.clock { margin-left: auto; min-width: 72px; text-align: center; padding: 6px 10px; border-radius: 8px; font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; background: var(--secondary); color: var(--muted-foreground); }
+.clock[data-running="true"] { background: var(--foreground); color: var(--background); }
+.clock[data-low="true"] { background: var(--destructive); color: var(--destructive-foreground); animation: clock-pulse 1s ease-in-out infinite; }
+@keyframes clock-pulse { 50% { transform: scale(1.06); } }
+.promo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.promo-btn { aspect-ratio: 1; border-radius: 12px; padding: 8px; background: url("./assets/wood-light.jpg") center/300%; box-shadow: inset 0 0 0 2px var(--wood-frame-deep); }
+@media (min-width: 820px) and (orientation: landscape) {
+  .play-layout { display: grid; grid-template-columns: auto minmax(260px, 340px); grid-template-rows: auto 1fr; align-items: start; justify-content: center; column-gap: 24px; }
+  .play-layout > header { grid-column: 1 / -1; }
+  .play-col { --board: min(calc(100dvh - 240px), 60vw); width: auto; }
+  .play-col .board-frame { width: var(--board); }
+  .play-col .player-bar { width: var(--board); max-width: none; }
+  .play-side { padding-top: 56px; }
+}
+@media (min-width: 768px) and (orientation: portrait) {
+  .board-frame { width: min(88vw, 720px, calc(100dvh - 300px)); }
+  .player-bar, .play-side { max-width: 720px; }
+}

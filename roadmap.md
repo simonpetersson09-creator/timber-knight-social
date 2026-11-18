@@ -1,20 +1,17 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
 ## Klart
+- [x] Startsida i Yatzy-stil, färgkoder, 6 nivåer med upplåsning, schackklocka, bondeförvandling, remi, ge upp
+- [x] Ljud, vibration, konfetti, surfplatta stående/liggande, upp till 3 sparade partier
+- [x] 40 språk med automatiskt enhetsspråk och språkmeny
 - [x] Träbräde, ebenholts- vs träpjäser, Mr B-färger/typsnitt
 - [x] Spel mot dator (3 nivåer), två spelare på en enhet, ångra
 
 ## Design
-- [ ] Startsida i Yatzy-layout: logga+tagline, kort för pågående matcher/inbjudningar, runda guldknappar (språk, inställningar, vänner), personlig statistik
-- [ ] Färgkoder: grön = din tur, guld = motståndarens tur, violett = väntande inbjudan
-- [ ] Fler nivåer (5–7) som låses upp efter vinster (Sudoku-modell)
-- [ ] Klocka/tidskontroll, bondeförvandling med val, remi-erbjudande, ge upp
-- [ ] Ljud + haptik vid drag/slag/schack/matt, konfetti vid vinst
-- [ ] Surfplatta (stående/liggande), safe-area, orientering utan omstart
-- [ ] Sparade partier (upp till 3 lokala + 3 online), återuppta
 
 ## Språk
-- [ ] 40 språk, automatiskt enhetsspråk, språkmeny med flaggor, iOS-behörighetstexter översatta
+- [ ] iOS-behörighetstexter översatta (när appen paketeras)
+- [ ] Sparade onlinepartier (3) när online byggs
 
 ## Identitet och profil
 - [ ] Anonym enhetsidentitet (ingen inloggning), namn (unikt, max 20), spelarnummer om namnlös
