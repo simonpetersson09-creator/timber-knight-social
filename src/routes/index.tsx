@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Bot, Globe, Languages, Lock, Settings, Users, UserPlus, UserRound, X, Cpu, Infinity as InfinityIcon, Trophy, Zap, Send, Hash, Mail } from "lucide-react";
+import { Bot, Globe, Languages, Lock, Settings, Users, UserPlus, UserRound, X, Cpu, Infinity as InfinityIcon, Trophy, Zap, Send, Hash, Mail, ChevronDown, Gamepad2, Percent, Handshake, Flame } from "lucide-react";
 import { toast } from "sonner";
 import { getCred } from "@/lib/identity";
 import { useMe } from "@/hooks/use-me";
@@ -50,6 +50,7 @@ function Home() {
   const [clock, setClock] = useState(0);
   const [color, setColor] = useState<"w" | "b" | "r">("w");
   const [langOpen, setLangOpen] = useState(false);
+  const [more, setMore] = useState(false);
 
   useEffect(() => {
     setGames(listGames());
@@ -100,14 +101,14 @@ function Home() {
       <div className="home-pattern" aria-hidden />
       <motion.div className="home-stack" initial="hidden" animate="show"
         variants={{ show: { transition: { staggerChildren: 0.08, delayChildren: 0.15 } } }}>
-        <motion.div variants={item} transition={{ duration: 0.45, ease: "easeOut" }} className="mb-8 text-center sm:mb-10">
-          <motion.div className="mx-auto mb-2 size-24 drop-shadow-[0_6px_16px_rgba(0,0,0,0.45)] sm:size-32"
+        <motion.div variants={item} transition={{ duration: 0.45, ease: "easeOut" }} className="mb-8 space-y-1 text-center sm:mb-10">
+          <motion.div className="mx-auto mb-2 size-28 drop-shadow-[0_6px_16px_rgba(0,0,0,0.45)] sm:size-32"
             animate={{ rotate: [0, 0, 4, -3, 0], scale: [1, 1, 1.05, 1.02, 1] }}
             transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}>
             <Piece color="w" type="k" className="size-full" />
           </motion.div>
           <h1 className="brand-wordmark text-4xl sm:text-5xl">Mr B Chess</h1>
-          <p className="brand-tagline mt-2">{t("tagline")}</p>
+          <p className="brand-tagline">{t("tagline")}</p>
         </motion.div>
 
         {online.length > 0 && (
@@ -124,10 +125,10 @@ function Home() {
           </motion.div>
         )}
 
-        <motion.div variants={item} className="flex flex-col gap-2">
-          <button className="action-btn action-blue" onClick={() => setOpen(open === "ai" ? null : "ai")}>
-            <Bot className="size-5" /> {t("playComputer")}
-          </button>
+        <motion.div variants={item} transition={{ duration: 0.45, ease: "easeOut" }} className="flex flex-col gap-[7px]">
+          <motion.button whileTap={{ scale: 0.97 }} className="action-btn action-blue" onClick={() => setOpen(open === "ai" ? null : "ai")}>
+            <Bot /> {t("playComputer")}
+          </motion.button>
           <AnimatePresence initial={false}>
             {open === "ai" && (
               <Expand>
@@ -158,9 +159,14 @@ function Home() {
             )}
           </AnimatePresence>
 
-          <button className="action-btn action-blue" onClick={() => setOpen(open === "local" ? null : "local")}>
-            <Users className="size-5" /> {t("twoPlayers")}
-          </button>
+          <div className="home-side">
+            <motion.button whileTap={{ scale: 0.97 }} className="action-btn action-blue" onClick={() => setOpen(open === "local" ? null : "local")}>
+              <Users /> <span>{t("twoPlayers")}</span>
+            </motion.button>
+            <motion.button whileTap={{ scale: 0.97 }} className="action-btn action-blue" onClick={() => setOpen(open === "online" ? null : "online")}>
+              <Globe /> <span>{t("playOnline")}</span>
+            </motion.button>
+          </div>
           <AnimatePresence initial={false}>
             {open === "local" && (
               <Expand>
@@ -170,9 +176,6 @@ function Home() {
             )}
           </AnimatePresence>
 
-          <button className="action-btn action-blue" onClick={() => setOpen(open === "online" ? null : "online")}>
-            <Globe className="size-5" /> {t("playOnline")}
-          </button>
           <AnimatePresence initial={false}>
             {open === "online" && (
               <Expand>
@@ -199,26 +202,35 @@ function Home() {
               </Expand>
             )}
           </AnimatePresence>
+          <motion.button whileTap={{ scale: 0.97 }} className="action-btn action-blue" onClick={() => void navigate({ to: "/leaderboard" })}>
+            <Trophy /> {t("leaderboards")}
+          </motion.button>
         </motion.div>
 
-        <motion.div variants={item} className="my-3 flex justify-center gap-4">
+        <motion.div variants={item} transition={{ duration: 0.45, ease: "easeOut" }} className="grid w-full grid-cols-4 place-items-center gap-1 pt-2">
           <Round label={t("language")} onClick={() => setLangOpen(true)}><Languages className="size-4" /></Round>
           <Round label={t("settings")} to="/settings"><Settings className="size-4" /></Round>
           <Round label={t("profile")} to="/profile"><UserRound className="size-4" /></Round>
           <Round label={t("friends")} to="/friends"><UserPlus className="size-4" /></Round>
-          <Round label={t("leaderboards")} to="/leaderboard"><Trophy className="size-4" /></Round>
         </motion.div>
 
         {stats && (
-          <motion.div variants={item} className="panel p-3">
-            <p className="field-label mb-2 text-center">{t("stats")}</p>
-            <div className="stat-grid">
-              <Stat n={stats.played} l={t("played")} />
-              <Stat n={stats.wins} l={t("wins")} />
-              <Stat n={stats.draws} l={t("draws")} />
-              <Stat n={`${winRate}%`} l={t("winRate")} />
-              <Stat n={stats.streak} l={t("streak")} />
+          <motion.div variants={item} transition={{ duration: 0.45, ease: "easeOut" }} className="mt-4 flex flex-col gap-2">
+            <button className="flex items-center justify-center gap-1.5" onClick={() => setMore(!more)} aria-expanded={more}>
+              <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">{t("stats")}</span>
+              <ChevronDown className={`size-3 text-muted-foreground transition-transform ${more ? "rotate-180" : ""}`} />
+            </button>
+            <div className="grid grid-cols-3 gap-2">
+              <Tile icon={Gamepad2} n={stats.played} l={t("played")} />
+              <Tile icon={Trophy} n={stats.wins} l={t("wins")} />
+              <Tile icon={Percent} n={stats.played ? `${winRate}%` : "—"} l={t("winRate")} />
             </div>
+            {more && (
+              <div className="grid grid-cols-2 gap-2">
+                <Tile icon={Handshake} n={stats.draws} l={t("draws")} />
+                <Tile icon={Flame} n={stats.streak} l={t("streak")} />
+              </div>
+            )}
           </motion.div>
         )}
       </motion.div>
@@ -286,8 +298,8 @@ function StartButton({ full, disabled, onClick }: { full: boolean; disabled?: bo
   );
 }
 
-function Stat({ n, l }: { n: number | string; l: string }) {
-  return <div className="stat-cell"><div className="stat-num">{n}</div><div className="stat-label">{l}</div></div>;
+function Tile({ icon: Icon, n, l }: { icon: typeof Trophy; n: number | string; l: string }) {
+  return <div className="home-tile"><Icon className="size-3 text-primary/70" /><span className="home-tile-num">{n}</span><span className="home-tile-label">{l}</span></div>;
 }
 
 function GameCard({ g, onDelete }: { g: SavedGame; onDelete: () => void }) {
