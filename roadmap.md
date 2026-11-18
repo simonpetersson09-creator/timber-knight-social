@@ -14,13 +14,13 @@
 - [ ] Sparade onlinepartier (3) när online byggs
 
 ## Identitet och profil
-- [ ] Anonym enhetsidentitet (ingen inloggning), namn (unikt, max 20), spelarnummer om namnlös
-- [ ] Avatar/profilbild, land med flagga
+- [x] Anonym enhetsidentitet (ingen inloggning), namn (unikt, max 20), spelarnummer om namnlös
+- [x] Avatar/profilbild, land med flagga
 
 ## Vänner
-- [ ] Vänförfrågan efter spelad onlinematch + vänkod/QR
-- [ ] Acceptera/avböj/dra tillbaka/ta bort, online-status
-- [ ] Vänstatistik: vinst/förlust/remi, senaste partier
+- [x] Vänkod/QR/länk (vänförfrågan efter onlinematch kommer med online)
+- [x] Acceptera/avböj/dra tillbaka/ta bort, online-status
+- [x] Vänstatistik (fylls på när onlinepartier finns): vinst/förlust/remi, senaste partier
 
 ## Online
 - [ ] Bjud in vän direkt (push), lobbykod + QR + /join-länk, korsade inbjudningar slås ihop

@@ -30,4 +30,5 @@ use the editor.
 <!-- LOVABLE:END -->
 - Chess rules via chess.js; computer opponent is local minimax in src/lib/engine.ts (no server needed for offline play).
 - UI text lives in src/lib/i18n as ordered string arrays per language matching KEYS; add a key to KEYS and every locale array together (i18n.test.ts checks lengths).
-- Saved games, stats and settings are device-local (src/lib/storage.ts, localStorage) until online play adds a backend.
+- Saved games, stats and settings are device-local (src/lib/storage.ts, localStorage).
+- Players have no login: an anonymous device id+secret (src/lib/identity.ts) is verified by server functions in src/lib/players.functions.ts, which alone touch the players/friendships/matches tables (RLS on, no client policies) — keeps identity tamper-proof without accounts.

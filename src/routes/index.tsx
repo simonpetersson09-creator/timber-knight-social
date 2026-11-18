@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Bot, Globe, Languages, Lock, Settings, Users, UserPlus, X, Cpu, Infinity as InfinityIcon } from "lucide-react";
+import { Bot, Globe, Languages, Lock, Settings, Users, UserPlus, UserRound, X, Cpu, Infinity as InfinityIcon } from "lucide-react";
 import { Piece } from "@/components/Piece";
 import { LanguageSheet } from "@/components/LanguageSheet";
 import { LEVELS, type Level } from "@/lib/engine";
@@ -134,7 +134,8 @@ function Home() {
         <motion.div variants={item} className="my-2 flex justify-center gap-4">
           <button className="round-btn" aria-label={t("language")} onClick={() => setLangOpen(true)}><Languages className="size-5" /></button>
           <Link to="/settings" className="round-btn" aria-label={t("settings")}><Settings className="size-5" /></Link>
-          <button className="round-btn" aria-label={t("friends")} disabled><UserPlus className="size-5" /></button>
+          <Link to="/profile" className="round-btn" aria-label={t("profile")}><UserRound className="size-5" /></Link>
+          <Link to="/friends" className="round-btn" aria-label={t("friends")}><UserPlus className="size-5" /></Link>
         </motion.div>
 
         {stats && (
