@@ -32,3 +32,5 @@ use the editor.
 - UI text lives in src/lib/i18n as ordered string arrays per language matching KEYS; add a key to KEYS and every locale array together (i18n.test.ts checks lengths).
 - Saved games, stats and settings are device-local (src/lib/storage.ts, localStorage).
 - Players have no login: an anonymous device id+secret (src/lib/identity.ts) is verified by server functions in src/lib/players.functions.ts, which alone touch the players/friendships/matches tables (RLS on, no client policies) — keeps identity tamper-proof without accounts.
+- Online games are server-authoritative: src/lib/online.functions.ts validates every move with chess.js; pure timing/ad/rating rules live in src/lib/online-rules.ts (tested). An hourly managed schedule calls /api/public/jobs/hourly for timeouts and reminders.
+- Native features (AdMob, push, in-app review, back button) load Capacitor plugins lazily and no-op on web; the Capacitor shell loads the published site (capacitor.config.ts server.url). Public web shows only a download page except /join, /legal, /admin.

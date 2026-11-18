@@ -4,7 +4,7 @@ import { z } from "zod";
 import { Piece } from "@/components/Piece";
 import { StoreButtons } from "@/components/StoreButtons";
 import { useI18n } from "@/lib/i18n";
-import { getCred } from "@/lib/identity";
+import { getCred, loadMe } from "@/lib/identity";
 import { isNative, isPreviewHost } from "@/lib/native";
 import { joinGame } from "@/lib/online.functions";
 import { askPushOnFirstOnline } from "@/lib/push";
@@ -34,7 +34,7 @@ function Join() {
     if (!code) { setState("not_found"); return; }
     setState("joining");
     void askPushOnFirstOnline();
-    joinGame({ data: { ...getCred(), code } }).then((r) => {
+    loadMe().then(() => joinGame({ data: { ...getCred(), code } })).then((r) => {
       if (r.result === "ok") void navigate({ to: "/match", search: { id: r.id }, replace: true });
       else setState(r.result);
     }).catch(() => setState("not_found"));

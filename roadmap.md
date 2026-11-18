@@ -23,16 +23,16 @@
 - [x] Vänstatistik (fylls på när onlinepartier finns): vinst/förlust/remi, senaste partier
 
 ## Online
-- [ ] Bjud in vän direkt (push), lobbykod + QR + /join-länk, korsade inbjudningar slås ihop
-- [ ] Snabbmatch med sökning, faller tillbaka på dator om ingen hittas
-- [ ] Servern avgör alla drag (fusksäkert), realtid + återanslutning
-- [ ] Tidsgränser: inaktiv → påminnelse → förlust; ge upp påverkar inte statistik
-- [ ] Inbjudan gäller 24 h, lobby 6 h; snabbchatt med fasta fraser
+- [x] Bjud in vän direkt (push), lobbykod + QR + /join-länk, korsade inbjudningar slås ihop
+- [x] Snabbmatch med sökning, faller tillbaka på dator om ingen hittas
+- [x] Servern avgör alla drag (fusksäkert), realtid + återanslutning
+- [x] Tidsgränser: inaktiv → påminnelse → förlust; ge upp påverkar inte statistik
+- [x] Inbjudan gäller 24 h, lobby 6 h; snabbchatt med fasta fraser
 - [ ] Väntrum (valfritt, som Yatzy)
 
 ## Statistik och topplistor
-- [ ] Partier, vinster, remi, vinstprocent, svit
-- [ ] Världs-/landstopplista per år, veckans topp 10, månadens flitigaste
+- [x] Partier, vinster, remi, vinstprocent, svit
+- [x] Världs-/landstopplista per år, veckans topp 10, månadens flitigaste
 - [ ] Veckopris topp 3 (3/2/1 XP) – beslut
 
 ## XP och butik (beslut)
@@ -40,24 +40,31 @@
 - [ ] Värva vän-belöning
 
 ## Notiser
-- [ ] Push iOS (APNs) + Android (Firebase), fråga vid onlinespel – inte vid start
-- [ ] Inställningar: din tur, påminnelser, spelpåminnelse efter 7 dagar (kl 18, max 1/vecka)
+- [x] Push iOS (APNs) + Android (Firebase), fråga vid onlinespel – inte vid start
+- [x] Inställningar: din tur, påminnelser, spelpåminnelse efter 7 dagar (kl 18, max 1/vecka)
 
 ## Annonser (egna AdMob-ID:n för Chess)
-- [ ] 1 App Open (appstart), bara på startsidan, aldrig mitt i parti, kräver minst 1 avslutat parti
-- [ ] Mellanannons vid avslut av parti (en per parti, väntar tills stängd)
+- [x] 1 App Open (appstart), bara på startsidan, aldrig mitt i parti, kräver minst 1 avslutat parti
+- [x] Mellanannons vid avslut av parti (en per parti, väntar tills stängd)
 - [ ] Banner under lokala partier (beslut)
 - [ ] Belöningsannons för XP/ledtråd (beslut)
-- [ ] Google-samtycke (UMP) + iOS ATT, ändra annonsval i inställningar, inga annonser på webben
-- [ ] app-ads.txt på juridiksidan
+- [x] Google-samtycke (UMP) + iOS ATT, ändra annonsval i inställningar, inga annonser på webben
+- [x] app-ads.txt på juridiksidan
 
 ## Övrigt
-- [ ] Be om betyg: efter 5 partier, sedan +10, +20, max 3 gånger
+- [x] Be om betyg: efter 5 partier, sedan +10, +20, max 3 gånger
 - [ ] Nyhets-/uppdateringsrutor (en i taget)
-- [ ] Inställningar: namn, avatar, land, språk, haptik, notiser, annonsval, nollställ statistik, radera mina data
-- [ ] Android bakåtknapp (stänger rutor först, minimerar på start), svep bakåt på iOS
-- [ ] Webben visar bara App Store/Google Play-sida (/join och /legal öppna)
-- [ ] Ny juridiksida "Mr B Chess Legal" (support, integritet, villkor, app-ads.txt)
+- [x] Inställningar: namn, avatar, land, språk, haptik, notiser, annonsval, nollställ statistik, radera mina data
+- [x] Android bakåtknapp (stänger rutor först, minimerar på start), svep bakåt på iOS
+- [x] Webben visar bara App Store/Google Play-sida (/join och /legal öppna)
+- [x] Ny juridiksida "Mr B Chess Legal" (support, integritet, villkor, app-ads.txt)
 - [ ] App-ikon 1024 px + splash, iOS/Android-paket, butikslänkar
-- [ ] Admin: PIN-skyddad statistik (enheter iOS/Android, 30 dagar, annonser, fel), testenheter exkluderas
-- [ ] Analys + felrapportering
+- [x] Admin: PIN-skyddad statistik (enheter iOS/Android, 30 dagar, annonser, fel), testenheter exkluderas
+- [x] Analys + felrapportering
+
+## Väntar på
+- [ ] Notiser skickas först när Firebase kopplas (koden är klar)
+- [ ] Egna AdMob-ID:n för Chess (testannonser tills dess)
+- [ ] Butikslänkar när appen finns i App Store/Google Play
+- [ ] Bygga iOS/Android-paket på dator (Xcode/Android Studio) efter publicering
+- [ ] Riktig app-ads.txt-rad och supportmejl på juridiksidan

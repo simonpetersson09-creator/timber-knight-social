@@ -8,10 +8,10 @@ describe("online rules", () => {
     const s = statsFor("a", [m("a", "b", "w"), m("a", "b", "b", false), m("b", "a", "b"), m("a", "c", "d")]);
     expect(s).toEqual({ played: 3, wins: 2, losses: 0, draws: 1, winRate: 67, streak: 2 });
   });
-  it("inactive player loses after 24 h", () => {
-    expect(moveDeadline(0, 11 * HOUR)).toBe("ok");
-    expect(moveDeadline(0, 12 * HOUR)).toBe("remind");
-    expect(moveDeadline(0, 24 * HOUR)).toBe("timeout");
+  it("inactive player is reminded after 24 h and loses after 48 h", () => {
+    expect(moveDeadline(0, 23 * HOUR)).toBe("ok");
+    expect(moveDeadline(0, 24 * HOUR)).toBe("remind");
+    expect(moveDeadline(0, 48 * HOUR)).toBe("timeout");
   });
   it("play reminder after 7 days, at 18 local time, max once a week", () => {
     const at18 = new Date("2026-11-18T17:00:00Z"); // 18:00 Stockholm
