@@ -95,16 +95,18 @@ function Home() {
   const req = UNLOCK[level];
 
   return (
-    <main className="flex min-h-dvh flex-col items-center px-5 pt-[calc(28px+env(safe-area-inset-top))] pb-[calc(28px+env(safe-area-inset-bottom))]">
+    <main className="relative flex min-h-dvh flex-col items-center overflow-x-hidden px-6 pt-[calc(28px+env(safe-area-inset-top))] pb-[calc(28px+env(safe-area-inset-bottom))]">
+      <div className="home-glow" aria-hidden />
+      <div className="home-pattern" aria-hidden />
       <motion.div className="home-stack" initial="hidden" animate="show"
-        variants={{ show: { transition: { staggerChildren: 0.07, delayChildren: 0.1 } } }}>
-        <motion.div variants={item} className="mb-2 text-center">
-          <motion.div className="mx-auto mb-2 size-28 drop-shadow-2xl"
-            animate={{ rotate: [0, 0, 5, -4, 0], y: [0, 0, -6, 0, 0] }}
-            transition={{ duration: 1.4, repeat: Infinity, repeatDelay: 2.5 }}>
+        variants={{ show: { transition: { staggerChildren: 0.08, delayChildren: 0.15 } } }}>
+        <motion.div variants={item} transition={{ duration: 0.45, ease: "easeOut" }} className="mb-8 text-center sm:mb-10">
+          <motion.div className="mx-auto mb-2 size-24 drop-shadow-[0_6px_16px_rgba(0,0,0,0.45)] sm:size-32"
+            animate={{ rotate: [0, 0, 4, -3, 0], scale: [1, 1, 1.05, 1.02, 1] }}
+            transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}>
             <Piece color="w" type="k" className="size-full" />
           </motion.div>
-          <h1 className="brand-wordmark text-5xl">Mr B Chess</h1>
+          <h1 className="brand-wordmark text-4xl sm:text-5xl">Mr B Chess</h1>
           <p className="brand-tagline mt-2">{t("tagline")}</p>
         </motion.div>
 
@@ -199,12 +201,12 @@ function Home() {
           </AnimatePresence>
         </motion.div>
 
-        <motion.div variants={item} className="my-2 flex justify-center gap-4">
-          <button className="round-btn" aria-label={t("language")} onClick={() => setLangOpen(true)}><Languages className="size-5" /></button>
-          <Link to="/settings" className="round-btn" aria-label={t("settings")}><Settings className="size-5" /></Link>
-          <Link to="/profile" className="round-btn" aria-label={t("profile")}><UserRound className="size-5" /></Link>
-          <Link to="/friends" className="round-btn" aria-label={t("friends")}><UserPlus className="size-5" /></Link>
-          <Link to="/leaderboard" className="round-btn" aria-label={t("leaderboards")}><Trophy className="size-5" /></Link>
+        <motion.div variants={item} className="my-3 flex justify-center gap-4">
+          <Round label={t("language")} onClick={() => setLangOpen(true)}><Languages className="size-4" /></Round>
+          <Round label={t("settings")} to="/settings"><Settings className="size-4" /></Round>
+          <Round label={t("profile")} to="/profile"><UserRound className="size-4" /></Round>
+          <Round label={t("friends")} to="/friends"><UserPlus className="size-4" /></Round>
+          <Round label={t("leaderboards")} to="/leaderboard"><Trophy className="size-4" /></Round>
         </motion.div>
 
         {stats && (
@@ -309,4 +311,10 @@ function GameCard({ g, onDelete }: { g: SavedGame; onDelete: () => void }) {
       <button className="card-x" aria-label={t("delete")} onClick={onDelete}><X className="size-4" /></button>
     </div>
   );
+}
+
+function Round({ label, to, onClick, children }: { label: string; to?: "/settings" | "/profile" | "/friends" | "/leaderboard"; onClick?: () => void; children: React.ReactNode }) {
+  const inner = <><span className="round-btn">{children}</span><span className="round-label">{label}</span></>;
+  const cls = "flex w-[46px] flex-col items-center gap-1.5 active:scale-[0.92] transition-transform";
+  return to ? <Link to={to} className={cls} aria-label={label}>{inner}</Link> : <button className={cls} aria-label={label} onClick={onClick}>{inner}</button>;
 }

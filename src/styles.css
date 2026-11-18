@@ -107,8 +107,8 @@
   --gradient-gold: linear-gradient(135deg, var(--primary-glow), var(--primary));
   --gradient-blue: linear-gradient(90deg, var(--accent-glow), var(--accent));
   --gradient-scene: radial-gradient(ellipse at 50% 0%, oklch(0.36 0.06 215) 0%, var(--background) 60%);
-  --shadow-gold: 0 6px 20px color-mix(in oklab, var(--primary) 35%, transparent);
-  --shadow-blue: 0 6px 20px color-mix(in oklab, var(--accent) 35%, transparent);
+  --shadow-gold: 0 4px 14px color-mix(in oklab, var(--primary) 35%, transparent);
+  --shadow-blue: 0 4px 16px color-mix(in oklab, var(--accent) 30%, transparent);
   --shadow-board: 0 30px 60px -15px oklch(0.1 0.03 220 / 80%), 0 0 0 1px oklch(0.15 0.03 40);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -143,9 +143,9 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
   filter: drop-shadow(0 4px 14px oklch(0.1 0.03 220 / 60%)); }
 .brand-tagline { font-size: 0.8rem; letter-spacing: 0.35em; text-transform: uppercase; color: var(--muted-foreground); }
 
-.action-btn { display: flex; align-items: center; justify-content: center; gap: 0.6rem; width: 100%; height: 52px;
+.action-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 44px; font-size: 14px; border-radius: 10px !important; transition: box-shadow .2s, transform .15s, filter .2s;
   border-radius: 12px; font-weight: 700; font-size: 15px; transition: transform .15s, box-shadow .2s, filter .2s; }
-.action-btn:active { transform: scale(0.98); }
+.action-btn:active { transform: scale(0.97); box-shadow: 0 2px 8px color-mix(in oklab, var(--accent) 20%, transparent); filter: brightness(.97); }
 .action-blue { background: var(--gradient-blue); color: var(--accent-foreground); box-shadow: var(--shadow-blue); }
 .action-gold { background: var(--gradient-gold); color: var(--primary-foreground); box-shadow: var(--shadow-gold); }
 .action-ghost { background: var(--secondary); color: var(--secondary-foreground); border: 1px solid var(--border); }
@@ -196,23 +196,28 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
   --invite-glow: oklch(0.68 0.14 295);
   --gradient-success: linear-gradient(90deg, var(--success-glow), var(--success));
   --gradient-invite: linear-gradient(90deg, var(--invite-glow), var(--invite));
-  --shadow-success: 0 6px 18px color-mix(in oklab, var(--success) 35%, transparent);
+  --shadow-success: 0 4px 16px color-mix(in oklab, var(--success) 30%, transparent);
 }
-.home-stack { width: 100%; max-width: 380px; margin-inline: auto; display: flex; flex-direction: column; gap: 10px; }
+.home-stack { width: 100%; max-width: 360px; margin-block: auto; margin-inline: auto; display: flex; flex-direction: column; gap: 7px; position: relative; z-index: 1; }
+.home-stack .action-btn > svg { width: 16px; height: 16px; }
+.home-glow { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(500px 500px at 50% 25%, color-mix(in oklab, var(--primary) 7%, transparent), transparent 70%); }
+.home-pattern { position: fixed; inset: 0; pointer-events: none; opacity: .022; background-image: conic-gradient(var(--foreground) 25%, transparent 0 50%, var(--foreground) 0 75%, transparent 0); background-size: 60px 60px; }
+.round-label { font-size: 8px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; line-height: 1; color: color-mix(in oklab, var(--primary) 60%, transparent); }
 @media (min-width: 768px) { .home-stack { max-width: 460px; } }
-.game-card { display: flex; align-items: center; gap: 10px; height: 56px; padding: 0 8px 0 12px; border-radius: 12px; font-weight: 700; font-size: 14px; }
+.game-card { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 6px 0 12px; border-radius: 10px; font-weight: 700; font-size: 14px; line-height: 1.15; overflow: hidden; transition: box-shadow .2s; }
 .card-you { background: var(--gradient-success); color: var(--primary-foreground); box-shadow: var(--shadow-success); }
 .card-opp { background: var(--gradient-gold); color: var(--primary-foreground); box-shadow: var(--shadow-gold); }
 .card-invite { background: var(--gradient-invite); color: var(--accent-foreground); }
-.card-chip { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 9px; background: oklch(1 0 0 / 22%); }
-.card-x { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; background: oklch(0 0 0 / 14%); }
-.round-btn { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 9999px; background: var(--gradient-gold); color: var(--primary-foreground); box-shadow: var(--shadow-gold); transition: transform .15s, filter .2s; }
+.card-chip { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 7px; font-size: 13px; background: var(--background); color: var(--foreground); }
+.card-chip > svg { width: 12px; height: 12px; }
+.card-x { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 7px; background: oklch(0 0 0 / 14%); }
+.round-btn { display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 9999px; background: var(--gradient-gold); color: var(--primary-foreground); box-shadow: var(--shadow-gold); transition: transform .15s, filter .2s; }
 .round-btn:active { transform: scale(.94); }
 .round-btn:disabled { filter: saturate(.3); opacity: .55; }
 .stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
-.stat-cell { text-align: center; padding: 10px 4px; border-radius: 10px; background: var(--secondary); }
-.stat-num { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--primary); }
-.stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted-foreground); }
+.stat-cell { text-align: center; padding: 8px 2px; border-radius: 10px; background: var(--secondary); }
+.stat-num { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--primary); }
+.stat-label { font-size: 8px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted-foreground); }
 .level-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .level-btn { position: relative; padding: 10px 4px; border-radius: 10px; background: var(--secondary); font-weight: 600; font-size: 13px; color: var(--secondary-foreground); border: 1px solid transparent; transition: all .2s; }
 .level-btn[data-active="true"] { background: var(--gradient-gold); color: var(--primary-foreground); box-shadow: var(--shadow-gold); }
@@ -278,3 +283,5 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .rank-num { width: 28px; text-align: center; font-weight: 800; color: var(--muted-foreground); }
 .rank-num[data-top="true"] { color: var(--primary); font-size: 1.15rem; }
 .friend-row[data-me="true"] { background: color-mix(in oklab, var(--primary) 14%, transparent); }
+
+@media (min-width: 768px) { .round-btn { width: 50px; height: 50px; } .round-label { font-size: 10px; } }
