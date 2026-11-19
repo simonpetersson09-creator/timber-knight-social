@@ -43,3 +43,4 @@ use the editor.
 - Shared GamePlayerCard/CapturedPieces components keep local and online game layouts consistent, with the board centred and actions at the bottom.
 - Capacitor copy/sync hooks configure iOS QR camera permissions automatically when the native project exists, avoiding manual Info.plist edits.
 - The chess board uses a flat CSS grid surface with native square hit targets and pre-shaded SVG pieces, not a continuous WebGL loop, to keep mobile rendering lightweight without changing game logic.
+- Computer levels above beginner use Stockfish 18 lite (WASM in a Web Worker: public/engine/stockfish.js, wasm via lovable-assets, src/lib/stockfish.ts); local minimax stays for beginner and as offline fallback — gives real strength without a server.

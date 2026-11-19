@@ -34,7 +34,7 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
-const QUICK_LEVELS = ["beginner", "medium", "hard"] as const satisfies readonly Level[];
+const QUICK_LEVELS = ["beginner", "medium", "hard", "master"] as const satisfies readonly Level[];
 
 const item = { hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0 } };
 

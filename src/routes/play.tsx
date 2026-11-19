@@ -16,6 +16,7 @@ import { ChessBoard } from "@/components/ChessBoard";
 import { Piece } from "@/components/Piece";
 import { Modal } from "@/components/Modal";
 import { bestMove, evaluateFen } from "@/lib/engine";
+import { stockfishMove, preloadStockfish } from "@/lib/stockfish";
 import { AI_MOVE_DELAY_MS } from "@/lib/play-motion";
 import { useI18n } from "@/lib/i18n";
 import { celebrate, feedback } from "@/lib/feedback";
@@ -149,16 +150,29 @@ function Play() {
     else feedback(game.inCheck() ? "check" : m.captured ? "capture" : "move");
   }, [game, persist, finish]);
 
+  useEffect(() => { if (saved?.mode === "ai" && saved.level !== "beginner") preloadStockfish(); }, [saved?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Computer move
   useEffect(() => {
     if (!aiTurn || !saved) return;
     setThinking(true);
-    const timer = setTimeout(() => {
-      const m = bestMove(game.fen(), saved.level);
-      setThinking(false);
-      if (m) applyMove({ from: m.from, to: m.to, ...(m.promotion ? { promotion: m.promotion } : {}) });
-    }, AI_MOVE_DELAY_MS);
-    return () => clearTimeout(timer);
+    let cancelled = false;
+    const fen = game.fen();
+    const started = Date.now();
+    const timer = setTimeout(async () => {
+      let mv: { from: string; to: string; promotion?: string } | null = null;
+      const uci = await stockfishMove(fen, saved.level);
+      if (uci) mv = { from: uci.slice(0, 2), to: uci.slice(2, 4), ...(uci[4] ? { promotion: uci[4] } : {}) };
+      else { const m = bestMove(fen, saved.level === "beginner" ? "beginner" : saved.level === "medium" ? "medium" : "expert"); if (m) mv = { from: m.from, to: m.to, ...(m.promotion ? { promotion: m.promotion } : {}) }; }
+      // Keep a natural minimum thinking pause even when the engine answers instantly.
+      const wait = Math.max(0, AI_MOVE_DELAY_MS - (Date.now() - started));
+      setTimeout(() => {
+        if (cancelled || game.fen() !== fen) return;
+        setThinking(false);
+        if (mv) applyMove(mv);
+      }, wait);
+    }, 0);
+    return () => { cancelled = true; clearTimeout(timer); };
   }, [aiTurn, saved?.id, game.fen()]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Clock ticking + timeout

@@ -274,7 +274,7 @@ h1, h2, h3, h4 { font-family: "Space Grotesk", system-ui, sans-serif; }
 .stat-cell { text-align: center; padding: 8px 2px; border-radius: 10px; background: var(--secondary); }
 .stat-num { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--primary); }
 .stat-label { font-size: 8px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted-foreground); }
-.level-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.level-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 .level-btn { position: relative; padding: 10px 4px; border-radius: 10px; background: var(--secondary); font-weight: 600; font-size: 13px; color: var(--secondary-foreground); border: 1px solid transparent; transition: all .2s; }
 .level-btn[data-active="true"] { background: var(--gradient-gold); color: var(--primary-foreground); box-shadow: var(--shadow-gold); }
 .level-btn[data-locked="true"] { color: var(--muted-foreground); border-style: dashed; border-color: var(--border); }
