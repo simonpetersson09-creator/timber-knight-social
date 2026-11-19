@@ -211,9 +211,9 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .seg button { padding: 10px 8px; border-radius: 9px; font-weight: 600; font-size: 14px; color: var(--muted-foreground); transition: all .2s; }
 .seg button[data-active="true"] { background: var(--gradient-gold); color: var(--primary-foreground); box-shadow: var(--shadow-gold); }
 
-.piece-slot { position: relative; z-index: 3; width: 90%; height: 90%; display: flex; pointer-events: none; transform-origin: center 87%; will-change: transform; }
-.piece-slot::before { content: ""; position: absolute; left: 16%; right: 16%; bottom: 7%; height: 12%; background: var(--piece-contact); pointer-events: none; }
-.piece-img { display: block; user-select: none; -webkit-user-drag: none; filter: drop-shadow(0 2px 1.5px oklch(0 0 0 / 50%)); }
+.piece-slot { position: relative; z-index: 3; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; pointer-events: none; transform-origin: center 87%; will-change: transform; }
+.piece-slot::before { content: ""; position: absolute; left: 16%; right: 16%; bottom: 3%; height: 12%; background: var(--piece-contact); pointer-events: none; }
+.piece-img { display: block; object-fit: contain; user-select: none; -webkit-user-drag: none; filter: drop-shadow(0 2px 1.5px oklch(0 0 0 / 50%)); }
 .piece-slot .piece-img { position: relative; width: 100%; height: 100%; object-fit: contain; filter: var(--piece-shadow); }
 
 /* ---------- Mr B shared UI ---------- */
