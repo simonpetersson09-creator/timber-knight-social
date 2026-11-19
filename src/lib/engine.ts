@@ -50,8 +50,8 @@ function search(game: Chess, depth: number, alpha: number, beta: number, max: bo
   return best;
 }
 
-const CFG: Record<Level, { depth: number; random: number; ms: number }> = {
-  beginner: { depth: 1, random: 0.55, ms: 400 },
+export const LOCAL_LEVEL_CFG: Record<Level, { depth: number; random: number; ms: number }> = {
+  beginner: { depth: 2, random: 0.25, ms: 400 },
   easy: { depth: 1, random: 0.15, ms: 500 },
   medium: { depth: 2, random: 0, ms: 1500 },
   hard: { depth: 3, random: 0, ms: 2500 },
@@ -63,7 +63,7 @@ export function bestMove(fen: string, level: Level): Move | null {
   const game = new Chess(fen);
   const moves = order(game.moves({ verbose: true }));
   if (!moves.length) return null;
-  const cfg = CFG[level];
+  const cfg = LOCAL_LEVEL_CFG[level];
   if (Math.random() < cfg.random) return moves[Math.floor(Math.random() * moves.length)] ?? null;
   const max = game.turn() === "w";
   const deadline = Date.now() + cfg.ms;

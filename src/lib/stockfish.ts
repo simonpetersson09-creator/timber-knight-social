@@ -3,9 +3,9 @@ import type { Level } from "./engine";
 
 /** UCI settings per level. Beginner stays on the light local engine (see engine.ts). */
 export const SF_CFG: Partial<Record<Level, { options: Record<string, string | number>; movetime: number }>> = {
-  medium: { options: { "Skill Level": 0, UCI_LimitStrength: "false" }, movetime: 150 },
-  hard: { options: { "Skill Level": 10, UCI_LimitStrength: "false" }, movetime: 500 },
-  expert: { options: { "Skill Level": 15, UCI_LimitStrength: "false" }, movetime: 1000 },
+  medium: { options: { "Skill Level": 7, UCI_LimitStrength: "false" }, movetime: 350 },
+  hard: { options: { "Skill Level": 12, UCI_LimitStrength: "false" }, movetime: 650 },
+  expert: { options: { "Skill Level": 17, UCI_LimitStrength: "false" }, movetime: 1200 },
   master: { options: { "Skill Level": 20, UCI_LimitStrength: "false" }, movetime: 2500 },
 };
 
