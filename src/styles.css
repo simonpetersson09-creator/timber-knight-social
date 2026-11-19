@@ -266,10 +266,7 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .card-pill > svg { width: 10px !important; height: 10px !important; }
 .card-pill:active { transform: scale(.95); }
 .card-pill-action { background: var(--gradient-gold) !important; color: var(--primary-foreground) !important; }
-.round-btn { display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 9999px; color: oklch(0.86 0.1 84); border: 1.5px solid color-mix(in oklab, var(--primary) 70%, transparent);
-  background: radial-gradient(circle at 50% 30%, var(--board-frame-glint), transparent 70%), linear-gradient(var(--board-frame-tint), var(--board-frame-tint)), url("./assets/wood-dark.jpg") center/cover, var(--wood-frame);
-  box-shadow: inset 0 2px 3px var(--board-frame-glint), inset 0 -3px 6px var(--board-frame-shade), 0 4px 12px var(--board-frame-shade); transition: transform .15s, filter .2s; -webkit-tap-highlight-color: transparent; }
-.round-btn > svg { filter: drop-shadow(0 1px 1px oklch(0 0 0 / 60%)); }
+.round-btn { display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 9999px; background: var(--gradient-gold); color: var(--primary-foreground); box-shadow: var(--shadow-gold); transition: transform .15s, filter .2s; }
 .round-btn:active { transform: scale(.94); }
 .round-btn:disabled { filter: saturate(.3); opacity: .55; }
 .stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
@@ -435,3 +432,11 @@ body { overscroll-behavior-y: contain; }
 .lobby-code-input::placeholder { color: color-mix(in oklab, var(--muted-foreground) 40%, transparent); }
 .lobby-scan { padding: 8px 12px; border-radius: 12px; background: var(--secondary); border: 1px solid color-mix(in oklab, var(--border) 50%, transparent); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--accent); }
 .lobby-scan > span { font-size: 10px; font-weight: 600; color: var(--muted-foreground); }
+
+/* Match-page bottom controls: wooden plaques with gold trim, matching the board frame */
+.game-actions :is(.game-clock-card .game-clock, .game-action-button) { border: 1.5px solid color-mix(in oklab, var(--primary) 60%, transparent) !important; color: oklch(0.88 0.08 84) !important;
+  background: radial-gradient(ellipse at 50% 0%, var(--board-frame-glint), transparent 70%), linear-gradient(var(--board-frame-tint), var(--board-frame-tint)), url("./assets/wood-dark.jpg") center/cover, var(--wood-frame) !important;
+  box-shadow: inset 0 1px 2px var(--board-frame-glint), inset 0 -3px 6px var(--board-frame-shade), 0 4px 12px var(--board-frame-shade); text-shadow: 0 1px 1px oklch(0 0 0 / 60%); }
+.game-actions .game-clock[data-running="true"] { background: var(--gradient-gold) !important; color: var(--primary-foreground) !important; text-shadow: none; }
+.game-actions .game-clock[data-low="true"] { background: var(--destructive) !important; color: var(--destructive-foreground) !important; }
+.game-actions .game-action-resign { border-color: color-mix(in oklab, var(--destructive) 55%, var(--primary)) !important; }

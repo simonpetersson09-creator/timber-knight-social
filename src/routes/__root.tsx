@@ -1,3 +1,4 @@
+import { PIECE_URLS } from "@/components/Piece";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -96,6 +97,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
+      ...PIECE_URLS.map((href) => ({ rel: "preload", as: "image", href, fetchPriority: "high" as const })),
       {
         rel: "stylesheet",
         href: appCss,
