@@ -1,6 +1,8 @@
 import type { Color, PieceSymbol, Square } from "chess.js";
 
 export const AI_MOVE_DELAY_MS = 1800;
+/** A draw may be proposed at most this many times per game. */
+export const MAX_DRAW_OFFERS = 2;
 
 export type BoardPiece = { square: Square; color: Color; type: PieceSymbol };
 export type PieceIds = Partial<Record<Square, string>>;

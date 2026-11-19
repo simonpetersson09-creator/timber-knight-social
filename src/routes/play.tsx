@@ -10,6 +10,8 @@ import { useMe } from "@/hooks/use-me";
 import { displayName } from "@/lib/profile";
 import { report } from "@/lib/report";
 import { toast } from "sonner";
+import { AnimatePresence, motion } from "framer-motion";
+import { MAX_DRAW_OFFERS } from "@/lib/play-motion";
 import { ChessBoard } from "@/components/ChessBoard";
 import { Piece } from "@/components/Piece";
 import { Modal } from "@/components/Modal";
@@ -57,6 +59,15 @@ function Play() {
   const [thinking, setThinking] = useState(false);
   const [promo, setPromo] = useState<{ from: Square; to: Square } | null>(null);
   const [ask, setAsk] = useState<"resign" | "draw" | null>(null);
+  // Each player may propose a draw at most twice per game.
+  const [drawOffers, setDrawOffers] = useState(0);
+  const [notice, setNotice] = useState<string | null>(null);
+  const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showNotice = (msg: string) => {
+    setNotice(msg);
+    if (noticeTimer.current) clearTimeout(noticeTimer.current);
+    noticeTimer.current = setTimeout(() => setNotice(null), 2400);
+  };
   const [now, setNow] = useState(() => Date.now());
   const [showEnd, setShowEnd] = useState(false);
   const turnStart = useRef(Date.now());
@@ -187,12 +198,14 @@ function Play() {
   }
 
   function offerDraw() {
+    if (drawOffers >= MAX_DRAW_OFFERS) return;
+    setDrawOffers((n) => n + 1);
     if (vsAi) {
       const ai = other(human);
       const e = evaluateFen(game.fen());
       const aiScore = ai === "w" ? e : -e;
       if (aiScore < -150 || (game.history().length > 60 && Math.abs(aiScore) < 60)) finish({ winner: null, reason: "draw" });
-      else toast(t("drawDeclined"));
+      else showNotice(t("drawDeclined"));
     } else setAsk("draw");
   }
 
@@ -248,22 +261,33 @@ function Play() {
   return (
     <main className="play-layout">
       <header className="flex w-full max-w-[560px] items-center justify-between">
-        <Link to="/" className="action-ghost flex size-10 items-center justify-center rounded-full" aria-label={t("home")}>
+        <Link to="/" className="play-back" aria-label={t("home")}>
           <ArrowLeft className="size-5" />
         </Link>
-        <span className="brand-wordmark text-2xl">Mr B Chess</span>
+        <span className="brand-wordmark play-wordmark text-2xl">Mr B Chess</span>
         <span className="size-10" />
       </header>
 
       <div className="play-col">
-        <div className="player-top">{card(top)}<CapturedPieces game={game} mine={top} />{clock(top)}</div>
+        <div className="player-top">{card(top)}<CapturedPieces game={game} mine={top} /></div>
         <ChessBoard game={game} orientation={vsAi ? human : "w"} disabled={aiTurn || !!result} lastMove={lastMove} onMove={onBoardMove} />
-        <div className="player-bottom">{clock(bottom)}<CapturedPieces game={game} mine={bottom} />{card(bottom)}</div>
+        <div className="player-bottom"><CapturedPieces game={game} mine={bottom} />{card(bottom)}</div>
+        <AnimatePresence>
+          {notice && (
+            <motion.div key={notice} className="board-notice" role="status"
+              initial={{ opacity: 0, scale: 0.85, x: "-50%", y: "-40%" }} animate={{ opacity: 1, scale: 1, x: "-50%", y: "-50%" }}
+              exit={{ opacity: 0, scale: 0.92, x: "-50%", y: "-50%" }} transition={{ type: "spring", stiffness: 320, damping: 24 }}>
+              <Handshake className="size-5" />{notice}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <div className="play-side">
         <div className="game-actions">
-          <Button variant="ghost" onClick={offerDraw} disabled={busy || game.history().length < 2} className="game-action-button game-action-draw">
+          <div className="game-clock-card" aria-label="clock">{clock(top)}{clock(bottom)}</div>
+          <span aria-hidden="true" />
+          <Button variant="ghost" onClick={offerDraw} disabled={busy || game.history().length < 2 || drawOffers >= MAX_DRAW_OFFERS} className="game-action-button game-action-draw">
             <Handshake className="size-4" /> {t("offerDraw")}
           </Button>
           <Button variant="ghost" onClick={() => setAsk("resign")} disabled={busy} className="game-action-button game-action-resign">
@@ -294,7 +318,7 @@ function Play() {
       <Modal open={ask === "draw"} onClose={() => setAsk(null)}>
         <p className="mb-4 text-center font-semibold">{t("drawOffer", { side: side(game.turn()) })}</p>
         <div className="flex gap-2">
-          <button className="action-btn action-ghost" onClick={() => { setAsk(null); toast(t("drawDeclined")); }}>{t("decline")}</button>
+          <button className="action-btn action-ghost" onClick={() => { setAsk(null); showNotice(t("drawDeclined")); }}>{t("decline")}</button>
           <button className="action-btn action-gold" onClick={() => { setAsk(null); finish({ winner: null, reason: "draw" }); }}>{t("accept")}</button>
         </div>
       </Modal>

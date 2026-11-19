@@ -64,13 +64,15 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
     const tray = layer?.closest(".play-col")?.querySelector(bottom ? ".player-bottom .captured-tray" : ".player-top .captured-tray");
     if (lr && tray) {
       const tr = tray.getBoundingClientRect();
-      const row = tray.querySelector(".captured-row");
-      const last = row?.lastElementChild?.getBoundingClientRect();
-      const tx = bottom ? tr.right - 13 : last ? last.right + 10 : tr.left + 13;
+      // Land exactly where the piece will rest: the newest (still hidden) slot in the tray.
+      const slots = tray.querySelectorAll(".captured-new");
+      const slot = slots[slots.length - 1]?.getBoundingClientRect();
       const sq = lr.width / 8;
+      const tx = slot ? slot.left + slot.width / 2 : bottom ? tr.right - 16 : tr.left + 16;
+      const ty = slot ? slot.top + slot.height / 2 : tr.top + tr.height / 2;
       dx = tx - (lr.left + (ci + 0.5) * sq);
-      dy = tr.top + tr.height / 2 - (lr.top + (ri + 0.5) * sq);
-      scale = Math.min(1, 32 / sq);
+      dy = ty - (lr.top + (ri + 0.5) * sq);
+      scale = Math.min(1, (slot?.height ?? 38) / sq);
     }
     setGhosts((g) => [...g, { key, piece: victim, dx, dy, scale }]);
     const tm = setTimeout(() => setGhosts((g) => g.filter((x) => x.key !== key)), 1450);

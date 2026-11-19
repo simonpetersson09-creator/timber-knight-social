@@ -303,19 +303,33 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .game-clock[data-active="you"], .game-clock[data-active="opp"] { border-color: color-mix(in oklab, var(--player-accent) 68%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--player-accent) 24%, transparent), 0 6px 18px color-mix(in oklab, var(--player-accent) 13%, transparent); }
 .game-clock[data-running="true"] { background: var(--player-accent); color: var(--player-on-accent); }
 .game-clock[data-low="true"] { background: var(--destructive); color: var(--destructive-foreground); animation: clock-pulse 1s ease-in-out infinite; }
-.captured-tray { flex: 1 1 auto; min-width: 0; min-height: 48px; display: flex; flex-direction: column; justify-content: center; }
+.captured-tray { flex: 1 1 auto; min-width: 0; min-height: 50px; display: flex; flex-direction: column; justify-content: center; padding: 4px 10px;
+  border-radius: 24px; border: 1px solid color-mix(in oklab, var(--primary) 30%, transparent);
+  background: radial-gradient(ellipse at 50% 30%, var(--board-frame-shade), transparent 75%), linear-gradient(var(--board-frame-tint), var(--board-frame-tint)), url("./assets/wood-dark.jpg") center/cover, var(--wood-frame);
+  box-shadow: inset 0 6px 12px var(--board-frame-shade), inset 0 -2px 3px var(--board-frame-glint), 0 2px 6px var(--board-frame-shade); }
 .captured-row { display: flex; flex-wrap: wrap; align-items: center; gap: 1px; line-height: 0; }
 .player-top .captured-row { justify-content: flex-start; }
 .player-bottom .captured-row { justify-content: flex-end; }
 .captured-row:empty { display: none; }
-.captured-row .piece-img { width: 26px; height: 32px; }
-.captured-row > * { margin-inline: -3px; }
+.captured-row .piece-img { width: 36px; height: 42px; }
+.captured-row > * { margin-inline: -6px; }
+.captured-row { padding-inline: 5px; }
 .captured-new { animation: captured-arrive 0s 1.4s both; }
 @keyframes captured-arrive { from { visibility: hidden; } }
 .capture-layer { position: relative; z-index: 4; grid-area: 2 / 2; pointer-events: none; }
 .capture-ghost { position: absolute; width: 12.5%; height: 12.5%; display: grid; place-items: center; }
 .capture-ghost .piece-img { width: 100%; height: 100%; }
 .play-side { margin-top: auto; display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 420px; min-width: 0; }
+.game-clock-card { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; height: 42px; }
+.game-clock-card .game-clock { min-height: 0; min-width: 0; height: 42px; }
+.board-notice { position: absolute; top: 50%; left: 50%; z-index: 20; display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-radius: 16px; white-space: nowrap; font-weight: 700; font-size: 15px; color: var(--foreground);
+  border: 1px solid color-mix(in oklab, var(--primary) 55%, transparent); background: color-mix(in oklab, var(--card) 92%, transparent); backdrop-filter: blur(6px);
+  box-shadow: 0 14px 40px color-mix(in oklab, var(--background) 80%, transparent), 0 0 0 1px color-mix(in oklab, var(--primary) 18%, transparent); }
+.board-notice svg { color: var(--primary); }
+.play-wordmark { filter: none; font-variation-settings: 'opsz' 28; text-shadow: none; -webkit-font-smoothing: antialiased; }
+.play-back { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 9999px; color: var(--primary); border: 1px solid color-mix(in oklab, var(--primary) 45%, transparent);
+  background: radial-gradient(circle at 35% 30%, color-mix(in oklab, var(--primary) 16%, var(--secondary)), var(--secondary)); box-shadow: 0 4px 14px color-mix(in oklab, var(--background) 70%, transparent), inset 0 1px 0 color-mix(in oklab, var(--primary) 25%, transparent); transition: transform .15s; }
+.play-back:active { transform: scale(.94); }
 .game-status { text-align: center; font-size: 12px; font-weight: 600; color: var(--muted-foreground); }
 .game-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 100%; }
 .game-action-button { min-width: 0; height: 42px; padding-inline: 10px; gap: 7px; overflow: hidden; white-space: nowrap; border-radius: 12px !important; font-size: 12px; font-weight: 700; transition: transform .15s, border-color .2s, background .2s; }
