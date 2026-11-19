@@ -1,0 +1,2 @@
+ALTER TABLE public.players ADD COLUMN IF NOT EXISTS notify_turn boolean NOT NULL DEFAULT true, ADD COLUMN IF NOT EXISTS notify_reminders boolean NOT NULL DEFAULT true, ADD COLUMN IF NOT EXISTS notify_play boolean NOT NULL DEFAULT true;
+CREATE POLICY "Device photo operations through verified server" ON storage.objects FOR ALL TO service_role USING (bucket_id = 'profile-photos') WITH CHECK (bucket_id = 'profile-photos');

@@ -1,3 +1,4 @@
+import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
@@ -64,7 +65,7 @@ function Leaderboard() {
         {rows?.map((r, i) => (
           <div key={r.player} className="friend-row" data-me={r.player === me?.id}>
             <span className="rank-num" data-top={i < 3}>{i + 1}</span>
-            <span className="friend-avatar">{r.avatar}</span>
+            <span className="friend-avatar"><PlayerAvatar avatar={r.avatar} /></span>
             <span className="min-w-0 flex-1 truncate font-semibold">{displayName({ name: r.name, player_number: Number(r.player_number) })} {r.country && flagOf(r.country)}</span>
             <span className="stat-num !text-lg">{Number(r.score)}</span>
           </div>

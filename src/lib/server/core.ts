@@ -3,6 +3,7 @@ import { Chess } from "chess.js";
 import { z } from "zod";
 import { translate, type Key } from "@/lib/i18n/translate";
 import { moveDeadline } from "@/lib/online-rules";
+import { allowsNotification } from "@/lib/notification-preferences";
 
 export const Cred = z.object({ id: z.string().uuid(), secret: z.string().min(20).max(100) });
 export type CredT = z.infer<typeof Cred>;
@@ -28,8 +29,8 @@ export const nameOf = (p: { name: string | null; player_number: number } | null 
 
 /** Sends a push notification in the recipient's language. Silently skipped until push is connected. */
 export async function notify(a: DB, playerId: string, key: Key, params: Record<string, string>, data: Record<string, string>) {
-  const { data: p } = await a.from("players").select("push_token, notify, lang").eq("id", playerId).maybeSingle();
-  if (!p?.push_token || !p.notify) return;
+  const { data: p } = await a.from("players").select("push_token, notify, lang, notify_turn, notify_reminders, notify_play").eq("id", playerId).maybeSingle();
+  if (!p?.push_token || !allowsNotification(key, p)) return;
   const lovable = process.env["LOVABLE_API_KEY"], fcm = process.env["FIREBASE_MESSAGING_API_KEY"];
   if (!lovable || !fcm) return;
   const res = await fetch("https://connector-gateway.lovable.dev/firebase_messaging/v1/projects/_/messages:send", {

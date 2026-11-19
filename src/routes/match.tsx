@@ -1,3 +1,4 @@
+import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Chess, type Square } from "chess.js";
@@ -185,7 +186,7 @@ function Match() {
     const p = pid ? players[pid] : null;
     return (
       <div className="panel player-bar" data-active={g.status === "active" && turn === c ? (c === myColor ? "you" : "opp") : undefined}>
-        <span className="friend-avatar !size-9 !text-xl">{p?.avatar ?? "♞"}</span>
+        <span className="friend-avatar !size-9 !text-xl"><PlayerAvatar avatar={p?.avatar} /></span>
         <div className="min-w-0">
           <div className="truncate font-semibold">{p ? displayName(p) : "…"} {p?.country && flagOf(p.country)}</div>
           <div className="text-xs text-muted-foreground">{c === "w" ? t("wood") : t("black")}</div>

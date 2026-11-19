@@ -304,6 +304,9 @@ export type Database = {
           last_seen: string
           name: string | null
           notify: boolean
+          notify_play: boolean
+          notify_reminders: boolean
+          notify_turn: boolean
           platform: string
           player_number: number
           push_token: string | null
@@ -323,6 +326,9 @@ export type Database = {
           last_seen?: string
           name?: string | null
           notify?: boolean
+          notify_play?: boolean
+          notify_reminders?: boolean
+          notify_turn?: boolean
           platform?: string
           player_number?: never
           push_token?: string | null
@@ -342,6 +348,9 @@ export type Database = {
           last_seen?: string
           name?: string | null
           notify?: boolean
+          notify_play?: boolean
+          notify_reminders?: boolean
+          notify_turn?: boolean
           platform?: string
           player_number?: never
           push_token?: string | null

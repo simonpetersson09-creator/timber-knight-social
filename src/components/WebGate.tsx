@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useLocation } from "@tanstack/react-router";
-import { Piece } from "@/components/Piece";
+import { BrandIcon } from "@/components/BrandIcon";
 import { useI18n } from "@/lib/i18n";
 import { isNative, isPreviewHost } from "@/lib/native";
 import { webPathAllowed } from "@/lib/online-rules";
@@ -19,7 +19,7 @@ export function DownloadPage() {
   const { t } = useI18n();
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-5 px-6 text-center">
-      <Piece color="w" type="k" className="size-28 drop-shadow-2xl" />
+      <BrandIcon className="size-40" />
       <h1 className="brand-wordmark text-5xl">Mr B Chess</h1>
       <p className="brand-tagline">{t("tagline")}</p>
       <p className="max-w-xs text-muted-foreground">{t("downloadText")}</p>

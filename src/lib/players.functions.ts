@@ -17,28 +17,29 @@ export const registerPlayer = createServerFn({ method: "POST" })
     const { a: a2, me } = await auth(data);
     await a2.from("players").update({ platform: data.platform, tz: data.tz, lang: data.lang }).eq("id", me);
     await a2.from("app_days").upsert({ player: me, day: new Date().toISOString().slice(0, 10), platform: data.platform }, { onConflict: "player,day", ignoreDuplicates: true });
-    const { data: p } = await a2.from("players").select(`${COLS}, notify`).eq("id", me).single();
+    const { data: p } = await a2.from("players").select(`${COLS}, notify, notify_turn, notify_reminders, notify_play`).eq("id", me).single();
     return p!;
   });
 
 export const updateProfile = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => Cred.extend({ name: z.string().max(60), avatar: z.string().max(8), country: z.string().length(2).nullable() }).parse(d))
+  .inputValidator((d: unknown) => Cred.extend({ name: z.string().max(60), avatar: z.string().max(100).optional(), country: z.string().length(2).nullable() }).parse(d))
   .handler(async ({ data }) => {
     const { a, me } = await auth(data);
     let name: string | null;
     try { name = cleanName(data.name); } catch { return { error: "too_long" as const }; }
-    const { error } = await a.from("players").update({ name, avatar: data.avatar, country: data.country }).eq("id", me);
+    const { error } = await a.from("players").update({ name, ...(data.avatar && !data.avatar.startsWith("photo:") ? { avatar: data.avatar } : {}), country: data.country }).eq("id", me);
     if (error) return { error: error.code === "23505" ? ("taken" as const) : ("failed" as const) };
     return { error: null };
   });
 
 export const setPush = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => Cred.extend({ token: z.string().max(4096).nullable().optional(), notify: z.boolean().optional() }).parse(d))
+  .inputValidator((d: unknown) => Cred.extend({ token: z.string().max(4096).nullable().optional(), notify: z.boolean().optional(), notify_turn: z.boolean().optional(), notify_reminders: z.boolean().optional(), notify_play: z.boolean().optional() }).parse(d))
   .handler(async ({ data }) => {
     const { a, me } = await auth(data);
-    const patch: { push_token?: string | null; notify?: boolean } = {};
+    const patch: { push_token?: string | null; notify?: boolean; notify_turn?: boolean; notify_reminders?: boolean; notify_play?: boolean } = {};
     if (data.token !== undefined) patch.push_token = data.token;
     if (data.notify !== undefined) patch.notify = data.notify;
+    for (const key of ["notify_turn", "notify_reminders", "notify_play"] as const) if (data[key] !== undefined) patch[key] = data[key];
     await a.from("players").update(patch).eq("id", me);
     return { ok: true };
   });
@@ -48,6 +49,8 @@ export const deleteMyData = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Cred.parse(d))
   .handler(async ({ data }) => {
     const { a, me } = await auth(data);
+    const { data: photos } = await a.storage.from("profile-photos").list(me);
+    if (photos?.length) await a.storage.from("profile-photos").remove(photos.map((p) => `${me}/${p.name}`));
     await a.from("players").delete().eq("id", me);
     return { ok: true };
   });
@@ -114,4 +117,35 @@ export const respondFriend = createServerFn({ method: "POST" })
       await a.from("friendships").update({ status: "accepted" }).eq("id", f.id);
     } else await a.from("friendships").delete().eq("id", f.id);
     return { ok: true };
+  });
+
+/** The private bucket never accepts direct client writes. */
+export const saveProfilePhoto = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => Cred.extend({ jpeg: z.string().max(680000).nullable() }).parse(d))
+  .handler(async ({ data }) => {
+    const { a, me } = await auth(data);
+    const path = `${me}/avatar.jpg`;
+    if (data.jpeg === null) {
+      await a.storage.from("profile-photos").remove([path]);
+      await a.from("players").update({ avatar: "♞" }).eq("id", me);
+      return { avatar: "♞" };
+    }
+    const bytes = Uint8Array.from(atob(data.jpeg), (c) => c.charCodeAt(0));
+    if (bytes.length > 500000 || bytes[0] !== 255 || bytes[1] !== 216 || bytes[2] !== 255) throw new Error("invalid_photo");
+    const { error } = await a.storage.from("profile-photos").upload(path, bytes, { contentType: "image/jpeg", upsert: true });
+    if (error) throw new Error("photo_upload_failed");
+    const avatar = `photo:${me}`;
+    const { error: updateError } = await a.from("players").update({ avatar }).eq("id", me);
+    if (updateError) throw new Error("photo_save_failed");
+    return { avatar };
+  });
+
+export const getProfilePhoto = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => Cred.extend({ player: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const { a } = await auth(data);
+    const { data: signed, error } = await a.storage.from("profile-photos").createSignedUrl(`${data.player}/avatar.jpg`, 3600);
+    if (error || !signed) return { url: null };
+    const url = new URL(signed.signedUrl);
+    return { url: `${import.meta.env['VITE_SUPABASE_URL']}${url.pathname}${url.search}` };
   });

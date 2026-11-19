@@ -17,6 +17,7 @@ import { Route as JoinRouteImport } from './routes/join'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as LegalRouteImport } from './routes/legal'
 import { Route as MatchRouteImport } from './routes/match'
+import { Route as OnlineRouteImport } from './routes/online'
 import { Route as PlayRouteImport } from './routes/play'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -62,6 +63,11 @@ const MatchRoute = MatchRouteImport.update({
   path: '/match',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OnlineRoute = OnlineRouteImport.update({
+  id: '/online',
+  path: '/online',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PlayRoute = PlayRouteImport.update({
   id: '/play',
   path: '/play',
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/leaderboard': typeof LeaderboardRoute
   '/legal': typeof LegalRoute
   '/match': typeof MatchRoute
+  '/online': typeof OnlineRoute
   '/play': typeof PlayRoute
   '/profile': typeof ProfileRoute
   '/settings': typeof SettingsRoute
@@ -106,6 +113,7 @@ export interface FileRoutesByTo {
   '/leaderboard': typeof LeaderboardRoute
   '/legal': typeof LegalRoute
   '/match': typeof MatchRoute
+  '/online': typeof OnlineRoute
   '/play': typeof PlayRoute
   '/profile': typeof ProfileRoute
   '/settings': typeof SettingsRoute
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/leaderboard': typeof LeaderboardRoute
   '/legal': typeof LegalRoute
   '/match': typeof MatchRoute
+  '/online': typeof OnlineRoute
   '/play': typeof PlayRoute
   '/profile': typeof ProfileRoute
   '/settings': typeof SettingsRoute
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/legal'
     | '/match'
+    | '/online'
     | '/play'
     | '/profile'
     | '/settings'
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/legal'
     | '/match'
+    | '/online'
     | '/play'
     | '/profile'
     | '/settings'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/legal'
     | '/match'
+    | '/online'
     | '/play'
     | '/profile'
     | '/settings'
@@ -180,6 +192,7 @@ export interface RootRouteChildren {
   LeaderboardRoute: typeof LeaderboardRoute
   LegalRoute: typeof LegalRoute
   MatchRoute: typeof MatchRoute
+  OnlineRoute: typeof OnlineRoute
   PlayRoute: typeof PlayRoute
   ProfileRoute: typeof ProfileRoute
   SettingsRoute: typeof SettingsRoute
@@ -244,6 +257,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MatchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/online': {
+      id: '/online'
+      path: '/online'
+      fullPath: '/online'
+      preLoaderRoute: typeof OnlineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/play': {
       id: '/play'
       path: '/play'
@@ -284,6 +304,7 @@ const rootRouteChildren: RootRouteChildren = {
   LeaderboardRoute: LeaderboardRoute,
   LegalRoute: LegalRoute,
   MatchRoute: MatchRoute,
+  OnlineRoute: OnlineRoute,
   PlayRoute: PlayRoute,
   ProfileRoute: ProfileRoute,
   SettingsRoute: SettingsRoute,

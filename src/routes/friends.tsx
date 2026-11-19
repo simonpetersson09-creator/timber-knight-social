@@ -1,3 +1,4 @@
+import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
@@ -130,7 +131,7 @@ function PlayerRow({ r, showStats, children }: { r: Row; showStats?: boolean; ch
   const on = isOnline(r.player.last_seen);
   return (
     <div className="friend-row">
-      <span className="friend-avatar">{r.player.avatar}<span className="status-dot" data-on={on} /></span>
+      <span className="friend-avatar"><PlayerAvatar avatar={r.player.avatar} /><span className="status-dot" data-on={on} /></span>
       <span className="min-w-0 flex-1">
         <span className="block truncate font-semibold">{displayName(r.player)} {r.player.country && flagOf(r.player.country)}</span>
         <span className="block truncate text-xs text-muted-foreground">

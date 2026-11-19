@@ -290,3 +290,23 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .friend-row[data-me="true"] { background: color-mix(in oklab, var(--primary) 14%, transparent); }
 
 @media (min-width: 768px) { .round-btn { width: 50px; height: 50px; } .round-label { font-size: 10px; } }
+
+/* Preserve touch, wheel and keyboard scrolling without visible scrollbars. */
+* { scrollbar-width: none; }
+*::-webkit-scrollbar { display: none; width: 0; height: 0; }
+html { overflow-x: hidden; }
+body { overscroll-behavior-y: contain; }
+.brand-icon { display: block; object-fit: cover; border-radius: 22%; }
+.settings-section { display: flex; flex-direction: column; gap: 8px; }
+.settings-heading { font-size: 11px; font-weight: 600; color: var(--muted-foreground); text-transform: uppercase; }
+.settings-rows { background: color-mix(in oklab, var(--secondary) 50%, transparent); border: 1px solid color-mix(in oklab, var(--border) 50%, transparent); border-radius: 8px; overflow: hidden; }
+.settings-rows > * + * { border-top: 1px solid color-mix(in oklab, var(--border) 50%, transparent); }
+.settings-row { display: flex; align-items: center; gap: 12px; min-height: 48px; width: 100%; padding: 12px; text-align: left; font-size: 14px; white-space: normal; justify-content: flex-start; }
+.settings-row > svg { flex-shrink: 0; color: var(--primary); }
+.settings-row:hover { background: var(--secondary); color: var(--foreground); }
+.round-btn { flex-shrink: 0; }
+.settings-row .row-value { margin-left: auto; max-width: 48%; overflow-wrap: anywhere; color: var(--muted-foreground); font-size: 12px; }
+.page-screen { width: 100%; max-width: 424px; margin-inline: auto; min-height: 100dvh; padding: calc(28px + env(safe-area-inset-top)) 20px calc(40px + env(safe-area-inset-bottom)); }
+.page-screen > header h1 { font-family: var(--font-display); font-size: 24px; background: none; color: var(--foreground); filter: none; text-transform: none; letter-spacing: 0; }
+.lobby-section { padding-block: 20px; border-bottom: 1px solid var(--border); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }

@@ -1,15 +1,17 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Bot, Globe, Languages, Lock, Settings, Users, UserPlus, UserRound, X, Cpu, Infinity as InfinityIcon, Trophy, Zap, Send, Hash, Mail, ChevronDown, Gamepad2, Percent, Handshake, Flame } from "lucide-react";
+import { Bot, Globe, Lock, Settings, Users, UserPlus, X, Cpu, Infinity as InfinityIcon, Trophy, ChevronDown, Gamepad2, Percent, Handshake, Flame } from "lucide-react";
 import { toast } from "sonner";
 import { getCred } from "@/lib/identity";
 import { useMe } from "@/hooks/use-me";
-import { cancelGame, createLobby, inviteFriend, joinGame, myOnline, quickMatch } from "@/lib/online.functions";
-import { getFriends } from "@/lib/players.functions";
-import { askPushOnFirstOnline } from "@/lib/push";
-import { displayName, isOnline } from "@/lib/profile";
-import { Piece } from "@/components/Piece";
+import { cancelGame, joinGame, myOnline } from "@/lib/online.functions";
+import { Button } from "@/components/ui/button";
+import { BrandIcon } from "@/components/BrandIcon";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
+
+import { displayName } from "@/lib/profile";
+
 import { LanguageSheet } from "@/components/LanguageSheet";
 import { LEVELS, type Level } from "@/lib/engine";
 import { useI18n } from "@/lib/i18n";
@@ -40,12 +42,9 @@ function Home() {
   const navigate = useNavigate();
   const [games, setGames] = useState<SavedGame[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
-  const [open, setOpen] = useState<"ai" | "local" | "online" | null>(null);
+  const [open, setOpen] = useState<"ai" | null>(null);
   const { me } = useMe();
   const [online, setOnline] = useState<OnlineRow[]>([]);
-  const [friends, setFriends] = useState<FriendRow[]>([]);
-  const [joinCode, setJoinCode] = useState("");
-  const [picking, setPicking] = useState(false);
   const [level, setLevel] = useState<Level>("easy");
   const [clock, setClock] = useState(0);
   const [color, setColor] = useState<"w" | "b" | "r">("w");
@@ -66,16 +65,6 @@ function Home() {
     const i = setInterval(load, 15_000);
     return () => clearInterval(i);
   }, [me]);
-  useEffect(() => { if (open === "online") { void askPushOnFirstOnline(); void getFriends({ data: getCred() }).then((r) => setFriends(r.filter((x) => x.kind === "friend"))).catch(() => {}); } }, [open]);
-
-  async function quick() { const r = await quickMatch({ data: getCred() }); void navigate({ to: "/match", search: { id: r.id } }); }
-  async function lobby() { const r = await createLobby({ data: getCred() }); void navigate({ to: "/match", search: { id: r.id } }); }
-  async function invite(friend: string) { setPicking(false); const r = await inviteFriend({ data: { ...getCred(), friend } }); void navigate({ to: "/match", search: { id: r.id } }); }
-  async function join() {
-    const r = await joinGame({ data: { ...getCred(), code: joinCode } });
-    if (r.result === "ok") void navigate({ to: "/match", search: { id: r.id } });
-    else toast.error(r.result === "expired" ? t("expired") : t("notFound"));
-  }
   async function acceptInvite(id: string) {
     const r = await joinGame({ data: { ...getCred(), gameId: id } });
     if (r.result === "ok") void navigate({ to: "/match", search: { id: r.id } }); else toast.error(t("expired"));
@@ -105,7 +94,7 @@ function Home() {
           <motion.div className="mx-auto mb-2 size-28 drop-shadow-[0_6px_16px_rgba(0,0,0,0.45)] sm:size-32"
             animate={{ rotate: [0, 0, 4, -3, 0], scale: [1, 1, 1.05, 1.02, 1] }}
             transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}>
-            <Piece color="w" type="k" className="size-full" />
+            <BrandIcon className="size-full" />
           </motion.div>
           <h1 className="brand-wordmark text-4xl sm:text-5xl">Mr B Chess</h1>
           <p className="brand-tagline">{t("tagline")}</p>
@@ -126,18 +115,18 @@ function Home() {
         )}
 
         <motion.div variants={item} transition={{ duration: 0.45, ease: "easeOut" }} className="flex flex-col gap-[7px]">
-          <motion.button whileTap={{ scale: 0.97 }} className="action-btn action-blue" onClick={() => setOpen(open === "ai" ? null : "ai")}>
+          <Button className="action-btn action-blue" onClick={() => setOpen(open === "ai" ? null : "ai")}>
             <Bot /> {t("playComputer")}
-          </motion.button>
+          </Button>
           <AnimatePresence initial={false}>
             {open === "ai" && (
               <Expand>
                 <p className="field-label">{t("level")}</p>
                 <div className="level-grid">
                   {LEVELS.map((l) => (
-                    <button key={l} className="level-btn" data-active={level === l} data-locked={!unlocked(l)} onClick={() => setLevel(l)}>
+                    <Button variant="ghost" key={l} className="level-btn" data-active={level === l} data-locked={!unlocked(l)} onClick={() => setLevel(l)}>
                       {!unlocked(l) && <Lock className="mr-1 inline size-3" />}{t(l)}
-                    </button>
+                    </Button>
                   ))}
                 </div>
                 {!unlocked(level) && req.after && (
@@ -149,9 +138,9 @@ function Home() {
                 <p className="field-label">{t("yourPieces")}</p>
                 <div className="seg">
                   {(["w", "b", "r"] as const).map((c) => (
-                    <button key={c} data-active={color === c} onClick={() => setColor(c)}>
+                    <Button variant="ghost" key={c} data-active={color === c} onClick={() => setColor(c)}>
                       {{ w: t("wood"), b: t("black"), r: t("random") }[c]}
-                    </button>
+                    </Button>
                   ))}
                 </div>
                 <StartButton full={full} disabled={!unlocked(level)} onClick={() => start("ai")} />
@@ -159,67 +148,26 @@ function Home() {
             )}
           </AnimatePresence>
 
-          <div className="home-side">
-            <motion.button whileTap={{ scale: 0.97 }} className="action-btn action-blue" onClick={() => setOpen(open === "local" ? null : "local")}>
-              <Users /> <span>{t("twoPlayers")}</span>
-            </motion.button>
-            <motion.button whileTap={{ scale: 0.97 }} className="action-btn action-blue" onClick={() => setOpen(open === "online" ? null : "online")}>
-              <Globe /> <span>{t("playOnline")}</span>
-            </motion.button>
-          </div>
-          <AnimatePresence initial={false}>
-            {open === "local" && (
-              <Expand>
-                <ClockPicker value={clock} onChange={setClock} />
-                <StartButton full={full} onClick={() => start("local")} />
-              </Expand>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence initial={false}>
-            {open === "online" && (
-              <Expand>
-                <button className="action-btn action-gold" disabled={!me} onClick={quick}><Zap className="size-5" /> {t("quickMatch")}</button>
-                <button className="action-btn action-ghost" disabled={!me} onClick={() => setPicking(!picking)}><Send className="size-5" /> {t("inviteFriend")}</button>
-                {picking && (
-                  <div className="flex flex-col gap-1">
-                    {friends.length === 0 && <Link to="/friends" className="text-center text-sm underline">{t("noFriends")}</Link>}
-                    {friends.map((f) => (
-                      <button key={f.id} className="friend-row text-left" onClick={() => invite(f.player.id)}>
-                        <span className="friend-avatar">{f.player.avatar}<span className="status-dot" data-on={isOnline(f.player.last_seen)} /></span>
-                        <span className="flex-1 truncate font-semibold">{displayName(f.player)}</span>
-                        <Mail className="size-4" />
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <button className="action-btn action-ghost" disabled={!me} onClick={lobby}><Hash className="size-5" /> {t("createLobby")}</button>
-                <div className="flex gap-2">
-                  <input className="text-field flex-1 uppercase tracking-[0.3em]" maxLength={6} value={joinCode} placeholder={t("lobbyCode")}
-                    onChange={(e) => setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} />
-                  <button className="action-btn action-gold !w-auto px-5" disabled={joinCode.length !== 6 || !me} onClick={join}>{t("join")}</button>
-                </div>
-              </Expand>
-            )}
-          </AnimatePresence>
-          <motion.button whileTap={{ scale: 0.97 }} className="action-btn action-blue" onClick={() => void navigate({ to: "/leaderboard" })}>
+          <Button variant="ghost" className="action-btn action-blue" onClick={() => void navigate({ to: "/online" })}>
+            <Users /> {t("playOnline")}
+          </Button>
+          <Button className="action-btn action-blue" onClick={() => void navigate({ to: "/leaderboard" })}>
             <Trophy /> {t("leaderboards")}
-          </motion.button>
+          </Button>
         </motion.div>
 
-        <motion.div variants={item} transition={{ duration: 0.45, ease: "easeOut" }} className="grid w-full grid-cols-4 place-items-center gap-1 pt-2">
-          <Round label={t("language")} onClick={() => setLangOpen(true)}><Languages className="size-4" /></Round>
+        <motion.div variants={item} transition={{ duration: 0.45, ease: "easeOut" }} className="grid w-full grid-cols-3 place-items-center gap-1 pt-2">
+          <Round label={t("language")} onClick={() => setLangOpen(true)}><Globe className="size-4" /></Round>
           <Round label={t("settings")} to="/settings"><Settings className="size-4" /></Round>
-          <Round label={t("profile")} to="/profile"><UserRound className="size-4" /></Round>
           <Round label={t("friends")} to="/friends"><UserPlus className="size-4" /></Round>
         </motion.div>
 
         {stats && (
           <motion.div variants={item} transition={{ duration: 0.45, ease: "easeOut" }} className="mt-4 flex flex-col gap-2">
-            <button className="flex items-center justify-center gap-1.5" onClick={() => setMore(!more)} aria-expanded={more}>
+            <Button variant="ghost" className="flex items-center justify-center gap-1.5" onClick={() => setMore(!more)} aria-expanded={more}>
               <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">{t("stats")}</span>
               <ChevronDown className={`size-3 text-muted-foreground transition-transform ${more ? "rotate-180" : ""}`} />
-            </button>
+            </Button>
             <div className="grid grid-cols-3 gap-2">
               <Tile icon={Gamepad2} n={stats.played} l={t("played")} />
               <Tile icon={Trophy} n={stats.wins} l={t("wins")} />
@@ -240,24 +188,23 @@ function Home() {
 }
 
 type OnlineRow = Awaited<ReturnType<typeof myOnline>>[number];
-type FriendRow = Awaited<ReturnType<typeof getFriends>>[number];
 
 function OnlineCard({ g, onAccept, onDecline }: { g: OnlineRow; onAccept: () => void; onDecline: () => void }) {
   const { t } = useI18n();
   const name = g.opponent ? displayName(g.opponent) : g.kind === "lobby" ? `${t("lobby")} ${g.code ?? ""}` : "…";
   if (g.role === "invited") return (
     <div className="game-card card-invite">
-      <span className="card-chip">{g.opponent?.avatar ?? "♞"}</span>
+      <span className="card-chip"><PlayerAvatar avatar={g.opponent?.avatar} /></span>
       <span className="min-w-0 flex-1"><span className="block truncate">{t("invitedBy", { name })}</span></span>
-      <button className="icon-btn icon-ok" aria-label={t("accept")} onClick={onAccept}>✓</button>
-      <button className="card-x" aria-label={t("decline")} onClick={onDecline}><X className="size-4" /></button>
+      <Button variant="ghost" className="icon-btn icon-ok" aria-label={t("accept")} onClick={onAccept}>✓</Button>
+      <Button variant="ghost" className="card-x" aria-label={t("decline")} onClick={onDecline}><X className="size-4" /></Button>
     </div>
   );
   const cls = g.role === "host" ? "card-invite" : g.myTurn ? "card-you" : "card-opp";
   const label = g.role === "host" ? t("waitingFor", { name }) : g.myTurn ? t("yourTurn") : t("opponentTurn");
   return (
     <Link to="/match" search={{ id: g.id }} className={`game-card ${cls}`}>
-      <span className="card-chip">{g.opponent?.avatar ?? "♞"}</span>
+      <span className="card-chip"><PlayerAvatar avatar={g.opponent?.avatar} /></span>
       <span className="min-w-0 flex-1"><span className="block truncate">{label}</span><span className="block truncate text-xs font-medium opacity-80">{name}</span></span>
     </Link>
   );
@@ -278,9 +225,9 @@ function ClockPicker({ value, onChange }: { value: number; onChange: (i: number)
       <p className="field-label">{t("clock")}</p>
       <div className="seg">
         {CLOCKS.map((c, i) => (
-          <button key={i} data-active={value === i} onClick={() => onChange(i)} className="!px-1 text-xs">
+          <Button variant="ghost" key={i} data-active={value === i} onClick={() => onChange(i)} className="!px-1 text-xs">
             {c ? clockLabel(c) : <InfinityIcon className="mx-auto size-4" />}
-          </button>
+          </Button>
         ))}
       </div>
       {value === 0 && <p className="-mt-1 text-center text-xs text-muted-foreground">{t("noClock")}</p>}
@@ -293,7 +240,7 @@ function StartButton({ full, disabled, onClick }: { full: boolean; disabled?: bo
   return (
     <>
       {full && <p className="text-center text-xs text-destructive">{t("maxSaved")}</p>}
-      <button className="action-btn action-gold" disabled={full || disabled} onClick={onClick}>{t("start")}</button>
+      <Button variant="ghost" className="action-btn action-gold" disabled={full || disabled} onClick={onClick}>{t("start")}</Button>
     </>
   );
 }
@@ -320,13 +267,13 @@ function GameCard({ g, onDelete }: { g: SavedGame; onDelete: () => void }) {
           </span>
         </span>
       </Link>
-      <button className="card-x" aria-label={t("delete")} onClick={onDelete}><X className="size-4" /></button>
+      <Button variant="ghost" className="card-x" aria-label={t("delete")} onClick={onDelete}><X className="size-4" /></Button>
     </div>
   );
 }
 
 function Round({ label, to, onClick, children }: { label: string; to?: "/settings" | "/profile" | "/friends" | "/leaderboard"; onClick?: () => void; children: React.ReactNode }) {
   const inner = <><span className="round-btn">{children}</span><span className="round-label">{label}</span></>;
-  const cls = "flex w-[46px] flex-col items-center gap-1.5 active:scale-[0.92] transition-transform";
-  return to ? <Link to={to} className={cls} aria-label={label}>{inner}</Link> : <button className={cls} aria-label={label} onClick={onClick}>{inner}</button>;
+  const cls = "flex h-auto w-[70px] flex-col items-center gap-1.5 bg-transparent p-0 hover:bg-transparent hover:text-foreground active:scale-[0.92] transition-transform";
+  return to ? <Link to={to} className={cls} aria-label={label}>{inner}</Link> : <Button variant="ghost" className={cls} aria-label={label} onClick={onClick}>{inner}</Button>;
 }

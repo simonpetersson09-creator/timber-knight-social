@@ -8,6 +8,10 @@
 - [x] Spel mot dator (3 nivåer), två spelare på en enhet, ångra
 
 ## Design
+- [x] Anpassa startknappar, separat vänspelsida och neutral språkikon
+- [x] Yatzy-liknande inställningar med namn och uppladdad profilbild
+- [x] Schackmaskot/appikon med sned svart hatt och monokel med kedja
+- [x] Dölj rullningslister utan att hindra scrollning
 
 ## Språk
 - [ ] iOS-behörighetstexter översatta (när appen paketeras)
