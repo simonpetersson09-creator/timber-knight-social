@@ -111,8 +111,8 @@
   --board-frame-deep: oklch(0.18 0.045 35);
   --board-coordinate: oklch(0.89 0.075 82 / 88%);
   --board-contact: oklch(0.1 0.02 40 / 65%);
-  --piece-contact: radial-gradient(ellipse, var(--board-contact) 0%, var(--board-shade) 22%, transparent 72%);
-  --piece-shadow: drop-shadow(0 -0.35px 0.35px var(--board-light)) drop-shadow(0 0.7px 0.65px var(--board-contact)) drop-shadow(0.6px 1.3px 1.4px var(--board-shade));
+  --piece-contact: radial-gradient(ellipse, oklch(0.12 0.025 40 / 32%) 0%, oklch(0.12 0.025 40 / 12%) 45%, transparent 72%);
+  --piece-shadow: drop-shadow(0 0.7px 0.55px oklch(0.12 0.025 40 / 28%));
   --ebony: oklch(0.16 0.01 50);
   --ebony-shine: oklch(0.42 0.02 50);
   --ivory: oklch(0.94 0.025 91);
@@ -212,7 +212,7 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .seg button[data-active="true"] { background: var(--gradient-gold); color: var(--primary-foreground); box-shadow: var(--shadow-gold); }
 
 .piece-slot { position: relative; z-index: 3; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; pointer-events: none; transform-origin: center 87%; will-change: transform; }
-.piece-slot::before { content: ""; position: absolute; left: 16%; right: 16%; bottom: 3%; height: 12%; background: var(--piece-contact); pointer-events: none; }
+.piece-slot::before { content: ""; position: absolute; left: 20%; right: 20%; bottom: 0; height: 9%; background: var(--piece-contact); pointer-events: none; }
 .piece-img { display: block; object-fit: contain; user-select: none; -webkit-user-drag: none; filter: drop-shadow(0 2px 1.5px oklch(0 0 0 / 50%)); }
 .piece-slot .piece-img { position: relative; width: 100%; height: 100%; object-fit: contain; filter: var(--piece-shadow); }
 
