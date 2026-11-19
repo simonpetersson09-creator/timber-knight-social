@@ -1,8 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { Chess } from "chess.js";
 import { z } from "zod";
-import { INVITE_TTL_MS, LOBBY_TTL_MS, QUICK_WAIT_MS, MOVE_LIMIT_MS, statsFor, type MatchRow } from "./online-rules";
-import { Cred, PLAYER_COLS, auth, finishGame, nameOf, notify, sweepGames, type DB } from "./server/core";
+import { INVITE_TTL_MS, LOBBY_TTL_MS, QUICK_WAIT_MS, MOVE_LIMIT_MS, moveDeadline, statsFor, type MatchRow } from "./online-rules";
+import { Cred, PLAYER_COLS, allMatches, auth, finishGame, nameOf, notify, sweepGames, type DB } from "./server/core";
 
 const GAME_COLS = "id, kind, status, host, invitee, white, black, code, pgn, fen, result, end_reason, draw_offer, last_move_at, reminded, expires_at, created_at";
 const later = (ms: number) => new Date(Date.now() + ms).toISOString();
@@ -64,7 +64,7 @@ export const inviteFriend = createServerFn({ method: "POST" })
       await notify(a, data.friend, "pushLobbyJoined", { name: await playerName(a, me) }, { game: crossed.id });
       return { id: crossed.id, merged: true };
     }
-    const { data: existing } = await a.from("games").select("id").eq("kind", "invite").eq("status", "waiting").eq("host", me).eq("invitee", data.friend).maybeSingle();
+    const { data: existing } = await a.from("games").select("id").eq("kind", "invite").eq("status", "waiting").eq("host", me).eq("invitee", data.friend).gt("expires_at", new Date().toISOString()).maybeSingle();
     if (existing) return { id: existing.id, merged: false };
     const { data: g, error } = await a.from("games").insert({ kind: "invite", host: me, invitee: data.friend, expires_at: later(INVITE_TTL_MS) }).select("id").single();
     if (error) throw new Error(error.message);
@@ -127,7 +127,8 @@ export const quickMatch = createServerFn({ method: "POST" })
     }
     await a.from("games").update({ status: "expired" }).eq("kind", "quick").eq("status", "waiting").eq("host", me);
     const { data: g } = await a.from("games").insert({ kind: "quick", host: me, expires_at: later(QUICK_WAIT_MS + 5000) }).select("id").single();
-    return { id: g!.id, status: "waiting" };
+    if (!g) throw new Error("quick_match_failed");
+    return { id: g.id, status: "waiting" };
   });
 
 export const getOnlineGame = createServerFn({ method: "POST" })
@@ -138,10 +139,11 @@ export const getOnlineGame = createServerFn({ method: "POST" })
     if (!g || ![g.white, g.black, g.host, g.invitee].includes(me)) throw new Error("not_found");
     await sweepGames(a, [g]);
     const { data: fresh } = await a.from("games").select(GAME_COLS).eq("id", g.id).single();
-    const ids = [fresh!.white, fresh!.black, fresh!.host].filter((x): x is string => !!x);
+    if (!fresh) throw new Error("not_found");
+    const ids = [fresh.white, fresh.black, fresh.host].filter((x): x is string => !!x);
     const { data: ps } = await a.from("players").select(PLAYER_COLS).in("id", ids);
     const { data: chat } = await a.from("game_chat").select("id, player, phrase, created_at").eq("game_id", g.id).gt("id", data.after).order("id").limit(50);
-    return { me, game: fresh!, players: ps ?? [], chat: chat ?? [] };
+    return { me, game: fresh, players: ps ?? [], chat: chat ?? [] };
   });
 
 async function loadActive(a: DB, gameId: string, me: string) {
@@ -156,18 +158,23 @@ export const makeMove = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { a, me } = await auth(data);
     const { g, color } = await loadActive(a, data.gameId, me);
+    if (moveDeadline(new Date(g.last_move_at).getTime(), Date.now()) === "timeout") {
+      await finishGame(a, g, new Chess(g.fen).turn() === "w" ? "b" : "w", "timeout");
+      return { ok: false };
+    }
     const c = new Chess();
     if (g.pgn) c.loadPgn(g.pgn);
     if (c.turn() !== color) return { ok: false };
     try { c.move({ from: data.from, to: data.to, ...(data.promotion ? { promotion: data.promotion } : {}) }); } catch { return { ok: false }; }
+    const movedAt = new Date().toISOString();
+    const result = c.isCheckmate() ? color : c.isDraw() || c.isStalemate() ? "d" : null;
     const { data: upd } = await a.from("games").update({
-      pgn: c.pgn(), fen: c.fen(), last_move_at: new Date().toISOString(), reminded: false, draw_offer: null,
+      pgn: c.pgn(), fen: c.fen(), last_move_at: movedAt, reminded: false, draw_offer: null,
       expires_at: later(MOVE_LIMIT_MS), updated_at: new Date().toISOString(),
-    }).eq("id", g.id).eq("pgn", g.pgn).select("id");
+      ...(result ? { status: "finished", result, end_reason: result === "d" ? "draw" : "checkmate" } : {}),
+    }).eq("id", g.id).eq("status", "active").eq("pgn", g.pgn).select("id");
     if (!upd?.length) return { ok: false };
-    if (c.isCheckmate()) await finishGame(a, g, color, "checkmate");
-    else if (c.isDraw() || c.isStalemate()) await finishGame(a, g, "d", "draw");
-    else {
+    if (!result) {
       const opp = color === "w" ? g.black : g.white;
       if (opp) await notify(a, opp, "pushTurn", { name: await playerName(a, me) }, { game: g.id });
     }
@@ -180,9 +187,9 @@ export const gameAction = createServerFn({ method: "POST" })
     const { a, me } = await auth(data);
     const { g, color } = await loadActive(a, data.gameId, me);
     if (data.action === "resign") await finishGame(a, g, color === "w" ? "b" : "w", "resign");
-    else if (data.action === "offerDraw") await a.from("games").update({ draw_offer: color }).eq("id", g.id);
+    else if (data.action === "offerDraw") await a.from("games").update({ draw_offer: color }).eq("id", g.id).eq("status", "active").eq("pgn", g.pgn);
     else if (data.action === "acceptDraw" && g.draw_offer && g.draw_offer !== color) await finishGame(a, g, "d", "agreed");
-    else if (data.action === "declineDraw") await a.from("games").update({ draw_offer: null }).eq("id", g.id);
+    else if (data.action === "declineDraw") await a.from("games").update({ draw_offer: null }).eq("id", g.id).eq("status", "active").eq("pgn", g.pgn);
     return { ok: true };
   });
 
@@ -201,8 +208,7 @@ export const myOnlineStats = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Cred.parse(d))
   .handler(async ({ data }) => {
     const { a, me } = await auth(data);
-    const { data: rows } = await a.from("matches").select("white, black, result, counts, finished_at").or(`white.eq.${me},black.eq.${me}`).order("finished_at", { ascending: false }).limit(1000);
-    return statsFor(me, (rows ?? []) as MatchRow[]);
+    return statsFor(me, await allMatches(a, me) as MatchRow[]);
   });
 
 export const getLeaderboard = createServerFn({ method: "POST" })

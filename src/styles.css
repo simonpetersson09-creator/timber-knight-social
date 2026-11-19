@@ -209,8 +209,12 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .home-tile-label { font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted-foreground); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .round-label { font-size: 8px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; line-height: 1; color: color-mix(in oklab, var(--primary) 60%, transparent); }
 
-.game-card { width: 100%; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 10px 0 12px; border-radius: 10px; overflow: hidden; text-align: left; font-family: var(--font-display); transition: box-shadow .2s, filter .2s; }
-.game-card:active { filter: brightness(.96); }
+.game-card { width: 100%; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 10px 0 12px; border-radius: 10px; overflow: hidden; text-align: left; font-family: var(--font-display); transition: box-shadow .2s, transform .15s, filter .2s; }
+.home-stack :is(.game-card, .action-btn) { --press-color: var(--accent); }
+.home-stack .card-you { --press-color: var(--success); }
+.home-stack .card-opp { --press-color: var(--primary); }
+.home-stack .card-invite { --press-color: var(--invite); }
+.home-stack :is(.game-card, .action-btn):active { transform: scale(.97); filter: brightness(.97); box-shadow: 0 2px 8px color-mix(in oklab, var(--press-color) 20%, transparent); }
 .card-you { background: var(--gradient-success); color: var(--background); box-shadow: var(--shadow-success); }
 .card-opp { background: var(--gradient-gold); color: var(--background); box-shadow: var(--shadow-gold); }
 .card-invite { background: var(--gradient-invite); color: var(--foreground); box-shadow: 0 4px 16px color-mix(in oklab, var(--invite) 30%, transparent); }
@@ -247,9 +251,24 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; }
 
 /* Play screen */
-.play-layout { display: flex; flex-direction: column; align-items: center; gap: 12px; min-height: 100dvh; padding: calc(16px + env(safe-area-inset-top)) 12px calc(16px + env(safe-area-inset-bottom)); }
-.play-col { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
-.play-side { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 560px; }
+.play-layout { display: flex; flex-direction: column; align-items: center; min-height: 760px; height: 100dvh; padding: calc(16px + env(safe-area-inset-top)) 12px calc(16px + env(safe-area-inset-bottom)); position: relative; }
+.play-col { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(100% - 24px, 560px, calc(100dvh - 390px)); min-width: 280px; }
+.play-col .board-frame { width: 100%; min-width: 0; padding: 3.2%; }
+.player-top { position: absolute; bottom: calc(100% + 12px); left: 0; }
+.player-bottom { position: absolute; top: calc(100% + 12px); right: 0; width: 100%; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.game-player-card { display: grid; grid-template-columns: 40px minmax(0, 1fr); width: 160px; min-height: 96px; padding: 10px; gap: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); }
+.game-player-card[data-active="you"] { border-color: var(--success); box-shadow: var(--shadow-success); }
+.game-player-card[data-active="opp"] { border-color: var(--primary); box-shadow: var(--shadow-gold); }
+.game-player-photo { grid-row: span 2; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 6px; overflow: hidden; background: var(--secondary); font-size: 26px; color: var(--primary); }
+.game-player-photo > svg { width: 28px; height: 28px; }
+.game-player-name { font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
+.game-player-card .clock { grid-column: 1 / -1; margin: 0; font-size: 20px; padding: 4px; }
+.captured-tray { flex: 1; min-width: 0; padding-top: 4px; }
+.captured-row { display: flex; flex-wrap: wrap; min-height: 30px; gap: 2px; }
+.captured-row .piece-img { width: 24px; height: 28px; }
+.play-side { margin-top: auto; display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 560px; }
+.game-status { text-align: center; font-size: 12px; font-weight: 600; color: var(--muted-foreground); }
+.game-chat-history { order: -1; }
 .player-bar { width: 100%; max-width: 560px; display: flex; align-items: center; gap: 10px; padding: 8px 12px; transition: box-shadow .25s; }
 .player-bar[data-active="you"] { box-shadow: 0 0 0 2px var(--success), var(--shadow-success); }
 .player-bar[data-active="opp"] { box-shadow: 0 0 0 2px var(--primary), var(--shadow-gold); }
@@ -260,16 +279,11 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .promo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .promo-btn { aspect-ratio: 1; border-radius: 12px; padding: 8px; background: url("./assets/wood-light.jpg") center/300%; box-shadow: inset 0 0 0 2px var(--wood-frame-deep); }
 @media (min-width: 820px) and (orientation: landscape) {
-  .play-layout { display: grid; grid-template-columns: auto minmax(260px, 340px); grid-template-rows: auto 1fr; align-items: start; justify-content: center; column-gap: 24px; }
-  .play-layout > header { grid-column: 1 / -1; }
-  .play-col { --board: min(calc(100dvh - 240px), 60vw); width: auto; }
-  .play-col .board-frame { width: var(--board); }
-  .play-col .player-bar { width: var(--board); max-width: none; }
-  .play-side { padding-top: 56px; }
+  .play-col { width: min(560px, calc(100dvh - 390px)); }
 }
 @media (min-width: 768px) and (orientation: portrait) {
-  .board-frame { width: min(88vw, 720px, calc(100dvh - 300px)); }
-  .player-bar, .play-side { max-width: 720px; }
+  .play-col { width: min(720px, calc(100dvh - 420px), 88vw); }
+  .play-side { max-width: 720px; }
 }
 
 /* Profile & friends */

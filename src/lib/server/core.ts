@@ -19,9 +19,10 @@ export const PLAYER_COLS = "id, player_number, name, avatar, country, friend_cod
 /** Verifies the anonymous device credentials and marks the player as seen. */
 export async function auth(c: CredT) {
   const a = await db();
-  const { data } = await a.from("players").select("id, secret_hash").eq("id", c.id).maybeSingle();
+  const { data } = await a.from("players").select("id, secret_hash, platform").eq("id", c.id).maybeSingle();
   if (!data || data.secret_hash !== (await sha256(c.secret))) throw new Error("unauthorized");
   await a.from("players").update({ last_seen: new Date().toISOString() }).eq("id", c.id);
+  if (data.platform === "ios" || data.platform === "android") await a.from("app_days").upsert({ player: c.id, day: stockholmDay(), platform: data.platform }, { onConflict: "player,day" });
   return { a, me: c.id };
 }
 
@@ -45,13 +46,22 @@ export async function notify(a: DB, playerId: string, key: Key, params: Record<s
 type GameRow = { id: string; status: string; white: string | null; black: string | null; fen: string; last_move_at: string; reminded: boolean; expires_at: string; kind: string; host: string };
 
 /** Ends a game, records it for statistics (resigned games don't count). */
-export async function finishGame(a: DB, g: { id: string; white: string | null; black: string | null }, result: "w" | "b" | "d", reason: string) {
-  const { data: upd } = await a.from("games").update({ status: "finished", result, end_reason: reason, draw_offer: null, updated_at: new Date().toISOString() })
-    .eq("id", g.id).eq("status", "active").select("id");
-  if (!upd?.length || !g.white || !g.black) return;
-  await a.from("matches").insert({ white: g.white, black: g.black, result, counts: reason !== "resign" });
-  const now = new Date().toISOString();
-  await a.from("players").update({ last_played: now }).in("id", [g.white, g.black]);
+export async function finishGame(a: DB, g: { id: string; white: string | null; black: string | null; fen: string; last_move_at: string }, result: "w" | "b" | "d", reason: string) {
+  const { error } = await a.from("games").update({ status: "finished", result, end_reason: reason, draw_offer: null, updated_at: new Date().toISOString() })
+    .eq("id", g.id).eq("status", "active").eq("fen", g.fen).eq("last_move_at", g.last_move_at);
+  if (error) throw new Error("game_finish_failed");
+}
+
+export function stockholmDay(now = new Date()) { return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Stockholm", year: "numeric", month: "2-digit", day: "2-digit" }).format(now); }
+
+export async function allMatches(a: DB, me: string) {
+  const rows = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await a.from("matches").select("white, black, result, counts, finished_at").or(`white.eq.${me},black.eq.${me}`).eq("counts", true).order("finished_at", { ascending: false }).order("id").range(from, from + 999);
+    if (error) throw new Error("stats_read_failed");
+    rows.push(...(data ?? []));
+    if (!data || data.length < 1000) return rows;
+  }
 }
 
 /** Expires stale invites/lobbies, reminds idle players and forfeits after the move limit. */

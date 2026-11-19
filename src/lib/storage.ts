@@ -47,17 +47,18 @@ export function turnOf(pgn: string): Color {
 }
 
 export const getStats = (): Stats => ({ ...EMPTY_STATS, ...read<Partial<Stats>>(S, {}) });
-export const resetStats = () => write(S, { ...EMPTY_STATS, levelWins: getStats().levelWins });
+export const resetStats = () => write(S, { ...EMPTY_STATS, levelWins: {}, recorded: getStats().recorded });
 
 /** Records a finished game vs the computer once; returns a level newly unlocked by this win. */
-export function recordResult(id: string, outcome: "win" | "loss" | "draw", level: Level): Level | null {
+export function recordResult(id: string, outcome: "win" | "loss" | "draw", level: Level, counts = true): Level | null {
+  if (!counts) return null;
   const s = getStats();
   if (s.recorded.includes(id)) return null;
   const before = LEVELS.filter((l) => isUnlocked(l, s.levelWins));
   s.played++;
   if (outcome === "win") { s.wins++; s.streak++; s.bestStreak = Math.max(s.bestStreak, s.streak); s.levelWins[level] = (s.levelWins[level] ?? 0) + 1; }
   else { s.streak = 0; if (outcome === "loss") s.losses++; else s.draws++; }
-  s.recorded = [...s.recorded, id].slice(-200);
+  s.recorded = [...s.recorded, id];
   write(S, s);
   return LEVELS.find((l) => isUnlocked(l, s.levelWins) && !before.includes(l)) ?? null;
 }

@@ -2,7 +2,10 @@ import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
-import { Check, Copy, Send, Share2, X } from "lucide-react";
+import { Check, Copy, Send, Share2, X, UserPlus, ScanLine } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/Modal";
+import { QrScanner } from "@/components/QrScanner";
 import { toast } from "sonner";
 import { z } from "zod";
 import { PageHeader } from "@/components/PageHeader";
@@ -37,6 +40,10 @@ function FriendsPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [code, setCode] = useState(linkCode ?? "");
   const [qr, setQr] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [sending, setSending] = useState(false);
+  const scanned = useCallback((value: string) => { setCode(value); setScanning(false); }, []);
   const sentLink = useRef(false);
   const navigate = useNavigate();
   async function invite(friend: string) {
@@ -50,13 +57,16 @@ function FriendsPage() {
   useEffect(() => { if (link) void QRCode.toDataURL(link, { margin: 1, width: 360, color: { dark: "#0b2a2e", light: "#f5ecd7" } }).then(setQr); }, [link]);
 
   const send = useCallback(async (c: string) => {
+    if (sending) return;
+    setSending(true);
     try {
       const r = await sendFriendRequest({ data: { ...getCred(), code: c } });
       const msg = { sent: t("requestSent"), accepted: t("nowFriends"), already: t("alreadyFriends"), not_found: t("notFound"), self: t("selfCode") }[r.result];
       (r.result === "sent" || r.result === "accepted" ? toast.success : toast.error)(msg);
-      setCode(""); refresh();
-    } catch { toast.error(t("notFound")); }
-  }, [t, refresh]);
+      if (r.result === "sent" || r.result === "accepted" || r.result === "already") { setCode(""); setAdding(false); }
+      refresh();
+    } catch { toast.error(t("error")); } finally { setSending(false); }
+  }, [t, refresh, sending]);
   useEffect(() => { if (me && linkCode && !sentLink.current) { sentLink.current = true; void send(linkCode); } }, [me, linkCode, send]);
 
   async function act(fid: string, action: "accept" | "remove") {
@@ -72,28 +82,39 @@ function FriendsPage() {
   const outgoing = rows.filter((r) => r.kind === "outgoing");
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-4 px-5 pt-[calc(20px+env(safe-area-inset-top))] pb-8">
+    <main className="page-screen flex flex-col gap-4">
       <PageHeader title={t("friends")} />
-
-      <div className="panel flex flex-col items-center gap-3 p-4">
+      <Button className="action-btn action-gold" onClick={() => setAdding(true)}><UserPlus />{t("addFriend")}</Button>
+      <Section title={t("friends")}>
+        {friends.length === 0 && <p className="py-2 text-center text-sm text-muted-foreground">{t("noFriends")}</p>}
+        {friends.map((r) => <PlayerRow key={r.id} r={r} showStats>
+          <Button variant="ghost" size="icon" className="icon-btn icon-ok" aria-label={t("inviteFriend")} onClick={() => void invite(r.player.id)}><Send className="size-4" /></Button>
+          <Button variant="ghost" size="icon" className="icon-btn" aria-label={t("remove")} onClick={() => { if (confirm(`${t("remove")} ${displayName(r.player)}?`)) void act(r.id, "remove"); }}><X className="size-4" /></Button>
+        </PlayerRow>)}
+      </Section>
+      <Modal open={adding} onClose={() => setAdding(false)}>
+      <div className="flex flex-col items-center gap-3">
         <p className="field-label">{t("yourCode")}</p>
         <div className="friend-code">{me?.friend_code ?? "······"}</div>
         {qr && <img src={qr} alt={t("scanToAdd")} className="size-40 rounded-xl" />}
         <p className="text-xs text-muted-foreground">{t("scanToAdd")}</p>
         <div className="flex gap-2">
-          <button className="round-btn" aria-label="copy" onClick={() => { void navigator.clipboard.writeText(me?.friend_code ?? ""); toast.success(me?.friend_code ?? ""); }}><Copy className="size-5" /></button>
-          <button className="round-btn" aria-label="share" onClick={share}><Share2 className="size-5" /></button>
+          <Button variant="ghost" size="icon" className="round-btn" aria-label={t("yourCode")} onClick={() => { void navigator.clipboard.writeText(me?.friend_code ?? ""); toast.success(me?.friend_code ?? ""); }}><Copy className="size-5" /></Button>
+          <Button variant="ghost" size="icon" className="round-btn" aria-label={t("shareLink")} onClick={share}><Share2 className="size-5" /></Button>
         </div>
       </div>
 
-      <div className="panel flex flex-col gap-2 p-4">
+      <div className="flex flex-col gap-2 pt-4">
         <label className="field-label" htmlFor="code">{t("addFriend")}</label>
         <div className="flex gap-2">
           <input id="code" className="text-field flex-1 uppercase tracking-[0.3em]" maxLength={6} value={code} placeholder={t("enterCode")}
             onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} />
-          <button className="action-btn action-gold !w-auto px-5" disabled={code.length !== 6 || !me} onClick={() => send(code)}>{t("send")}</button>
+          <Button variant="ghost" size="icon" className="shrink-0" aria-label={t("scanQr")} onClick={() => setScanning(true)}><ScanLine /></Button>
         </div>
+        <Button className="action-btn action-gold" disabled={code.length !== 6 || !me || sending} onClick={() => send(code)}><UserPlus />{t("addFriend")}</Button>
       </div>
+      </Modal>
+      {scanning && <QrScanner onCode={scanned} onClose={() => setScanning(false)} />}
 
       {incoming.length > 0 && (
         <Section title={t("requests")}>
@@ -105,16 +126,6 @@ function FriendsPage() {
           ))}
         </Section>
       )}
-
-      <Section title={t("friends")}>
-        {friends.length === 0 && <p className="py-2 text-center text-sm text-muted-foreground">{t("noFriends")}</p>}
-        {friends.map((r) => (
-          <PlayerRow key={r.id} r={r} showStats>
-            <button className="icon-btn icon-ok" aria-label={t("inviteFriend")} onClick={() => void invite(r.player.id)}><Send className="size-4" /></button>
-            <button className="icon-btn" aria-label={t("remove")} onClick={() => { if (confirm(`${t("remove")} ${displayName(r.player)}?`)) void act(r.id, "remove"); }}><X className="size-4" /></button>
-          </PlayerRow>
-        ))}
-      </Section>
 
       {outgoing.length > 0 && (
         <Section title={t("sentRequests")}>
@@ -130,7 +141,7 @@ function FriendsPage() {
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return <div className="panel flex flex-col gap-1 p-3"><p className="field-label mb-1 text-center">{title}</p>{children}</div>;
+  return <section className="flex flex-col gap-2"><h2 className="settings-heading">{title}</h2>{children}</section>;
 }
 
 function PlayerRow({ r, showStats, children }: { r: Row; showStats?: boolean; children: React.ReactNode }) {
@@ -141,7 +152,7 @@ function PlayerRow({ r, showStats, children }: { r: Row; showStats?: boolean; ch
       <span className="friend-avatar"><PlayerAvatar avatar={r.player.avatar} /><span className="status-dot" data-on={on} /></span>
       <span className="min-w-0 flex-1">
         <span className="block truncate font-semibold">{displayName(r.player)} {r.player.country && flagOf(r.player.country)}</span>
-        <span className="block truncate text-xs text-muted-foreground">
+        <span className="block text-xs text-muted-foreground">
           {showStats ? `${on ? t("online") : t("offline")} · ${r.stats.w} ${t("wins")} · ${r.stats.l} ${t("losses")} · ${r.stats.d} ${t("draws")}` : on ? t("online") : t("offline")}
         </span>
         {showStats && r.recent.length > 0 && (

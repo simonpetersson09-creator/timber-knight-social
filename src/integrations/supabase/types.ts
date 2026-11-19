@@ -44,6 +44,7 @@ export type Database = {
         Row: {
           created_at: string
           detail: string | null
+          event_id: string | null
           id: number
           kind: string
           name: string
@@ -53,6 +54,7 @@ export type Database = {
         Insert: {
           created_at?: string
           detail?: string | null
+          event_id?: string | null
           id?: never
           kind: string
           name: string
@@ -62,6 +64,7 @@ export type Database = {
         Update: {
           created_at?: string
           detail?: string | null
+          event_id?: string | null
           id?: never
           kind?: string
           name?: string
@@ -253,6 +256,7 @@ export type Database = {
           black: string
           counts: boolean
           finished_at: string
+          game_id: string | null
           id: string
           result: string
           white: string
@@ -261,6 +265,7 @@ export type Database = {
           black: string
           counts?: boolean
           finished_at?: string
+          game_id?: string | null
           id?: string
           result: string
           white: string
@@ -269,6 +274,7 @@ export type Database = {
           black?: string
           counts?: boolean
           finished_at?: string
+          game_id?: string | null
           id?: string
           result?: string
           white?: string
@@ -279,6 +285,13 @@ export type Database = {
             columns: ["black"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
             referencedColumns: ["id"]
           },
           {
@@ -364,6 +377,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ingest_chess_event: {
+        Args: {
+          p_detail: string
+          p_event: string
+          p_kind: string
+          p_name: string
+          p_player: string
+        }
+        Returns: boolean
+      }
       leaderboard: {
         Args: { p_country: string; p_kind: string }
         Returns: {

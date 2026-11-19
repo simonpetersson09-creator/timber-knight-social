@@ -1,7 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Chess, type Square } from "chess.js";
-import { ArrowLeft, Flag, Handshake, Undo2 } from "lucide-react";
+import { ArrowLeft, Flag, Handshake } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { GamePlayerCard } from "@/components/GamePlayerCard";
+import { CapturedPieces } from "@/components/CapturedPieces";
+import { useMe } from "@/hooks/use-me";
+import { displayName } from "@/lib/profile";
+import { report } from "@/lib/report";
 import { toast } from "sonner";
 import { ChessBoard } from "@/components/ChessBoard";
 import { Piece } from "@/components/Piece";
@@ -40,6 +46,7 @@ function Play() {
   const { id } = Route.useSearch();
   const navigate = useNavigate();
   const { t } = useI18n();
+  const { me } = useMe();
   const game = useRef(new Chess()).current;
   const [saved, setSaved] = useState<SavedGame | null>(null);
   const [, setTick] = useState(0);
@@ -52,6 +59,7 @@ function Play() {
   const [showEnd, setShowEnd] = useState(false);
   const turnStart = useRef(Date.now());
   const savedRef = useRef<SavedGame | null>(null);
+  const finishedGame = useRef<string | null>(null);
   savedRef.current = saved;
   const refresh = () => setTick((x) => x + 1);
 
@@ -64,6 +72,7 @@ function Play() {
     const l = h[h.length - 1];
     setLastMove(l ? { from: l.from, to: l.to } : null);
     setResult(null);
+    finishedGame.current = null;
     turnStart.current = Date.now();
     setSaved(g);
   }, [id, game, navigate]);
@@ -80,14 +89,16 @@ function Play() {
 
   const finish = useCallback((res: Result) => {
     const s = savedRef.current;
-    if (!s) return;
+    if (!s || finishedGame.current === s.id) return;
+    finishedGame.current = s.id;
     setResult(res);
     deleteGame(s.id);
     setShowEnd(false);
     void showGameEndAd().then(() => { setShowEnd(true); void onGameFinished(); });
+    report("play", "local_game_finished", JSON.stringify({ game: s.id, reason: res.reason, winner: res.winner, level: s.level }));
     if (s.mode === "ai") {
       const outcome = res.winner === null ? "draw" : res.winner === s.human ? "win" : "loss";
-      const unlocked = recordResult(s.id, outcome, s.level);
+      const unlocked = recordResult(s.id, outcome, s.level, res.reason !== "resigned");
       feedback(outcome === "win" ? "win" : outcome === "loss" ? "lose" : "draw");
       if (outcome === "win") void celebrate();
       if (unlocked) setTimeout(() => toast.success(t("unlocked", { level: t(unlocked) })), 900);
@@ -173,16 +184,6 @@ function Play() {
     else applyMove({ from, to });
   }
 
-  function undo() {
-    game.undo();
-    if (vsAi && game.turn() !== human) game.undo();
-    const h = game.history({ verbose: true });
-    const l = h[h.length - 1];
-    setLastMove(l ? { from: l.from, to: l.to } : null);
-    persist(savedRef.current?.times ?? null);
-    refresh();
-  }
-
   function offerDraw() {
     if (vsAi) {
       const ai = other(human);
@@ -207,18 +208,12 @@ function Play() {
     else void navigate({ to: "/" });
   }
 
-  const captured = useMemo(() => {
-    const out = { w: [] as string[], b: [] as string[] };
-    for (const m of game.history({ verbose: true })) if (m.captured) out[m.color].push(m.captured);
-    return out;
-  }, [game.fen()]); // eslint-disable-line react-hooks/exhaustive-deps
-
   if (!saved) return <main className="min-h-dvh" />;
 
   const side = (c: Color) => (c === "w" ? t("wood") : t("black"));
   const top: Color = vsAi ? other(human) : "b";
   const bottom: Color = other(top);
-  const nameOf = (c: Color) => (vsAi ? (c === human ? t("you") : `${t("computer")} · ${t(saved.level)}`) : side(c));
+  const nameOf = (c: Color) => (vsAi ? (c === human ? me ? displayName(me) : t("you") : `${t("computer")} · ${t(saved.level)}`) : side(c));
   const activeKind = (c: Color): "you" | "opp" | undefined => {
     if (result || game.turn() !== c) return undefined;
     return !vsAi || c === human ? "you" : "opp";
@@ -239,20 +234,8 @@ function Play() {
     : result.winner === null ? t("draw") : t("sideWins", { side: side(result.winner) });
 
   const bar = (c: Color) => (
-    <div className="panel player-bar" data-active={activeKind(c)}>
-      <Piece color={c} type="k" className="size-8" />
-      <div className="min-w-0">
-        <div className="truncate font-semibold">{nameOf(c)}</div>
-        <div className="flex h-4 flex-wrap">
-          {captured[c].map((p, i) => <Piece key={i} color={other(c)} type={p} className="-mr-1 size-4" />)}
-        </div>
-      </div>
-      {saved.clock && (
-        <div className="clock" data-running={!result && game.turn() === c} data-low={!result && game.turn() === c && remaining(c) < 20000}>
-          {fmt(remaining(c))}
-        </div>
-      )}
-    </div>
+    <GamePlayerCard name={nameOf(c)} avatar={c === human ? me?.avatar : undefined} computer={vsAi && c !== human}
+      time={saved.clock ? fmt(remaining(c)) : "∞"} active={activeKind(c)} low={!!saved.clock && !result && game.turn() === c && remaining(c) < 20000} />
   );
 
   const busy = thinking || !!result;
@@ -267,23 +250,20 @@ function Play() {
       </header>
 
       <div className="play-col">
-        {bar(top)}
+        <div className="player-top">{bar(top)}</div>
         <ChessBoard game={game} orientation={vsAi ? human : "w"} disabled={aiTurn || !!result} lastMove={lastMove} onMove={onBoardMove} />
-        {bar(bottom)}
+        <div className="player-bottom"><CapturedPieces game={game} mine={bottom} />{bar(bottom)}</div>
       </div>
 
       <div className="play-side">
-        <div key={status} className="panel px-4 py-3 text-center font-semibold">{status}</div>
-        <div className="grid grid-cols-3 gap-2">
-          <button onClick={undo} disabled={busy || !!saved.clock || game.history().length === 0} className="action-btn action-ghost !h-12 text-sm">
-            <Undo2 className="size-4" /> {t("undo")}
-          </button>
-          <button onClick={offerDraw} disabled={busy || game.history().length < 2} className="action-btn action-ghost !h-12 text-sm">
+        <div key={status} className="game-status">{status}</div>
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="ghost" onClick={offerDraw} disabled={busy || game.history().length < 2} className="action-btn action-ghost text-sm">
             <Handshake className="size-4" /> {t("offerDraw")}
-          </button>
-          <button onClick={() => setAsk("resign")} disabled={busy} className="action-btn action-ghost !h-12 text-sm">
+          </Button>
+          <Button variant="ghost" onClick={() => setAsk("resign")} disabled={busy} className="action-btn action-ghost text-sm">
             <Flag className="size-4" /> {t("resign")}
-          </button>
+          </Button>
         </div>
       </div>
 

@@ -37,3 +37,8 @@ use the editor.
 - Profile photos use a private Storage bucket, device-verified server uploads and short-lived signed reads; store only a photo marker in the avatar field to avoid arbitrary image URLs.
 - Friend play lives on its own /online route rather than expanding the home button; retain server-authoritative lobby and invitation flows.
 - Notification categories are enforced by allowsNotification on the server so settings actually control delivery.
+- Completion statistics and server play logs are recorded by the database game-update trigger in the same transaction; moves use active-state and position guards to prevent stale writes.
+- Telemetry uses device-verified delivery, persistent bounded queues and unique event IDs; server rate limits and deduplication prevent retries inflating statistics.
+- Daily native installation counts use Stockholm dates and foreground heartbeats; paginated statistics include the full eligible history and exclude web/test activity in admin.
+- Shared GamePlayerCard/CapturedPieces components keep local and online game layouts consistent, with the board centred and actions at the bottom.
+- Capacitor copy/sync hooks configure iOS QR camera permissions automatically when the native project exists, avoiding manual Info.plist edits.

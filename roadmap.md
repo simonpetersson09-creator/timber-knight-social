@@ -1,11 +1,11 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
 ## Klart
-- [x] Startsida i Yatzy-stil, färgkoder, 6 nivåer med upplåsning, schackklocka, bondeförvandling, remi, ge upp
-- [x] Ljud, vibration, konfetti, surfplatta stående/liggande, upp till 3 sparade partier
+- [x] Startsida i Yatzy-stil, färgkoder, 3 öppna nivåer, schackklocka, bondeförvandling, remi, ge upp
+- [x] Vibration, konfetti, surfplatta stående/liggande, upp till 3 sparade partier
 - [x] 40 språk med automatiskt enhetsspråk och språkmeny
 - [x] Träbräde, ebenholts- vs träpjäser, Mr B-färger/typsnitt
-- [x] Spel mot dator (3 nivåer), två spelare på en enhet, ångra
+- [x] Spel mot dator (3 nivåer) och online; ingen ångra
 
 ## Design
 - [x] Anpassa startknappar, separat vänspelsida och neutral språkikon
@@ -32,16 +32,15 @@
 - [x] Servern avgör alla drag (fusksäkert), realtid + återanslutning
 - [x] Tidsgränser: inaktiv → påminnelse → förlust; ge upp påverkar inte statistik
 - [x] Inbjudan gäller 24 h, lobby 6 h; snabbchatt med fasta fraser
-- [ ] Väntrum (valfritt, som Yatzy)
+- Avstår: väntrum
 
 ## Statistik och topplistor
 - [x] Partier, vinster, remi, vinstprocent, svit
 - [x] Världs-/landstopplista per år, veckans topp 10, månadens flitigaste
-- [ ] Veckopris topp 3 (3/2/1 XP) – beslut
+- Avstår: veckopriser
 
 ## XP och butik (beslut)
-- [ ] XP via belöningsannons, butik med bräd-/pjäsdesigner, ramar, vinsteffekter
-- [ ] Värva vän-belöning
+- Avstår: XP, butik och värvningsbelöningar
 
 ## Notiser
 - [x] Push iOS (APNs) + Android (Firebase), fråga vid onlinespel – inte vid start
@@ -50,14 +49,13 @@
 ## Annonser (egna AdMob-ID:n för Chess)
 - [x] 1 App Open (appstart), bara på startsidan, aldrig mitt i parti, kräver minst 1 avslutat parti
 - [x] Mellanannons vid avslut av parti (en per parti, väntar tills stängd)
-- [ ] Banner under lokala partier (beslut)
-- [ ] Belöningsannons för XP/ledtråd (beslut)
+- Avstår: banner och belöningsannons
 - [x] Google-samtycke (UMP) + iOS ATT, ändra annonsval i inställningar, inga annonser på webben
 - [x] app-ads.txt på juridiksidan
 
 ## Övrigt
 - [x] Be om betyg: efter 5 partier, sedan +10, +20, max 3 gånger
-- [ ] Nyhets-/uppdateringsrutor (en i taget)
+- Avstår: nyhets-/uppdateringsrutor
 - [x] Inställningar: namn, avatar, land, språk, haptik, notiser, annonsval, nollställ statistik, radera mina data
 - [x] Android bakåtknapp (stänger rutor först, minimerar på start), svep bakåt på iOS
 - [x] Webben visar bara App Store/Google Play-sida (/join och /legal öppna)
@@ -74,6 +72,12 @@
 - [ ] Riktig app-ads.txt-rad och supportmejl på juridiksidan
 
 ## Runda 19 nov
+- [x] Enhetliga effekter på startsidans kort
+- [x] Integritetsknapp och förbättrad vänsida
+- [x] Jämfört server/loggning med Yatzy: transaktionssäker resultatregistrering, deduplicerade återförsök, kompletta historiksiffror, Stockholm-dagar; behåller säker enhetsidentitet och TanStack
+- [x] Automatisk iOS-kamerabehörighet via copy/sync (fysisk kamera verifieras efter iOS-paketering)
+- [x] Vänkod accepterad och synlig hos två spelare; skapa/gå med via kod och spela till schack matt verifierat
+- [x] Centrerat bräde, spelarkort, slagna pjäser och bottenknappar; ingen ångra
 - [x] Standardnamn "Spelare 1234", unika namn, land väljs automatiskt
 - [x] Drottning bredvid kungen i ikonen
 - [x] Snabbspel: 3 nivåer + förklarad schackklocka, inget pjäsval (värd/spelare = mahogny)

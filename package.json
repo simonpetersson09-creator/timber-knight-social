@@ -4,6 +4,9 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
+    "capacitor:sync:after": "node scripts/ios-permissions.mjs",
+    "capacitor:copy:after": "node scripts/ios-permissions.mjs",
+    "native:ios": "bunx cap add ios && bunx cap sync ios",
     "dev": "vite dev",
     "build": "vite build",
     "build:dev": "vite build --mode development",

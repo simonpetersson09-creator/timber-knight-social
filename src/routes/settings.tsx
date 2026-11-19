@@ -110,6 +110,7 @@ function SettingsPage() {
     </div></Section>
     <Section title={t("adChoices")}><div className="settings-rows"><Button variant="ghost" className="settings-row" onClick={async () => { if (!isNative() || !(await openAdChoices())) toast(t("adChoicesApp")); }}><ShieldCheck /><span className="flex-1">{t("adChoices")}</span><ChevronRight /></Button></div></Section>
     <div className="settings-rows"><Button variant="ghost" className="settings-row text-destructive" disabled={!me || busy} onClick={() => setWipe(true)}><Trash2 />{t("deleteMyData")}</Button></div>
+    <div className="settings-rows"><Button asChild variant="ghost" className="settings-row"><Link to="/legal" hash="privacy"><ShieldCheck /><span className="flex-1">{t("privacy")}</span><ChevronRight /></Link></Button></div>
     <Button asChild variant="link" className="h-auto w-full whitespace-normal text-xs text-muted-foreground"><Link to="/legal">{t("legal")}</Link></Button>
     <LanguageSheet open={langOpen} onClose={() => setLangOpen(false)} />
     <Modal open={confirm} onClose={() => setConfirm(false)}><p className="mb-4 text-center font-semibold">{t("confirmReset")}</p><div className="flex gap-2"><Button variant="ghost" className="action-btn action-ghost" onClick={() => setConfirm(false)}>{t("cancel")}</Button><Button className="action-btn action-gold" onClick={() => { resetStats(); setStats(getStats()); setConfirm(false); toast.success(t("resetStats")); }}>{t("accept")}</Button></div></Modal>

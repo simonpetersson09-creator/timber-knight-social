@@ -1,4 +1,6 @@
-import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { GamePlayerCard } from "@/components/GamePlayerCard";
+import { CapturedPieces } from "@/components/CapturedPieces";
+import { Button } from "@/components/ui/button";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Chess, type Square } from "chess.js";
@@ -59,9 +61,10 @@ function Match() {
     try {
       const r = await getOnlineGame({ data: { ...getCred(), gameId: id, after: lastChat.current } });
       if (r.chat.length) {
-        lastChat.current = r.chat[r.chat.length - 1]!.id;
+        const last = r.chat[r.chat.length - 1];
+        if (!last) return;
+        lastChat.current = last.id;
         setChat((c) => [...c, ...r.chat].slice(-30));
-        const last = r.chat[r.chat.length - 1]!;
         if (last.player !== r.me) { setBubble({ mine: false, text: t(CHAT[last.phrase] ?? "chat0") }); feedback("move"); }
       }
       if (r.game.pgn !== prevPgn.current) {
@@ -154,7 +157,7 @@ function Match() {
   const oppId = myColor === "w" ? g.black : g.white;
   const opp = oppId ? players[oppId] : null;
   const meP = players[me];
-  const deadlineH = Math.max(0, Math.ceil((new Date(g.expires_at).getTime() - now) / 3_600_000));
+  const deadlineH = Math.min(48, Math.max(0, Math.ceil((new Date(g.expires_at).getTime() - now) / 3_600_000)));
 
   async function move(from: Square, to: Square, promotion?: "q" | "r" | "b" | "n") {
     const backup = game.pgn();
@@ -178,21 +181,16 @@ function Match() {
   }
   async function say(i: number) {
     setAsk(null);
-    setBubble({ mine: true, text: t(CHAT[i]!) });
+    setBubble({ mine: true, text: t(CHAT[i] ?? "chat0") });
     await sendChat({ data: { ...getCred(), gameId: id, phrase: i } }).catch(() => {});
   }
 
   const bar = (pid: string | null | undefined, c: "w" | "b") => {
     const p = pid ? players[pid] : null;
     return (
-      <div className="panel player-bar" data-active={g.status === "active" && turn === c ? (c === myColor ? "you" : "opp") : undefined}>
-        <span className="friend-avatar !size-9 !text-xl"><PlayerAvatar avatar={p?.avatar} /></span>
-        <div className="min-w-0">
-          <div className="truncate font-semibold">{p ? displayName(p) : "…"} {p?.country && flagOf(p.country)}</div>
-          <div className="text-xs text-muted-foreground">{c === "w" ? t("wood") : t("black")}</div>
-        </div>
-        {g.status === "active" && turn === c && <div className="clock" data-running="true">{deadlineH}h</div>}
-      </div>
+      <GamePlayerCard name={p ? `${displayName(p)}${p.country ? ` ${flagOf(p.country)}` : ""}` : "…"} avatar={p?.avatar}
+        time={g.status === "active" && turn === c ? `${deadlineH}h` : "48h"}
+        active={g.status === "active" && turn === c ? (c === myColor ? "you" : "opp") : undefined} />
     );
   };
   const reasonText = g.end_reason === "resign" ? t("resignNoStats") : g.end_reason === "timeout" ? t("inactiveLoss") : g.end_reason === "checkmate" ? t("checkmate") : t("draw");
@@ -208,13 +206,13 @@ function Match() {
         <button className="action-ghost flex size-10 items-center justify-center rounded-full" aria-label={t("quickChat")} disabled={g.status !== "active"} onClick={() => setAsk("chat")}><MessageCircle className="size-5" /></button>
       </header>
       <div className="play-col relative">
-        {bar(oppId, myColor === "w" ? "b" : "w")}
+        <div className="player-top">{bar(oppId, myColor === "w" ? "b" : "w")}</div>
         <ChessBoard game={game} orientation={myColor} disabled={!myTurn} lastMove={(() => { const h = game.history({ verbose: true }); const l = h[h.length - 1]; return l ? { from: l.from, to: l.to } : null; })()} onMove={onBoardMove} />
-        {bar(me, myColor)}
+        <div className="player-bottom"><CapturedPieces game={game} mine={myColor} />{bar(me, myColor)}</div>
         {bubble && <div className="chat-bubble" data-mine={bubble.mine}>{bubble.text}</div>}
       </div>
       <div className="play-side">
-        <div className="panel px-4 py-3 text-center font-semibold">{status}</div>
+        <div className="game-status">{status}</div>
         {g.draw_offer && g.draw_offer !== myColor && g.status === "active" && (
           <div className="panel flex flex-col gap-2 p-3 text-center">
             <p className="font-semibold">{t("drawOffer", { side: opp ? displayName(opp) : "" })}</p>
@@ -225,11 +223,11 @@ function Match() {
           </div>
         )}
         <div className="grid grid-cols-2 gap-2">
-          <button onClick={() => act("offerDraw")} disabled={g.status !== "active" || game.history().length < 2 || !!g.draw_offer} className="action-btn action-ghost !h-12 text-sm"><Handshake className="size-4" /> {t("offerDraw")}</button>
-          <button onClick={() => setAsk("resign")} disabled={g.status !== "active"} className="action-btn action-ghost !h-12 text-sm"><Flag className="size-4" /> {t("resign")}</button>
+          <Button variant="ghost" onClick={() => act("offerDraw")} disabled={g.status !== "active" || game.history().length < 2 || !!g.draw_offer} className="action-btn action-ghost text-sm"><Handshake className="size-4" /> {t("offerDraw")}</Button>
+          <Button variant="ghost" onClick={() => setAsk("resign")} disabled={g.status !== "active"} className="action-btn action-ghost text-sm"><Flag className="size-4" /> {t("resign")}</Button>
         </div>
         {chat.length > 0 && (
-          <div className="panel max-h-32 overflow-y-auto p-3 text-sm">
+          <div className="game-chat-history max-h-16 overflow-y-auto text-xs">
             {chat.slice(-6).map((c) => <p key={c.id}><b>{c.player === me ? t("you") : opp ? displayName(opp) : ""}:</b> {t(CHAT[c.phrase] ?? "chat0")}</p>)}
           </div>
         )}

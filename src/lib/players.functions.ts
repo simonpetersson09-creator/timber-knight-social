@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { cleanName, friendCode } from "./profile";
-import { Cred, PLAYER_COLS as COLS, auth, db, sha256 as hash } from "./server/core";
+import { Cred, PLAYER_COLS as COLS, allMatches, auth, db, sha256 as hash, stockholmDay } from "./server/core";
 
 export const registerPlayer = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Cred.extend({
@@ -17,9 +17,10 @@ export const registerPlayer = createServerFn({ method: "POST" })
     const { a: a2, me } = await auth(data);
     await a2.from("players").update({ platform: data.platform, tz: data.tz, lang: data.lang }).eq("id", me);
     if (data.country) await a2.from("players").update({ country: data.country }).eq("id", me).is("country", null);
-    await a2.from("app_days").upsert({ player: me, day: new Date().toISOString().slice(0, 10), platform: data.platform }, { onConflict: "player,day", ignoreDuplicates: true });
+    if (data.platform !== "web") await a2.from("app_days").upsert({ player: me, day: stockholmDay(), platform: data.platform }, { onConflict: "player,day" });
     const { data: p } = await a2.from("players").select(`${COLS}, notify, notify_turn, notify_reminders, notify_play`).eq("id", me).single();
-    return p!;
+    if (!p) throw new Error("profile_read_failed");
+    return p;
   });
 
 export const updateProfile = createServerFn({ method: "POST" })
@@ -57,13 +58,12 @@ export const deleteMyData = createServerFn({ method: "POST" })
   });
 
 export const reportEvent = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid().nullable(), platform: z.enum(["ios", "android", "web"]), kind: z.enum(["error", "ad"]), name: z.string().max(80), detail: z.string().max(2000).nullable() }).parse(d))
+  .inputValidator((d: unknown) => Cred.extend({ eventId: z.string().uuid(), kind: z.enum(["error", "ad", "play"]), name: z.string().max(80), detail: z.string().max(2000).nullable() }).parse(d))
   .handler(async ({ data }) => {
-    const a = await db();
-    let player = data.id;
-    if (player) { const { data: p } = await a.from("players").select("id").eq("id", player).maybeSingle(); if (!p) player = null; }
-    await a.from("client_events").insert({ player, platform: data.platform, kind: data.kind, name: data.name, detail: data.detail });
-    return { ok: true };
+    const { a, me } = await auth(data);
+    const { data: ok, error } = await a.rpc("ingest_chess_event", { p_player: me, p_event: data.eventId, p_kind: data.kind, p_name: data.name, p_detail: data.detail ?? "" });
+    if (error) throw new Error("event_delivery_failed");
+    return { ok: !!ok };
   });
 
 export const getFriends = createServerFn({ method: "POST" })
@@ -74,21 +74,19 @@ export const getFriends = createServerFn({ method: "POST" })
     const list = rows ?? [];
     const otherIds = list.map((r) => (r.requester === me ? r.addressee : r.requester));
     const { data: players } = otherIds.length ? await a.from("players").select(COLS).in("id", otherIds) : { data: [] };
-    const { data: games } = otherIds.length
-      ? await a.from("matches").select("white, black, result, finished_at, counts").or(`white.eq.${me},black.eq.${me}`).eq("counts", true).order("finished_at", { ascending: false }).limit(500)
-      : { data: [] };
+    const games = otherIds.length ? await allMatches(a, me) : [];
     return list.map((r) => {
       const otherId = r.requester === me ? r.addressee : r.requester;
-      const vs = (games ?? []).filter((g) => g.white === otherId || g.black === otherId);
+      const vs = games.filter((g) => g.white === otherId || g.black === otherId);
       const mine = (g: { white: string; result: string }) => (g.result === "d" ? "d" : (g.result === "w") === (g.white === me) ? "w" : "l");
       return {
         id: r.id,
         kind: r.status === "accepted" ? ("friend" as const) : r.requester === me ? ("outgoing" as const) : ("incoming" as const),
-        player: (players ?? []).find((p) => p.id === otherId)!,
+        player: (players ?? []).find((p) => p.id === otherId),
         stats: { w: vs.filter((g) => mine(g) === "w").length, l: vs.filter((g) => mine(g) === "l").length, d: vs.filter((g) => mine(g) === "d").length },
         recent: vs.slice(0, 5).map((g) => ({ r: mine(g), at: g.finished_at })),
       };
-    }).filter((x) => x.player);
+    }).filter((x): x is typeof x & { player: NonNullable<typeof x.player> } => !!x.player);
   });
 
 export const sendFriendRequest = createServerFn({ method: "POST" })
@@ -103,7 +101,11 @@ export const sendFriendRequest = createServerFn({ method: "POST" })
       if (ex.status === "pending" && ex.requester === other.id) { await a.from("friendships").update({ status: "accepted" }).eq("id", ex.id); return { result: "accepted" as const }; }
       return { result: ex.status === "accepted" ? ("already" as const) : ("sent" as const) };
     }
-    await a.from("friendships").insert({ requester: me, addressee: other.id });
+    const { error } = await a.from("friendships").insert({ requester: me, addressee: other.id });
+    if (error) {
+      if (error.code === "23505") return { result: "sent" as const };
+      throw new Error("friend_request_failed");
+    }
     return { result: "sent" as const };
   });
 

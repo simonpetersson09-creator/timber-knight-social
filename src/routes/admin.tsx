@@ -54,6 +54,7 @@ function Admin() {
         <h2 className="mb-2 font-bold">Fel (30 dagar)</h2>
         {s.errors.length === 0 ? <p className="text-sm text-muted-foreground">Inga fel.</p> : s.errors.map(([n, c]) => <p key={n} className="truncate text-sm">{n}: <b>{c}</b></p>)}
       </section>
+      <section className="panel p-4"><h2 className="mb-2 font-bold">Spelhändelser (30 dagar)</h2>{s.play.length ? s.play.map(([name, count]) => <p key={name} className="text-sm">{name}: <b>{count}</b></p>) : <p className="text-sm text-muted-foreground">Inga spelhändelser ännu.</p>}</section>
       <section className="panel flex flex-col gap-2 p-4">
         <h2 className="font-bold">Testtelefoner</h2>
         <p className="text-sm text-muted-foreground">Spelarnummer syns i appens inställningar. Nu: {s.testPlayers.join(", ") || "inga"}</p>

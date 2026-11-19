@@ -55,7 +55,9 @@ let appOpenShown = false;
 export async function maybeShowAppOpen(path: string) {
   if (!canShowAppOpen({ path, finished: getMeta().finished, shownThisLaunch: appOpenShown, native: isNative() })) return;
   const id = unit("appOpen");
-  if (!id || !(await initAds())) return;
+  report("ad", "app_open_opportunity");
+  if (!id) { report("ad", "app_open_no_unit"); return; }
+  if (!(await initAds())) return;
   appOpenShown = true;
   try {
     const { AdMob } = await mod();
@@ -68,17 +70,27 @@ export async function maybeShowAppOpen(path: string) {
 
 /** Full-screen ad at game end. Resolves only after the player has closed it. */
 export async function showGameEndAd(): Promise<void> {
+  if (!isNative()) return;
+  report("ad", "interstitial_opportunity");
   const id = unit("interstitial");
-  if (!id || !(await initAds())) return;
+  if (!id) { report("ad", "interstitial_no_unit"); return; }
+  if (!(await initAds())) return;
   try {
     const { AdMob, InterstitialAdPluginEvents } = await mod();
     await AdMob.prepareInterstitial({ adId: id });
+    report("ad", "interstitial_loaded");
     await new Promise<void>((resolve) => {
       let done = false;
-      const finish = () => { if (!done) { done = true; resolve(); } };
-      void AdMob.addListener(InterstitialAdPluginEvents.Dismissed, finish);
-      void AdMob.addListener(InterstitialAdPluginEvents.FailedToShow, finish);
-      AdMob.showInterstitial().then(() => report("ad", "interstitial_shown")).catch((e) => { report("ad", "interstitial_failed", String(e)); finish(); });
+      const handles: { remove: () => Promise<void> }[] = [];
+      const finish = () => { if (!done) { done = true; for (const handle of handles) void handle.remove(); resolve(); } };
+      void (async () => {
+        const dismissed = await AdMob.addListener(InterstitialAdPluginEvents.Dismissed, () => { report("ad", "interstitial_dismissed"); finish(); });
+        handles.push(dismissed);
+        const failed = await AdMob.addListener(InterstitialAdPluginEvents.FailedToShow, () => { report("ad", "interstitial_failed_to_show"); finish(); });
+        handles.push(failed);
+        try { await AdMob.showInterstitial(); report("ad", "interstitial_shown"); }
+        catch (e) { report("ad", "interstitial_failed", String(e)); finish(); }
+      })().catch(() => finish());
     });
   } catch (e) { report("ad", "interstitial_load_failed", String(e)); }
 }

@@ -29,6 +29,20 @@
       "when": 1795079653298,
       "tag": "0003_profile_photos_notification_choices",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795083081199,
+      "tag": "0004_atomic_match_records_and_durable_logs",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795083523479,
+      "tag": "0005_leaderboard_native_test_exclusions_and_periods",
+      "breakpoints": true
     }
   ]
 }

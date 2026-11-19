@@ -4,7 +4,7 @@ import { isNative, platform } from "@/lib/native";
 import { runTopBackHandler } from "@/lib/back-handler";
 import { maybeShowAppOpen, initAds } from "@/lib/ads";
 import { resumePush } from "@/lib/push";
-import { report } from "@/lib/report";
+import { flushReports, report } from "@/lib/report";
 import { loadMe } from "@/lib/identity";
 
 /** App-wide native behaviour: back button, iOS swipe back, launch ad, push, error reports. */
@@ -16,11 +16,15 @@ export function NativeHost() {
 
   useEffect(() => {
     void loadMe().catch(() => {});
+    const foreground = () => { if (document.visibilityState === "visible") { void loadMe(true).catch(() => {}); void flushReports(); } };
+    const heartbeat = setInterval(foreground, 60_000);
+    window.addEventListener("online", foreground);
+    document.addEventListener("visibilitychange", foreground);
     const onErr = (e: ErrorEvent) => report("error", e.message || "error", `${e.filename}:${e.lineno}`);
     const onRej = (e: PromiseRejectionEvent) => report("error", String(e.reason).slice(0, 80), String((e.reason as Error)?.stack ?? ""));
     window.addEventListener("error", onErr);
     window.addEventListener("unhandledrejection", onRej);
-    return () => { window.removeEventListener("error", onErr); window.removeEventListener("unhandledrejection", onRej); };
+    return () => { clearInterval(heartbeat); window.removeEventListener("online", foreground); document.removeEventListener("visibilitychange", foreground); window.removeEventListener("error", onErr); window.removeEventListener("unhandledrejection", onRej); };
   }, []);
 
   useEffect(() => {

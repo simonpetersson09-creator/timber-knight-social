@@ -1,9 +1,26 @@
 import { reportEvent } from "./players.functions";
-import { platform } from "./native";
-function myId(): string | null { try { return (JSON.parse(localStorage.getItem("mrbchess.identity.v1") ?? "null") as { id: string } | null)?.id ?? null; } catch { return null; } }
-let sent = 0;
-/** Error and ad reports for the admin page (max 30 per launch). */
-export function report(kind: "error" | "ad", name: string, detail?: string) {
-  if (sent++ > 30) return;
-  void reportEvent({ data: { id: myId(), platform: platform(), kind, name: name.slice(0, 80), detail: detail?.slice(0, 2000) ?? null } }).catch(() => {});
+import { getCred, loadMe } from "./identity";
+
+type Event = { eventId: string; kind: "error" | "ad" | "play"; name: string; detail: string | null };
+const KEY = "mrbchess.reports.v1";
+let flushing = false;
+function queue(): Event[] { try { return JSON.parse(localStorage.getItem(KEY) ?? "[]") as Event[]; } catch { return []; } }
+function save(events: Event[]) { try { localStorage.setItem(KEY, JSON.stringify(events.slice(-100))); } catch { /* full storage */ } }
+/** Durable, bounded delivery queue. IDs stay the same during retries so reports count once. */
+export function report(kind: Event["kind"], name: string, detail?: string) {
+  save([...queue(), { eventId: crypto.randomUUID(), kind, name: name.slice(0, 80), detail: detail?.slice(0, 2000) ?? null }]);
+  void flushReports();
+}
+export async function flushReports() {
+  if (flushing || !queue().length || !navigator.onLine) return;
+  flushing = true;
+  try {
+    await loadMe();
+    for (const event of queue().slice(0, 20)) {
+      const result = await reportEvent({ data: { ...getCred(), ...event } });
+      if (!result.ok) break;
+      save(queue().filter((e) => e.eventId !== event.eventId));
+    }
+  } catch { /* retry when online/foreground/heartbeat fires */ }
+  finally { flushing = false; }
 }

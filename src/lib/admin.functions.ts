@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { stockholmDay } from "./server/core";
 
 async function check(pw: string) {
   const want = process.env["ADMIN_PASSWORD"];
@@ -12,22 +13,29 @@ export const adminStats = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ password: z.string().max(200) }).parse(d))
   .handler(async ({ data }) => {
     const a = await check(data.password);
-    const since = new Date(Date.now() - 29 * 864e5).toISOString().slice(0, 10);
+    const since = stockholmDay(new Date(Date.now() - 29 * 864e5));
     const { data: tests } = await a.from("players").select("id, player_number").eq("is_test", true);
     const testIds = new Set((tests ?? []).map((t) => t.id));
     const days: Record<string, { ios: number; android: number }> = {};
-    for (let i = 0; i < 30; i++) days[new Date(Date.now() - i * 864e5).toISOString().slice(0, 10)] = { ios: 0, android: 0 };
+    for (let i = 0; i < 30; i++) days[stockholmDay(new Date(Date.now() - i * 864e5))] = { ios: 0, android: 0 };
     for (let from = 0; ; from += 1000) {
-      const { data: rows } = await a.from("app_days").select("player, day, platform").gte("day", since).in("platform", ["ios", "android"]).range(from, from + 999);
-      for (const r of rows ?? []) if (!testIds.has(r.player) && days[r.day]) days[r.day]![r.platform as "ios" | "android"]++;
+      const { data: rows, error } = await a.from("app_days").select("player, day, platform").gte("day", since).in("platform", ["ios", "android"]).order("day").order("player").range(from, from + 999);
+      if (error) throw new Error("stats_read_failed");
+      for (const r of rows ?? []) { const day = days[r.day]; if (!testIds.has(r.player) && day && (r.platform === "ios" || r.platform === "android")) day[r.platform]++; }
       if (!rows || rows.length < 1000) break;
     }
-    const { data: events } = await a.from("client_events").select("kind, name, platform, detail, created_at").gte("created_at", new Date(Date.now() - 30 * 864e5).toISOString()).order("created_at", { ascending: false }).limit(500);
-    const ev = (events ?? []).filter((e) => e.platform !== "web");
+    const events = [];
+    for (let from = 0; ; from += 1000) {
+      const { data: rows, error } = await a.from("client_events").select("player, kind, name, platform, detail, created_at").in("platform", ["ios", "android"]).gte("created_at", new Date(Date.now() - 30 * 864e5).toISOString()).order("created_at", { ascending: false }).order("id").range(from, from + 999);
+      if (error) throw new Error("event_stats_failed");
+      events.push(...(rows ?? []));
+      if (!rows || rows.length < 1000) break;
+    }
+    const ev = events.filter((e) => !e.player || !testIds.has(e.player));
     const group = (kind: string) => Object.entries(ev.filter((e) => e.kind === kind).reduce<Record<string, number>>((m, e) => ({ ...m, [e.name]: (m[e.name] ?? 0) + 1 }), {})).sort((x, y) => y[1] - x[1]);
     return {
       days: Object.entries(days).sort((x, y) => y[0].localeCompare(x[0])).map(([day, v]) => ({ day, ...v, total: v.ios + v.android })),
-      ads: group("ad"), errors: group("error"),
+      ads: group("ad"), errors: group("error"), play: group("play"),
       recentErrors: ev.filter((e) => e.kind === "error").slice(0, 20),
       testPlayers: (tests ?? []).map((t) => t.player_number),
     };
