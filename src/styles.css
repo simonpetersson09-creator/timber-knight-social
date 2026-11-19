@@ -289,40 +289,33 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .play-col { position: absolute; top: calc(50% - 24px); left: 50%; transform: translate(-50%, -50%); width: min(calc(100% - 24px), 560px, calc(100dvh - 390px)); max-width: calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right)); min-width: 0; }
 .play-col .board-scene { width: 100%; }
 .play-col .board-frame { width: 100%; min-width: 0; }
-.player-top, .player-bottom { position: absolute; left: 0; width: 100%; display: flex; align-items: center; gap: 8px; }
+.player-top, .player-bottom { position: absolute; left: 0; width: 100%; display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
 .player-top { bottom: calc(100% + 12px); }
 .player-bottom { top: calc(100% + 8px); }
-.game-player-card { --player-accent: var(--ivory); --player-on-accent: var(--ivory-ink); display: grid; grid-template-columns: 30px minmax(0, 1fr); align-items: center; flex: 0 0 min(52%, 168px); width: min(52%, 168px); min-width: 0; min-height: 46px; padding: 6px 8px; gap: 7px; border: 1px solid color-mix(in oklab, var(--player-accent) 18%, transparent); border-radius: 12px; background: linear-gradient(120deg, color-mix(in oklab, var(--player-accent) 8%, var(--card)), var(--card)); box-shadow: 0 6px 18px color-mix(in oklab, var(--background) 70%, transparent); }
+.player-profile-line { display: flex; align-items: center; width: 100%; min-width: 0; gap: 8px; }
+.game-player-card { --player-accent: var(--ivory); --player-on-accent: var(--ivory-ink); display: grid; grid-template-columns: 22px minmax(0, 1fr); align-items: center; flex: 1 1 auto; width: 100%; min-width: 0; min-height: 32px; padding: 3px 9px; gap: 7px; border: 1px solid color-mix(in oklab, var(--player-accent) 18%, transparent); border-radius: 10px; background: linear-gradient(120deg, color-mix(in oklab, var(--player-accent) 8%, var(--card)), var(--card)); box-shadow: 0 3px 10px color-mix(in oklab, var(--background) 55%, transparent); }
 .game-player-card[data-piece="b"] { --player-accent: var(--ebony-shine); --player-on-accent: var(--foreground); }
-.game-player-card[data-active="you"], .game-player-card[data-active="opp"] { border-color: color-mix(in oklab, var(--player-accent) 68%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--player-accent) 24%, transparent), 0 7px 20px color-mix(in oklab, var(--player-accent) 13%, transparent); }
-.game-player-photo { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9999px; overflow: hidden; background: var(--player-accent); color: var(--player-on-accent); font-size: 21px; }
-.game-player-photo > svg { width: 19px; height: 19px; }
-.game-player-name { min-width: 0; font-size: 11px; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
+.game-player-card[data-active="you"], .game-player-card[data-active="opp"] { border-color: color-mix(in oklab, var(--player-accent) 68%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--player-accent) 24%, transparent), 0 4px 12px color-mix(in oklab, var(--player-accent) 13%, transparent); }
+.game-player-photo { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 9999px; overflow: hidden; background: var(--player-accent); color: var(--player-on-accent); font-size: 17px; }
+.game-player-photo > svg { width: 15px; height: 15px; }
+.game-player-name { min-width: 0; font-size: 11px; font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; }
 .game-clock { --player-accent: var(--ivory); --player-on-accent: var(--ivory-ink); flex: 0 0 auto; display: grid; place-items: center; min-width: 58px; min-height: 46px; padding: 6px 9px; border: 1px solid color-mix(in oklab, var(--player-accent) 18%, transparent); border-radius: 12px; background: color-mix(in oklab, var(--player-accent) 10%, var(--secondary)); color: var(--foreground); font-weight: 700; font-size: 14px; line-height: 1; font-variant-numeric: tabular-nums; }
 .game-clock[data-piece="b"] { --player-accent: var(--ebony-shine); --player-on-accent: var(--foreground); }
 .game-clock[data-active="you"], .game-clock[data-active="opp"] { border-color: color-mix(in oklab, var(--player-accent) 68%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--player-accent) 24%, transparent), 0 6px 18px color-mix(in oklab, var(--player-accent) 13%, transparent); }
 .game-clock[data-running="true"] { background: var(--player-accent); color: var(--player-on-accent); }
 .game-clock[data-low="true"] { background: var(--destructive); color: var(--destructive-foreground); animation: clock-pulse 1s ease-in-out infinite; }
-.captured-tray { flex: 1 1 auto; min-width: 0; height: 92px; justify-content: center; display: flex; flex-direction: column; justify-content: center; padding: 4px 10px;
-  border-radius: 24px; border: 1px solid color-mix(in oklab, var(--primary) 30%, transparent);
+.player-profile-line .game-clock { min-height: 32px; height: 32px; border-radius: 10px; }
+.captured-tray { container-type: inline-size; flex: none; width: 100%; min-width: 0; height: 48px; display: flex; align-items: center; justify-content: center; padding: 2px 8px;
+  border-radius: 18px; border: 1px solid color-mix(in oklab, var(--primary) 30%, transparent);
   background: radial-gradient(ellipse at 50% 30%, var(--board-frame-shade), transparent 75%), linear-gradient(var(--board-frame-tint), var(--board-frame-tint)), url("./assets/wood-dark.jpg") center/cover, var(--wood-frame);
-  box-shadow: inset 0 6px 12px var(--board-frame-shade), inset 0 -2px 3px var(--board-frame-glint), 0 2px 6px var(--board-frame-shade); }
-.captured-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0; line-height: 0; }
-.captured-row { direction: rtl; justify-content: flex-start; align-content: flex-start; row-gap: 0; }
-.captured-row:empty { display: none; }
-.captured-row .piece-img { width: 30px; height: 36px; }
-/* The piece images carry transparent side margins, so each type pulls its box back by that margin. */
-.captured-row > * { --pad: .45; margin-inline: calc(var(--pad) * -15px + .75px); height: 28px; display: grid; place-items: center; }
-.captured-row > [data-type="p"] { --pad: .485; }
-.captured-row > [data-type="b"] { --pad: .50; }
-.captured-row > [data-type="n"] { --pad: .45; }
-.captured-row > [data-type="r"] { --pad: .405; }
-.captured-row > [data-type="q"] { --pad: .06; }
-.captured-row > [data-type="k"] { --pad: .26; }
-.captured-tray { justify-content: center; height: 74px; padding: 4px 10px; }
+  box-shadow: inset 0 5px 9px var(--board-frame-shade), inset 0 -2px 3px var(--board-frame-glint), 0 2px 6px var(--board-frame-shade); }
+.captured-row { direction: rtl; display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); align-items: center; width: 100%; height: 100%; gap: clamp(1px, .45cqi, 3px); line-height: 0; }
+.captured-row > span { display: grid; place-items: center; min-width: 0; height: 100%; overflow: visible; }
+.captured-row .piece-img { width: clamp(28px, 10cqi, 42px); height: clamp(28px, 10cqi, 42px); max-width: none; filter: drop-shadow(0 1px 1px oklch(0 0 0 / 40%)); }
+.captured-row > [data-type="q"] .piece-img { width: clamp(25px, 8.4cqi, 36px); height: clamp(25px, 8.4cqi, 36px); }
 .captured-tray[data-owner="w"] { border-color: color-mix(in oklab, var(--wood-frame-deep) 45%, transparent);
   background: radial-gradient(ellipse at 50% 30%, transparent, color-mix(in oklab, var(--wood-frame-deep) 30%, transparent) 90%), linear-gradient(var(--board-light-tint), var(--board-light-tint)), url("./assets/wood-light.jpg") center/cover;
-  box-shadow: inset 0 6px 12px color-mix(in oklab, var(--wood-frame-deep) 40%, transparent), 0 2px 6px var(--board-frame-shade); }
+  box-shadow: inset 0 5px 9px color-mix(in oklab, var(--wood-frame-deep) 40%, transparent), 0 2px 6px var(--board-frame-shade); }
 .captured-tray[data-owner="b"] { background: radial-gradient(ellipse at 50% 30%, var(--board-frame-shade), transparent 75%), linear-gradient(color-mix(in oklab, var(--ebony) 55%, transparent), color-mix(in oklab, var(--ebony) 55%, transparent)), url("./assets/wood-dark.jpg") center/cover; }
 .captured-new { animation: captured-arrive 0s 1.4s both; }
 @keyframes captured-arrive { from { visibility: hidden; } }

@@ -269,9 +269,9 @@ function Play() {
       </header>
 
       <div className="play-col">
-        <div className="player-top">{card(top)}<CapturedPieces game={game} mine={top} /></div>
+        <div className="player-top"><div className="player-profile-line">{card(top)}</div><CapturedPieces game={game} mine={top} /></div>
         <ChessBoard game={game} orientation={vsAi ? human : "w"} disabled={aiTurn || !!result} lastMove={lastMove} onMove={onBoardMove} />
-        <div className="player-bottom"><CapturedPieces game={game} mine={bottom} />{card(bottom)}</div>
+        <div className="player-bottom"><CapturedPieces game={game} mine={bottom} /><div className="player-profile-line">{card(bottom)}</div></div>
         <AnimatePresence>
           {notice && (
             <motion.div key={notice} className="board-notice" role="status"
