@@ -1,5 +1,11 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Android och språk – full genomgång 19 nov
+- [ ] Skapa och granska Android-projektet, behörigheter, säkerhetsmarginaler och publicerad adress
+- [ ] Kontrollera native-delning, haptik, säker identitet, kamera, annonser, notiser och offlinebygge
+- [ ] Översätt återstående synliga texter och rätta hårdkodade språkberoende sidor
+- [ ] Verifiera samtliga 40 språk, platshållare och centrala mobilflöden
+
 ## Klart
 - [x] Startsida i Yatzy-stil, färgkoder, 3 öppna nivåer, schackklocka, bondeförvandling, remi, ge upp
 - [x] Vibration, konfetti, surfplatta stående/liggande, upp till 3 sparade partier

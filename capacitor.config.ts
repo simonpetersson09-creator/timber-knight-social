@@ -7,7 +7,7 @@ const config: CapacitorConfig = {
   appId: "com.simonpetersson.mrbchess",
   appName: "Mr B Chess",
   webDir: offline ? ".output/public" : "public",
-  server: offline ? undefined : { url: "https://mrbchess.lovable.app", cleartext: false },
+  server: offline ? undefined : { url: "https://timber-knight-social.lovable.app", cleartext: false },
   ios: { contentInset: "never" },
   plugins: { PushNotifications: { presentationOptions: ["badge", "sound", "alert"] } },
 };

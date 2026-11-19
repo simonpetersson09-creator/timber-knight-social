@@ -17,6 +17,9 @@ export const KEYS = [
   "ruleCastling", "ruleCastlingText", "ruleEnPassant", "ruleEnPassantText",
   "rulePromotion", "rulePromotionText", "ruleStalemate", "ruleStalemateText",
   "ruleDraws", "ruleDrawsText", "ruleClocks", "ruleClocksText", "ruleMoves", "ruleMovesText",
+  "notFoundTitle", "notFoundText", "goHome", "loadErrorTitle", "loadErrorText", "tryAgain",
+  "legalSupport", "legalSupportText", "legalPrivacy1", "legalPrivacy2", "legalPrivacy3",
+  "legalTerms", "legalTermsText", "legalAppAdsText",
 ] as const;
 export type Key = (typeof KEYS)[number];
 
