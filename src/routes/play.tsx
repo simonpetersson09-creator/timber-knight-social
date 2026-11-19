@@ -251,7 +251,7 @@ function Play() {
       </header>
 
       <div className="play-col">
-        <div className="player-top">{bar(top)}</div>
+        <div className="player-top">{bar(top)}<CapturedPieces game={game} mine={top} /></div>
         <ChessBoard game={game} orientation={vsAi ? human : "w"} disabled={aiTurn || !!result} lastMove={lastMove} onMove={onBoardMove} />
         <div className="player-bottom"><CapturedPieces game={game} mine={bottom} />{bar(bottom)}</div>
       </div>

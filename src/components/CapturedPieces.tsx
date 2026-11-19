@@ -6,7 +6,6 @@ export function CapturedPieces({ game, mine }: { game: Chess; mine: "w" | "b" })
   const captured = capturedPieces(game);
   const other = mine === "w" ? "b" : "w";
   return <div className="captured-tray">
-    <div className="captured-row">{captured[other].map((type, i) => <Piece key={i} color={mine} type={type} />)}</div>
     <div className="captured-row">{captured[mine].map((type, i) => <Piece key={i} color={other} type={type} />)}</div>
   </div>;
 }
