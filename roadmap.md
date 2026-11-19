@@ -95,3 +95,7 @@
 - [x] Användaren har valt förslag 3 – Djup mahogny
 - [x] Förslag 3 infört på det riktiga spelbrädet; 64 tryckytor, markeringar, drag och båda spelriktningarna verifierade på fem skärmstorlekar
 - [x] Förslag 2 – Sidenmatt infört; 72 tester samt drag, markeringar och 64 tryckytor i båda spelriktningarna verifierade på fem skärmstorlekar
+
+## Pjäsförslag 19 nov
+- [x] Fem materialvarianter skapade som kontrollerade stillbilder för chatten; appens pjäser är orörda
+- [ ] Användaren väljer ett pjäsförslag att införa
