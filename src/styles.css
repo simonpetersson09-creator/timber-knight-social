@@ -100,6 +100,12 @@
   --ring: oklch(0.76 0.14 70);
   --wood-frame: oklch(0.36 0.1 32);
   --wood-frame-deep: oklch(0.2 0.045 40);
+  --board-light: oklch(0.97 0.025 82 / 25%);
+  --board-shade: oklch(0.12 0.025 40 / 55%);
+  --board-bevel: oklch(0.66 0.07 52 / 45%);
+  --board-contact: oklch(0.1 0.02 40 / 65%);
+  --piece-contact: radial-gradient(ellipse, var(--board-contact) 0%, transparent 72%);
+  --piece-shadow: drop-shadow(1px 2px 0.7px var(--board-contact)) drop-shadow(2px 4px 2px var(--board-shade));
   --ebony: oklch(0.16 0.01 50);
   --ebony-shine: oklch(0.42 0.02 50);
   --highlight: oklch(0.82 0.15 95 / 55%);
@@ -151,12 +157,17 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .action-ghost { background: var(--secondary); color: var(--secondary-foreground); border: 1px solid var(--border); }
 .action-btn:disabled { opacity: .55; filter: saturate(.6); }
 
-.board-frame { width: min(94vw, 560px, calc(100dvh - 260px)); min-width: 280px; aspect-ratio: 1; padding: 3.2%;
-  border-radius: 14px; background: url("./assets/wood-dark.jpg") center/cover, var(--wood-frame);
-  box-shadow: var(--shadow-board), inset 0 2px 0 oklch(1 0 0 / 12%), inset 0 -3px 6px oklch(0 0 0 / 40%); }
-.board-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; height: 100%; border-radius: 4px; overflow: hidden;
-  box-shadow: 0 0 0 2px var(--wood-frame-deep), inset 0 0 12px oklch(0 0 0 / 35%); }
-.board-square { position: relative; display: flex; align-items: center; justify-content: center; container-type: size; }
+.board-scene { width: min(90vw, 560px, calc(100dvh - 260px)); min-width: 0; aspect-ratio: 1; isolation: isolate; }
+.board-frame { position: relative; width: 100%; height: 100%; padding: 3.2%; transform: perspective(1100px) rotateX(9deg); transform-origin: center; border-radius: 12px;
+  background: linear-gradient(125deg, var(--board-light), transparent 45%, var(--board-shade)), url("./assets/wood-dark.jpg") center/cover, var(--wood-frame);
+  box-shadow: inset 0 1px 0 var(--board-light), inset 0 3px 2px var(--board-bevel), inset 0 -3px 2px var(--board-shade),
+    0 2px 0 var(--wood-frame), 0 5px 0 var(--wood-frame), 0 8px 0 var(--wood-frame-deep), 0 9px 0 var(--board-contact), var(--shadow-board); }
+.board-frame::after { content: ""; position: absolute; inset: 1.2%; border: 1px solid var(--board-bevel); border-bottom-color: var(--board-shade); border-radius: 8px; pointer-events: none; }
+.board-grid { position: relative; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(8, minmax(0, 1fr)); width: 100%; height: 100%; border-radius: 3px; overflow: hidden;
+  box-shadow: 0 0 0 1px var(--wood-frame-deep), 0 1px 0 2px var(--board-bevel); }
+.board-grid::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(135deg, var(--board-light), transparent 40%, transparent 70%, var(--board-shade)); opacity: .35; box-shadow: inset 0 2px 5px var(--board-shade); pointer-events: none; z-index: 4; }
+.board-square { position: relative; display: flex; align-items: center; justify-content: center; container-type: size; padding: 0; min-width: 0; min-height: 0; touch-action: manipulation; }
+.board-square:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
 .sq-light { background: linear-gradient(oklch(0.9 0.045 80 / 0.7), oklch(0.9 0.045 80 / 0.7)), url("./assets/wood-light.jpg") center/400%; }
 .sq-dark { background: linear-gradient(oklch(0.42 0.1 35 / 0.72), oklch(0.42 0.1 35 / 0.72)), url("./assets/wood-dark.jpg") center/400%; }
 .sq-last::before, .sq-selected::before, .sq-check::before { content: ""; position: absolute; inset: 0; }
@@ -184,9 +195,10 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .seg button { padding: 10px 8px; border-radius: 9px; font-weight: 600; font-size: 14px; color: var(--muted-foreground); transition: all .2s; }
 .seg button[data-active="true"] { background: var(--gradient-gold); color: var(--primary-foreground); box-shadow: var(--shadow-gold); }
 
-.piece-slot { position: relative; z-index: 3; width: 92%; height: 92%; display: flex; }
+.piece-slot { position: relative; z-index: 3; width: 90%; height: 90%; display: flex; pointer-events: none; transform-origin: center 85%; }
+.piece-slot::before { content: ""; position: absolute; left: 14%; right: 10%; bottom: 5%; height: 15%; background: var(--piece-contact); pointer-events: none; }
 .piece-img { display: block; user-select: none; -webkit-user-drag: none; filter: drop-shadow(0 2px 1.5px oklch(0 0 0 / 50%)); }
-.piece-slot .piece-img { width: 100%; height: 100%; }
+.piece-slot .piece-img { position: relative; width: 100%; height: 100%; object-fit: contain; filter: var(--piece-shadow); }
 
 /* ---------- Mr B shared UI ---------- */
 :root {
@@ -252,10 +264,11 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 
 /* Play screen */
 .play-layout { display: flex; flex-direction: column; align-items: center; min-height: 760px; height: 100dvh; padding: calc(16px + env(safe-area-inset-top)) 12px calc(16px + env(safe-area-inset-bottom)); position: relative; }
-.play-col { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(100% - 24px, 560px, calc(100dvh - 390px)); min-width: 280px; }
+.play-col { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(100% - 36px, 560px, calc(100dvh - 390px)); min-width: 0; }
+.play-col .board-scene { width: 100%; }
 .play-col .board-frame { width: 100%; min-width: 0; padding: 3.2%; }
 .player-top { position: absolute; bottom: calc(100% + 12px); left: 0; }
-.player-bottom { position: absolute; top: calc(100% + 12px); right: 0; width: 100%; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.player-bottom { position: absolute; top: calc(100% + 22px); right: 0; width: 100%; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .game-player-card { display: grid; grid-template-columns: 40px minmax(0, 1fr); width: 160px; min-height: 96px; padding: 10px; gap: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); }
 .game-player-card[data-active="you"] { border-color: var(--success); box-shadow: var(--shadow-success); }
 .game-player-card[data-active="opp"] { border-color: var(--primary); box-shadow: var(--shadow-gold); }

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import type { Chess, Square } from "chess.js";
 import { Piece } from "./Piece";
 
@@ -14,6 +14,7 @@ type Props = {
 };
 
 export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Props) {
+  const reduceMotion = useReducedMotion();
   const [selected, setSelected] = useState<Square | null>(null);
   const board = game.board();
   const targets = useMemo(
@@ -41,6 +42,7 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
   }
 
   return (
+    <div className="board-scene">
     <div className="board-frame">
       <div className="board-grid">
         {rows.map((r, ri) =>
@@ -68,9 +70,9 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
                 {p && (
                   <motion.span
                     key={`${sq}-${p.color}${p.type}`}
-                    initial={{ scale: 0.6, opacity: 0 }}
+                    initial={reduceMotion ? false : { scale: 0.85, opacity: 0 }}
                     animate={{ scale: selected === sq ? 1.12 : 1, opacity: 1, y: selected === sq ? -4 : 0 }}
-                    transition={{ type: "spring", stiffness: 420, damping: 24 }}
+                    transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 24 }}
                     className="piece-slot"
                   >
                     <Piece color={p.color} type={p.type} />
@@ -81,6 +83,7 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
           }),
         )}
       </div>
+    </div>
     </div>
   );
 }
