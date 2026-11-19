@@ -285,7 +285,7 @@ function Play() {
 
       <div className="play-side">
         <div className="game-actions">
-          <div className="game-clock-card" aria-label="clock">{clock(top)}{clock(bottom)}</div>
+          <div className="game-clock-card" aria-label="clock">{clock(result ? bottom : game.turn())}</div>
           <span aria-hidden="true" />
           <Button variant="ghost" onClick={offerDraw} disabled={busy || game.history().length < 2 || drawOffers >= MAX_DRAW_OFFERS} className="game-action-button game-action-draw">
             <Handshake className="size-4" /> {t("offerDraw")}
