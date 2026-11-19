@@ -41,7 +41,8 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
 
   // Captured pieces: remember last position so the loser can take a humiliating exit.
   const prevRef = useRef<{ fen: string; pieces: BoardPiece[] }>({ fen: game.fen(), pieces: currentPieces });
-  const [ghosts, setGhosts] = useState<{ key: string; piece: BoardPiece }[]>([]);
+  const [ghosts, setGhosts] = useState<{ key: string; piece: BoardPiece; dx: number; dy: number; scale: number }[]>([]);
+  const layerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const prev = prevRef.current;
     if (prev.fen === game.fen()) return;
@@ -53,8 +54,26 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
     prevRef.current = { fen: game.fen(), pieces: now };
     if (!victim || reduceMotion) return;
     const key = `${victim.square}-${game.fen()}`;
-    setGhosts((g) => [...g, { key, piece: victim }]);
-    const tm = setTimeout(() => setGhosts((g) => g.filter((x) => x.key !== key)), 1500);
+    // Fly to the captor's tray: bottom row when the captor plays from the bottom.
+    const layer = layerRef.current;
+    const lr = layer?.getBoundingClientRect();
+    const ci = cols.indexOf(FILES.indexOf(victim.square.charAt(0)));
+    const ri = rows.indexOf(8 - Number(victim.square.charAt(1)));
+    const bottom = victim.color !== orientation;
+    let dx = 0, dy = (bottom ? 1 : -1) * (lr?.height ?? 300) * 0.6, scale = 0.5;
+    const tray = layer?.closest(".play-col")?.querySelector(bottom ? ".player-bottom .captured-tray" : ".player-top .captured-tray");
+    if (lr && tray) {
+      const tr = tray.getBoundingClientRect();
+      const row = tray.querySelector(".captured-row");
+      const last = row?.lastElementChild?.getBoundingClientRect();
+      const tx = bottom ? tr.right - 13 : last ? last.right + 10 : tr.left + 13;
+      const sq = lr.width / 8;
+      dx = tx - (lr.left + (ci + 0.5) * sq);
+      dy = tr.top + tr.height / 2 - (lr.top + (ri + 0.5) * sq);
+      scale = Math.min(1, 32 / sq);
+    }
+    setGhosts((g) => [...g, { key, piece: victim, dx, dy, scale }]);
+    const tm = setTimeout(() => setGhosts((g) => g.filter((x) => x.key !== key)), 1450);
     return () => clearTimeout(tm);
   }, [game.fen()]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -118,20 +137,18 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
             }),
           )}
         </div>
-        <div className="capture-layer" aria-hidden="true">
-          {ghosts.map(({ key, piece }) => {
+        <div ref={layerRef} className="capture-layer" aria-hidden="true">
+          {ghosts.map(({ key, piece, dx, dy, scale }) => {
             const ci = cols.indexOf(FILES.indexOf(piece.square.charAt(0)));
             const ri = rows.indexOf(8 - Number(piece.square.charAt(1)));
-            // Captor's tray is on the captor's side: bottom when captor matches orientation.
-            const dir = piece.color === orientation ? -1 : 1;
             return (
               <motion.span key={key} className="capture-ghost" style={{ left: `${ci * 12.5}%`, top: `${ri * 12.5}%` }}
-                initial={{ y: 0, rotate: 0, scale: 1, opacity: 1 }}
+                initial={{ x: 0, y: 0, rotate: 0, scale: 1 }}
                 animate={{
-                  y: ["0%", "-55%", "0%", "-25%", "0%", `${dir * 420}%`],
-                  rotate: [0, -12, 10, -6, 0, 540],
-                  scale: [1, 1.1, 0.92, 1.04, 1, 0.45],
-                  opacity: [1, 1, 1, 1, 1, 0],
+                  x: [0, 0, 0, 0, 0, dx],
+                  y: ["0%", "-55%", "0%", "-25%", "0%", `${dy}px`],
+                  rotate: [0, -12, 10, -6, 0, 720],
+                  scale: [1, 1.1, 0.92, 1.04, 1, scale],
                 }}
                 transition={{ duration: 1.4, times: [0, 0.14, 0.3, 0.42, 0.52, 1], ease: "easeInOut" }}>
                 <Piece color={piece.color} type={piece.type} />

@@ -262,7 +262,6 @@ function Play() {
       </div>
 
       <div className="play-side">
-        <div key={status} className="game-status">{status}</div>
         <div className="game-actions">
           <Button variant="ghost" onClick={offerDraw} disabled={busy || game.history().length < 2} className="game-action-button game-action-draw">
             <Handshake className="size-4" /> {t("offerDraw")}
