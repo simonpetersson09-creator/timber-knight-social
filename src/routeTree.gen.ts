@@ -21,6 +21,8 @@ import { Route as OnlineRouteImport } from './routes/online'
 import { Route as PlayRouteImport } from './routes/play'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminDiagramRouteImport } from './routes/admin.diagram'
 import { Route as ApiPublicJobsHourlyRouteImport } from './routes/api/public/jobs/hourly'
 
 const IndexRoute = IndexRouteImport.update({
@@ -83,6 +85,16 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDiagramRoute = AdminDiagramRouteImport.update({
+  id: '/diagram',
+  path: '/diagram',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ApiPublicJobsHourlyRoute = ApiPublicJobsHourlyRouteImport.update({
   id: '/api/public/jobs/hourly',
   path: '/api/public/jobs/hourly',
@@ -92,7 +104,7 @@ const ApiPublicJobsHourlyRoute = ApiPublicJobsHourlyRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/add': typeof AddRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/friends': typeof FriendsRoute
   '/join': typeof JoinRoute
   '/leaderboard': typeof LeaderboardRoute
@@ -102,12 +114,13 @@ export interface FileRoutesByFullPath {
   '/play': typeof PlayRoute
   '/profile': typeof ProfileRoute
   '/settings': typeof SettingsRoute
+  '/admin/diagram': typeof AdminDiagramRoute
+  '/admin/': typeof AdminIndexRoute
   '/api/public/jobs/hourly': typeof ApiPublicJobsHourlyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/add': typeof AddRoute
-  '/admin': typeof AdminRoute
   '/friends': typeof FriendsRoute
   '/join': typeof JoinRoute
   '/leaderboard': typeof LeaderboardRoute
@@ -117,13 +130,15 @@ export interface FileRoutesByTo {
   '/play': typeof PlayRoute
   '/profile': typeof ProfileRoute
   '/settings': typeof SettingsRoute
+  '/admin/diagram': typeof AdminDiagramRoute
+  '/admin': typeof AdminIndexRoute
   '/api/public/jobs/hourly': typeof ApiPublicJobsHourlyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/add': typeof AddRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/friends': typeof FriendsRoute
   '/join': typeof JoinRoute
   '/leaderboard': typeof LeaderboardRoute
@@ -133,6 +148,8 @@ export interface FileRoutesById {
   '/play': typeof PlayRoute
   '/profile': typeof ProfileRoute
   '/settings': typeof SettingsRoute
+  '/admin/diagram': typeof AdminDiagramRoute
+  '/admin/': typeof AdminIndexRoute
   '/api/public/jobs/hourly': typeof ApiPublicJobsHourlyRoute
 }
 export interface FileRouteTypes {
@@ -150,12 +167,13 @@ export interface FileRouteTypes {
     | '/play'
     | '/profile'
     | '/settings'
+    | '/admin/diagram'
+    | '/admin/'
     | '/api/public/jobs/hourly'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/add'
-    | '/admin'
     | '/friends'
     | '/join'
     | '/leaderboard'
@@ -165,6 +183,8 @@ export interface FileRouteTypes {
     | '/play'
     | '/profile'
     | '/settings'
+    | '/admin/diagram'
+    | '/admin'
     | '/api/public/jobs/hourly'
   id:
     | '__root__'
@@ -180,13 +200,15 @@ export interface FileRouteTypes {
     | '/play'
     | '/profile'
     | '/settings'
+    | '/admin/diagram'
+    | '/admin/'
     | '/api/public/jobs/hourly'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AddRoute: typeof AddRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   FriendsRoute: typeof FriendsRoute
   JoinRoute: typeof JoinRoute
   LeaderboardRoute: typeof LeaderboardRoute
@@ -285,6 +307,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/diagram': {
+      id: '/admin/diagram'
+      path: '/diagram'
+      fullPath: '/admin/diagram'
+      preLoaderRoute: typeof AdminDiagramRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/api/public/jobs/hourly': {
       id: '/api/public/jobs/hourly'
       path: '/api/public/jobs/hourly'
@@ -295,10 +331,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminDiagramRoute: typeof AdminDiagramRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminDiagramRoute: AdminDiagramRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AddRoute: AddRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   FriendsRoute: FriendsRoute,
   JoinRoute: JoinRoute,
   LeaderboardRoute: LeaderboardRoute,

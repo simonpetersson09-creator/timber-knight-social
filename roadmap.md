@@ -96,6 +96,13 @@
 - [x] Förslag 3 infört på det riktiga spelbrädet; 64 tryckytor, markeringar, drag och båda spelriktningarna verifierade på fem skärmstorlekar
 - [x] Förslag 2 – Sidenmatt infört; 72 tester samt drag, markeringar och 64 tryckytor i båda spelriktningarna verifierade på fem skärmstorlekar
 
+## Admin- och appjämförelse 19 nov
+- [x] Jämfört Chess loggning och admininloggning med senaste Yatzy
+- [x] Samma adminutseende, sparad adminnyckel, utloggning, 30-dagarstabell, diagram, bästa tider och diagnostik som Yatzy
+- [x] Jämfört Chess med Ludo, Sudoku och Ord; verifierade luckor: lokal native-paketering, native-haptik, säkrare enhetslagring, resultatdelning, retention/push-test i admin, nivåstatistik, regelhjälp och sparade annonsval
+- [x] Riktig admininloggning, 30 dagar, diagram och 84 automatiska tester verifierade
+- Lanseringsluckor att prioritera separat: support@example.com kvar, produktionsannons-ID:n saknas, dataradering behöver felkontroll, integritetstexten behöver kontakt/lagringstider och native-länkar/push/offline kräver enhetstester
+
 ## Pjäsförslag 19 nov
 - [x] Fem materialvarianter skapade som kontrollerade stillbilder för chatten; appens pjäser är orörda
 - [x] Användaren har valt förslag 2 – Elfenben & ebenholts

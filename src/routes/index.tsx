@@ -11,6 +11,7 @@ import { BrandIcon } from "@/components/BrandIcon";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 
 import { displayName } from "@/lib/profile";
+import { report } from "@/lib/report";
 
 import { LanguageSheet } from "@/components/LanguageSheet";
 import { type Level } from "@/lib/engine";
@@ -74,7 +75,10 @@ function Home() {
   function start() {
     // The player always gets the ivory pieces and moves first.
     const g = createGame({ mode: "ai", level, human: "w", clock: CLOCKS[clock] ?? null });
-    if (g) void navigate({ to: "/play", search: { id: g.id } });
+    if (g) {
+      report("play", "local_game_started", JSON.stringify({ game: g.id, level, mode: g.mode }));
+      void navigate({ to: "/play", search: { id: g.id } });
+    }
   }
   function remove(id: string) { deleteGame(id); setGames(listGames()); }
 

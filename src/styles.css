@@ -129,6 +129,16 @@
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
+  --admin-chart-devices: oklch(0.78 0.16 145);
+  --admin-chart-ios: oklch(0.7 0.18 220);
+  --admin-chart-android: oklch(0.7 0.14 155);
+  --admin-chart-played: oklch(0.72 0.17 325);
+  --admin-chart-age: oklch(0.72 0.13 285);
+  --admin-chart-total: oklch(0.9 0.12 90);
+  --admin-chart-cpu: oklch(0.72 0.13 95);
+  --admin-chart-online: oklch(0.68 0.17 235);
+  --admin-chart-forfeits: oklch(0.65 0.2 25);
+  --admin-chart-issues: oklch(0.62 0.19 15);
   --sidebar: var(--card);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);

@@ -1,0 +1,101 @@
+import { ADMIN_START_DAY } from "./admin-period";
+
+export interface AdminDayRow {
+  day: string;
+  devices: number;
+  ios: number;
+  android: number;
+  played: number;
+  avg_app_age_days?: number | null;
+  total: number;
+  cpu_finished: number;
+  online_finished: number;
+  forfeits: number;
+  issues: number;
+  issue_devices?: number;
+  new_players?: number;
+  returning_played?: number;
+  post_match_shown?: number;
+  post_match_opportunities?: number;
+  incomplete_columns?: string[];
+}
+
+export type AdminColumnKey = keyof AdminDayRow;
+
+export function adminReturningShare(row: AdminDayRow): number | null {
+  if (row.returning_played == null || row.played <= 0 || adminValueIncomplete(row, "played") || adminValueIncomplete(row, "returning_played")) return null;
+  return row.returning_played / row.played * 100;
+}
+
+export function adminOnlineOutcomes(row: AdminDayRow): number {
+  return Number(row.online_finished ?? 0) + Number(row.forfeits ?? 0);
+}
+
+export function adminForfeitShare(row: AdminDayRow): number | null {
+  const outcomes = adminOnlineOutcomes(row);
+  return outcomes ? row.forfeits / outcomes * 100 : null;
+}
+
+export function adminValueIncomplete(row: AdminDayRow, key: AdminColumnKey): boolean {
+  return row.incomplete_columns?.includes(key) === true;
+}
+
+export function adminCellValue(row: AdminDayRow, key: AdminColumnKey): number {
+  if (key === "total") return Number(row.cpu_finished ?? 0) + Number(row.online_finished ?? 0);
+  if (key === "ios") return Number(row.ios ?? 0);
+  if (key === "android") return Number(row.android ?? 0);
+  return Number(row[key] ?? 0);
+}
+
+export function adminRollingMean(rows: AdminDayRow[], day: string, key: AdminColumnKey): number | null {
+  const end = Date.parse(`${day}T00:00:00Z`);
+  const start = Math.max(end - 29 * 86_400_000, Date.parse(`${ADMIN_START_DAY}T00:00:00Z`));
+  if (start > end) return null;
+  const expected = Math.round((end - start) / 86_400_000) + 1;
+  const window = rows.filter((row) => {
+    const time = Date.parse(`${row.day}T00:00:00Z`);
+    return time >= start && time <= end;
+  });
+  if (new Set(window.map((row) => row.day)).size !== expected) return null;
+  if (window.some((row) => adminValueIncomplete(row, key) || ((key === "avg_app_age_days" || key === "returning_played") && row[key] == null))) return null;
+  return window.reduce((sum, row) => sum + adminCellValue(row, key), 0) / expected;
+}
+
+export function adminRecordIndexes(rows: AdminDayRow[], keys: AdminColumnKey[]): Partial<Record<AdminColumnKey, number>> {
+  const out: Partial<Record<AdminColumnKey, number>> = {};
+  for (const key of keys) {
+    if (rows.some((row) => adminValueIncomplete(row, key))) { out[key] = -1; continue; }
+    let best = -1;
+    let bestValue = 0;
+    rows.forEach((row, index) => {
+      const value = adminCellValue(row, key);
+      if (value > bestValue) { bestValue = value; best = index; }
+    });
+    out[key] = best;
+  }
+  return out;
+}
+
+export type StarPoint = { key: AdminColumnKey; day: string; x: number; y: number; lane: number };
+
+export function buildRibbon(pts: StarPoint[]): string {
+  if (pts.length < 2) return "";
+  const f = (n: number) => n.toFixed(1);
+  let d = `M ${f(pts[0]!.x)} ${f(pts[0]!.y)}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i]!, b = pts[i + 1]!, lane = a.lane;
+    const dx = b.x - a.x, dy1 = lane - a.y, dy2 = b.y - lane;
+    const r = Math.max(0, Math.min(14, Math.abs(dy1) / 2, Math.abs(dx) / 2, Math.abs(dy2) / 2));
+    if (Math.abs(dx) < 1 || r < 3) {
+      d += ` L ${f(a.x)} ${f(lane)} L ${f(b.x)} ${f(lane)} L ${f(b.x)} ${f(b.y)}`;
+      continue;
+    }
+    const sx = Math.sign(dx);
+    d += ` L ${f(a.x)} ${f(lane - Math.sign(dy1) * r)}` +
+      ` Q ${f(a.x)} ${f(lane)} ${f(a.x + sx * r)} ${f(lane)}` +
+      ` L ${f(b.x - sx * r)} ${f(lane)}` +
+      ` Q ${f(b.x)} ${f(lane)} ${f(b.x)} ${f(lane + Math.sign(dy2) * r)}` +
+      ` L ${f(b.x)} ${f(b.y)}`;
+  }
+  return d;
+}
