@@ -99,3 +99,7 @@
 ## Pjäsförslag 19 nov
 - [x] Fem materialvarianter skapade som kontrollerade stillbilder för chatten; appens pjäser är orörda
 - [ ] Användaren väljer ett pjäsförslag att införa
+
+## Toppvy för pjäser 19 nov
+- [x] Tre toppvyförslag skapade och visuellt kontrollerade i båda pjäsfärgerna; appen är orörd
+- [ ] Användaren väljer toppvy eller behåller sidovyn
