@@ -1,3 +1,4 @@
+import { setPlayerWord } from "@/lib/profile";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { LANGUAGES, type Key } from "./keys";
 import { translate } from "./translate";
@@ -35,7 +36,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     setChoice(l);
     setLangState(l === "auto" ? resolveDeviceLang(navigator.languages ?? [navigator.language]) : l);
   }, []);
-  const value = useMemo<Ctx>(() => ({ lang, choice, setLang, t: (k, p) => translate(lang, k, p) }), [lang, choice, setLang]);
+  const value = useMemo<Ctx>(() => { setPlayerWord(translate(lang, "playerN")); return { lang, choice, setLang, t: (k, p) => translate(lang, k, p) }; }, [lang, choice, setLang]);
   return <I18n.Provider value={value}>{children}</I18n.Provider>;
 }
 

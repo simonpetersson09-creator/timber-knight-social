@@ -5,7 +5,7 @@ import { Cred, PLAYER_COLS as COLS, auth, db, sha256 as hash } from "./server/co
 
 export const registerPlayer = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Cred.extend({
-    platform: z.enum(["ios", "android", "web"]).default("web"), tz: z.string().max(60).nullable().default(null), lang: z.string().max(8).default("en"),
+    platform: z.enum(["ios", "android", "web"]).default("web"), tz: z.string().max(60).nullable().default(null), lang: z.string().max(8).default("en"), country: z.string().length(2).nullable().default(null),
   }).parse(d))
   .handler(async ({ data }) => {
     const a = await db();
@@ -16,6 +16,7 @@ export const registerPlayer = createServerFn({ method: "POST" })
     }
     const { a: a2, me } = await auth(data);
     await a2.from("players").update({ platform: data.platform, tz: data.tz, lang: data.lang }).eq("id", me);
+    if (data.country) await a2.from("players").update({ country: data.country }).eq("id", me).is("country", null);
     await a2.from("app_days").upsert({ player: me, day: new Date().toISOString().slice(0, 10), platform: data.platform }, { onConflict: "player,day", ignoreDuplicates: true });
     const { data: p } = await a2.from("players").select(`${COLS}, notify, notify_turn, notify_reminders, notify_play`).eq("id", me).single();
     return p!;
@@ -26,7 +27,7 @@ export const updateProfile = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { a, me } = await auth(data);
     let name: string | null;
-    try { name = cleanName(data.name); } catch { return { error: "too_long" as const }; }
+    try { name = cleanName(data.name); } catch (e) { return { error: (e instanceof Error && e.message === "taken" ? "taken" : "too_long") as "taken" | "too_long" }; }
     const { error } = await a.from("players").update({ name, ...(data.avatar && !data.avatar.startsWith("photo:") ? { avatar: data.avatar } : {}), country: data.country }).eq("id", me);
     if (error) return { error: error.code === "23505" ? ("taken" as const) : ("failed" as const) };
     return { error: null };

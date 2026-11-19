@@ -1,8 +1,8 @@
 import { PlayerAvatar } from "@/components/PlayerAvatar";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
-import { Check, Copy, Share2, X } from "lucide-react";
+import { Check, Copy, Send, Share2, X } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { PageHeader } from "@/components/PageHeader";
@@ -10,6 +10,7 @@ import { useMe } from "@/hooks/use-me";
 import { useI18n } from "@/lib/i18n";
 import { getCred } from "@/lib/identity";
 import { getFriends, respondFriend, sendFriendRequest } from "@/lib/players.functions";
+import { inviteFriend } from "@/lib/online.functions";
 import { displayName, flagOf, isOnline } from "@/lib/profile";
 
 export const Route = createFileRoute("/friends")({
@@ -37,6 +38,11 @@ function FriendsPage() {
   const [code, setCode] = useState(linkCode ?? "");
   const [qr, setQr] = useState("");
   const sentLink = useRef(false);
+  const navigate = useNavigate();
+  async function invite(friend: string) {
+    try { const r = await inviteFriend({ data: { ...getCred(), friend } }); await navigate({ to: "/match", search: { id: r.id } }); }
+    catch { toast.error(t("error")); }
+  }
 
   const refresh = useCallback(() => { getFriends({ data: getCred() }).then(setRows).catch(() => {}); }, []);
   useEffect(() => { if (!me) return; refresh(); const i = setInterval(refresh, 30_000); return () => clearInterval(i); }, [me, refresh]);
@@ -104,6 +110,7 @@ function FriendsPage() {
         {friends.length === 0 && <p className="py-2 text-center text-sm text-muted-foreground">{t("noFriends")}</p>}
         {friends.map((r) => (
           <PlayerRow key={r.id} r={r} showStats>
+            <button className="icon-btn icon-ok" aria-label={t("inviteFriend")} onClick={() => void invite(r.player.id)}><Send className="size-4" /></button>
             <button className="icon-btn" aria-label={t("remove")} onClick={() => { if (confirm(`${t("remove")} ${displayName(r.player)}?`)) void act(r.id, "remove"); }}><X className="size-4" /></button>
           </PlayerRow>
         ))}

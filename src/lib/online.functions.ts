@@ -14,9 +14,9 @@ async function playerName(a: DB, id: string) {
   const { data } = await a.from("players").select("name, player_number").eq("id", id).maybeSingle();
   return nameOf(data);
 }
-/** Starts a waiting game with random colours. */
+/** Starts a waiting game: the inviting host always gets the mahogany (white) pieces. */
 async function start(a: DB, gameId: string, host: string, guest: string) {
-  const hostWhite = Math.random() < 0.5;
+  const hostWhite = true;
   const { data } = await a.from("games").update({
     status: "active", white: hostWhite ? host : guest, black: hostWhite ? guest : host, invitee: guest,
     last_move_at: new Date().toISOString(), expires_at: later(MOVE_LIMIT_MS), updated_at: new Date().toISOString(),

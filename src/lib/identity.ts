@@ -1,5 +1,6 @@
 import { registerPlayer } from "./players.functions";
 import { platform } from "./native";
+import { guessCountry } from "./profile";
 const K = "mrbchess.identity.v1";
 export type Cred = { id: string; secret: string };
 /** Anonymous device identity – no login. Created once, kept in device storage. */
@@ -15,7 +16,7 @@ export function loadMe(fresh = false): Promise<Me> {
   if (!cached || fresh) {
     const tz = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return null; } })();
     const lang = document.documentElement.lang || "en";
-    cached = registerPlayer({ data: { ...getCred(), platform: platform(), tz, lang } });
+    cached = registerPlayer({ data: { ...getCred(), platform: platform(), tz, lang, country: guessCountry(navigator.languages ?? [navigator.language], tz) } });
     cached.catch(() => { cached = null; });
   }
   return cached;

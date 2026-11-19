@@ -209,13 +209,23 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .home-tile-label { font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted-foreground); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .round-label { font-size: 8px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; line-height: 1; color: color-mix(in oklab, var(--primary) 60%, transparent); }
 
-.game-card { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 6px 0 12px; border-radius: 10px; font-weight: 700; font-size: 14px; line-height: 1.15; overflow: hidden; transition: box-shadow .2s; }
+.game-card { width: 100%; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 10px 0 12px; border-radius: 10px; overflow: hidden; text-align: left; font-family: var(--font-display); transition: box-shadow .2s, filter .2s; }
+.game-card:active { filter: brightness(.96); }
 .card-you { background: var(--gradient-success); color: var(--primary-foreground); box-shadow: var(--shadow-success); }
-.card-opp { background: var(--gradient-gold); color: var(--primary-foreground); box-shadow: var(--shadow-gold); }
+.card-opp { background: var(--gradient-gold); color: var(--background); box-shadow: var(--shadow-gold); }
 .card-invite { background: var(--gradient-invite); color: var(--foreground); box-shadow: 0 4px 16px color-mix(in oklab, var(--invite) 30%, transparent); }
-.card-chip { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 7px; font-size: 13px; background: var(--background); color: var(--foreground); }
+.card-link { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; height: 100%; }
+.card-chip { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 7px; font-size: 13px; overflow: hidden; background: var(--background); color: var(--foreground); }
 .card-chip > svg { width: 12px; height: 12px; }
-.card-x { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 7px; background: oklch(0 0 0 / 14%); }
+.card-chip-light { background: oklch(1 0 0 / 22%); color: var(--foreground); }
+.card-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+.card-name { display: block; font-size: 11px; font-weight: 700; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-sub { display: flex; align-items: center; gap: 4px; font-size: 8px; line-height: 1; opacity: .9; white-space: nowrap; overflow: hidden; }
+.card-dot { width: 4px; height: 4px; border-radius: 9999px; background: currentColor; flex-shrink: 0; animation: pulse 2s infinite; }
+.card-pill { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: auto !important; min-height: 0; font-family: inherit; font-size: 8px !important; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; line-height: 1; padding: 4px 8px !important; border-radius: 9999px !important; background: var(--background) !important; color: var(--foreground) !important; transition: transform .15s; }
+.card-pill > svg { width: 10px !important; height: 10px !important; }
+.card-pill:active { transform: scale(.95); }
+.card-pill-action { background: var(--gradient-gold) !important; color: var(--primary-foreground) !important; }
 .round-btn { display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 9999px; background: var(--gradient-gold); color: var(--primary-foreground); box-shadow: var(--shadow-gold); transition: transform .15s, filter .2s; }
 .round-btn:active { transform: scale(.94); }
 .round-btn:disabled { filter: saturate(.3); opacity: .55; }
@@ -310,3 +320,24 @@ body { overscroll-behavior-y: contain; }
 .page-screen > header h1 { font-family: var(--font-display); font-size: 24px; background: none; color: var(--foreground); filter: none; text-transform: none; letter-spacing: 0; }
 .lobby-section { padding-block: 20px; border-bottom: 1px solid var(--border); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* "Spela med vän": two cards, same layout as Mr B Yatzy */
+.lobby-card { padding: 16px; border-radius: 16px; display: flex; flex-direction: column; gap: 12px; border: 1px solid; }
+.lobby-card-create { background: color-mix(in oklab, var(--primary) 10%, transparent); border-color: color-mix(in oklab, var(--primary) 30%, transparent); --lc: var(--primary); }
+.lobby-card-join { background: color-mix(in oklab, var(--accent) 10%, transparent); border-color: color-mix(in oklab, var(--accent) 30%, transparent); --lc: var(--accent); }
+.lobby-card-icon { width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: color-mix(in oklab, var(--lc) 20%, transparent); color: var(--lc); }
+.lobby-card-icon > svg { width: 20px; height: 20px; }
+.lobby-card-title { font-family: var(--font-display); font-weight: 700; font-size: 16px; }
+.lobby-card-hint { font-size: 12px; line-height: 1.35; color: var(--muted-foreground); }
+.lobby-btn { width: 100%; padding: 14px 0; border-radius: 12px; font-family: var(--font-display); font-weight: 700; font-size: 18px; transition: background .2s; }
+.lobby-btn:disabled { opacity: .55; }
+.lobby-btn-create { background: var(--primary); color: var(--primary-foreground); box-shadow: var(--shadow-gold); }
+.lobby-btn-join { background: var(--secondary); color: var(--muted-foreground); border: 1px solid color-mix(in oklab, var(--border) 50%, transparent); }
+.lobby-btn-join[data-ready="true"] { background: var(--accent); color: var(--accent-foreground); border-color: transparent; box-shadow: var(--shadow-blue); opacity: 1; }
+.lobby-friends-link { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--primary); }
+.lobby-friends-link:active { opacity: .7; }
+.lobby-code-input { flex: 1; min-width: 0; padding: 12px; border-radius: 12px; background: var(--secondary); color: var(--foreground); border: 1px solid color-mix(in oklab, var(--border) 50%, transparent); font-family: var(--font-display); font-weight: 700; font-size: 20px; letter-spacing: .3em; text-align: center; text-transform: uppercase; outline: none; }
+.lobby-code-input:focus { border-color: color-mix(in oklab, var(--accent) 60%, transparent); }
+.lobby-code-input::placeholder { color: color-mix(in oklab, var(--muted-foreground) 40%, transparent); }
+.lobby-scan { padding: 8px 12px; border-radius: 12px; background: var(--secondary); border: 1px solid color-mix(in oklab, var(--border) 50%, transparent); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--accent); }
+.lobby-scan > span { font-size: 10px; font-weight: 600; color: var(--muted-foreground); }

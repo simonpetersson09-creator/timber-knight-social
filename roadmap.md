@@ -72,3 +72,10 @@
 - [ ] Butikslänkar när appen finns i App Store/Google Play
 - [ ] Bygga iOS/Android-paket på dator (Xcode/Android Studio) efter publicering
 - [ ] Riktig app-ads.txt-rad och supportmejl på juridiksidan
+
+## Runda 19 nov
+- [x] Standardnamn "Spelare 1234", unika namn, land väljs automatiskt
+- [x] Drottning bredvid kungen i ikonen
+- [x] Snabbspel: 3 nivåer + förklarad schackklocka, inget pjäsval (värd/spelare = mahogny)
+- [x] Startsidans kort och Spela med vän-sidan som Yatzy
+- [x] Inställningar: inget ljud, inga spelade/vinster; profilbild verifierad

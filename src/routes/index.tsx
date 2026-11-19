@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Bot, Globe, Lock, Settings, Users, UserPlus, X, Cpu, Infinity as InfinityIcon, Trophy, ChevronDown, Gamepad2, Percent, Handshake, Flame } from "lucide-react";
+import { Bot, Globe, Settings, Users, UserPlus, X, Cpu, Infinity as InfinityIcon, Trophy, ChevronDown, Gamepad2, Percent, Handshake, Flame, Play, Send, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { getCred } from "@/lib/identity";
 import { useMe } from "@/hooks/use-me";
@@ -13,9 +13,8 @@ import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { displayName } from "@/lib/profile";
 
 import { LanguageSheet } from "@/components/LanguageSheet";
-import { LEVELS, type Level } from "@/lib/engine";
+import { type Level } from "@/lib/engine";
 import { useI18n } from "@/lib/i18n";
-import { UNLOCK, isUnlocked } from "@/lib/progress";
 import {
   CLOCKS, MAX_SAVED, clockLabel, createGame, deleteGame, getStats, listGames, turnOf,
   type SavedGame, type Stats,
@@ -35,6 +34,8 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
+const QUICK_LEVELS = ["beginner", "medium", "hard"] as const satisfies readonly Level[];
+
 const item = { hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0 } };
 
 function Home() {
@@ -45,9 +46,8 @@ function Home() {
   const [open, setOpen] = useState<"ai" | null>(null);
   const { me } = useMe();
   const [online, setOnline] = useState<OnlineRow[]>([]);
-  const [level, setLevel] = useState<Level>("easy");
+  const [level, setLevel] = useState<Level>("beginner");
   const [clock, setClock] = useState(0);
-  const [color, setColor] = useState<"w" | "b" | "r">("w");
   const [langOpen, setLangOpen] = useState(false);
   const [more, setMore] = useState(false);
 
@@ -55,7 +55,6 @@ function Home() {
     setGames(listGames());
     const s = getStats();
     setStats(s);
-    setLevel([...LEVELS].reverse().find((l) => isUnlocked(l, s.levelWins)) ?? "easy");
   }, []);
 
   useEffect(() => {
@@ -72,17 +71,14 @@ function Home() {
   async function decline(id: string) { await cancelGame({ data: { ...getCred(), gameId: id } }); setOnline((o) => o.filter((x) => x.id !== id)); }
 
   const full = games.length >= MAX_SAVED;
-  const unlocked = (l: Level) => isUnlocked(l, stats?.levelWins ?? {});
-
-  function start(mode: "ai" | "local") {
-    const human = mode === "local" ? "w" : color === "r" ? (Math.random() < 0.5 ? "w" : "b") : color;
-    const g = createGame({ mode, level, human, clock: CLOCKS[clock] ?? null });
+  function start() {
+    // The player always gets the mahogany pieces and moves first.
+    const g = createGame({ mode: "ai", level, human: "w", clock: CLOCKS[clock] ?? null });
     if (g) void navigate({ to: "/play", search: { id: g.id } });
   }
   function remove(id: string) { deleteGame(id); setGames(listGames()); }
 
   const winRate = stats && stats.played ? Math.round((stats.wins / stats.played) * 100) : 0;
-  const req = UNLOCK[level];
 
   return (
     <main className="relative flex min-h-dvh flex-col items-center overflow-x-hidden px-6 pt-[calc(28px+env(safe-area-inset-top))] pb-[calc(28px+env(safe-area-inset-bottom))]">
@@ -123,27 +119,13 @@ function Home() {
               <Expand>
                 <p className="field-label">{t("level")}</p>
                 <div className="level-grid">
-                  {LEVELS.map((l) => (
-                    <Button variant="ghost" key={l} className="level-btn" data-active={level === l} data-locked={!unlocked(l)} onClick={() => setLevel(l)}>
-                      {!unlocked(l) && <Lock className="mr-1 inline size-3" />}{t(l)}
-                    </Button>
+                  {QUICK_LEVELS.map((l) => (
+                    <Button variant="ghost" key={l} className="level-btn" data-active={level === l} onClick={() => setLevel(l)}>{t(l)}</Button>
                   ))}
                 </div>
-                {!unlocked(level) && req.after && (
-                  <p className="text-center text-xs text-muted-foreground">
-                    {t("unlockHint", { n: req.wins, level: t(req.after) })} · {stats?.levelWins[req.after] ?? 0}/{req.wins}
-                  </p>
-                )}
                 <ClockPicker value={clock} onChange={setClock} />
-                <p className="field-label">{t("yourPieces")}</p>
-                <div className="seg">
-                  {(["w", "b", "r"] as const).map((c) => (
-                    <Button variant="ghost" key={c} data-active={color === c} onClick={() => setColor(c)}>
-                      {{ w: t("wood"), b: t("black"), r: t("random") }[c]}
-                    </Button>
-                  ))}
-                </div>
-                <StartButton full={full} disabled={!unlocked(level)} onClick={() => start("ai")} />
+                <p className="text-center text-xs text-muted-foreground">{t("youGetMahogany")}</p>
+                <StartButton full={full} onClick={start} />
               </Expand>
             )}
           </AnimatePresence>
@@ -191,21 +173,32 @@ type OnlineRow = Awaited<ReturnType<typeof myOnline>>[number];
 
 function OnlineCard({ g, onAccept, onDecline }: { g: OnlineRow; onAccept: () => void; onDecline: () => void }) {
   const { t } = useI18n();
-  const name = g.opponent ? displayName(g.opponent) : g.kind === "lobby" ? `${t("lobby")} ${g.code ?? ""}` : "…";
+  const name = g.opponent ? displayName(g.opponent) : "…";
   if (g.role === "invited") return (
     <div className="game-card card-invite">
       <span className="card-chip"><PlayerAvatar avatar={g.opponent?.avatar} /></span>
-      <span className="min-w-0 flex-1"><span className="block truncate">{t("invitedBy", { name })}</span></span>
-      <Button variant="ghost" className="icon-btn icon-ok" aria-label={t("accept")} onClick={onAccept}>✓</Button>
-      <Button variant="ghost" className="card-x" aria-label={t("decline")} onClick={onDecline}><X className="size-4" /></Button>
+      <span className="card-body"><span className="card-name">{t("invitedBy", { name })}</span>
+        <span className="card-sub"><span className="card-dot" />{t("inviteValid")}</span></span>
+      <Button variant="ghost" className="card-pill card-pill-action" onClick={onAccept}>{t("accept")}</Button>
+      <Button variant="ghost" className="card-pill" aria-label={t("decline")} onClick={onDecline}><X /></Button>
     </div>
   );
-  const cls = g.role === "host" ? "card-invite" : g.myTurn ? "card-you" : "card-opp";
-  const label = g.role === "host" ? t("waitingFor", { name }) : g.myTurn ? t("yourTurn") : t("opponentTurn");
+  if (g.role === "host") return (
+    <div className="game-card card-invite">
+      <Link to="/match" search={{ id: g.id }} className="card-link">
+        <span className="card-chip">{g.kind === "lobby" ? <Users /> : <Send />}</span>
+        <span className="card-body"><span className="card-name">{g.kind === "lobby" ? t("lobbyOpen", { code: g.code ?? "" }) : name}</span>
+          <span className="card-sub"><span className="card-dot" />{g.kind === "lobby" ? `${t("waitingShort")}…` : t("waitingFor", { name })}</span></span>
+      </Link>
+      <Button variant="ghost" className="card-pill" onClick={onDecline}>{g.kind === "lobby" ? t("close") : t("cancel")}</Button>
+    </div>
+  );
   return (
-    <Link to="/match" search={{ id: g.id }} className={`game-card ${cls}`}>
-      <span className="card-chip"><PlayerAvatar avatar={g.opponent?.avatar} /></span>
-      <span className="min-w-0 flex-1"><span className="block truncate">{label}</span><span className="block truncate text-xs font-medium opacity-80">{name}</span></span>
+    <Link to="/match" search={{ id: g.id }} className={`game-card ${g.myTurn ? "card-you" : "card-opp"}`}>
+      <span className={`card-chip${g.myTurn ? " card-chip-light" : ""}`}><Play /></span>
+      <span className="card-body"><span className="card-name">{name}</span>
+        <span className="card-sub"><Clock className="size-2.5" />{g.myTurn ? t("yourTurn") : t("opponentTurn")}</span></span>
+      <span className={g.myTurn ? "card-pill card-pill-action animate-pulse" : "card-pill"}>{g.myTurn ? t("yourTurn") : t("waitingShort")}</span>
     </Link>
   );
 }
@@ -230,17 +223,17 @@ function ClockPicker({ value, onChange }: { value: number; onChange: (i: number)
           </Button>
         ))}
       </div>
-      {value === 0 && <p className="-mt-1 text-center text-xs text-muted-foreground">{t("noClock")}</p>}
+      <p className="-mt-1 text-center text-xs text-muted-foreground">{t(`clockDesc${value}` as "clockDesc0")}</p>
     </>
   );
 }
 
-function StartButton({ full, disabled, onClick }: { full: boolean; disabled?: boolean; onClick: () => void }) {
+function StartButton({ full, onClick }: { full: boolean; onClick: () => void }) {
   const { t } = useI18n();
   return (
     <>
       {full && <p className="text-center text-xs text-destructive">{t("maxSaved")}</p>}
-      <Button variant="ghost" className="action-btn action-gold" disabled={full || disabled} onClick={onClick}>{t("start")}</Button>
+      <Button variant="ghost" className="action-btn action-gold" disabled={full} onClick={onClick}>{t("start")}</Button>
     </>
   );
 }
@@ -251,23 +244,16 @@ function Tile({ icon: Icon, n, l }: { icon: typeof Trophy; n: number | string; l
 
 function GameCard({ g, onDelete }: { g: SavedGame; onDelete: () => void }) {
   const { t } = useI18n();
-  const turn = turnOf(g.pgn);
-  const yours = g.mode === "local" || turn === g.human;
-  const label = g.mode === "ai"
-    ? (yours ? t("yourTurn") : t("computerTurn"))
-    : t("toMove", { side: turn === "w" ? t("wood") : t("black") });
+  const yours = turnOf(g.pgn) === g.human;
   return (
     <div className={`game-card ${yours ? "card-you" : "card-opp"}`}>
-      <Link to="/play" search={{ id: g.id }} className="flex h-full min-w-0 flex-1 items-center gap-3 text-left active:scale-[0.98]">
-        <span className="card-chip">{g.mode === "ai" ? <Cpu className="size-5" /> : <Users className="size-5" />}</span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate">{label}</span>
-          <span className="block truncate text-xs font-medium opacity-80">
-            {g.mode === "ai" ? `${t("computer")} · ${t(g.level)}` : t("twoPlayers")}{g.clock ? ` · ${clockLabel(g.clock)}` : ""}
-          </span>
-        </span>
+      <Link to="/play" search={{ id: g.id }} className="card-link">
+        <span className={`card-chip${yours ? " card-chip-light" : ""}`}><Cpu /></span>
+        <span className="card-body"><span className="card-name">{t("computer")} · {t(g.level)}</span>
+          <span className="card-sub"><Clock className="size-2.5" />{g.clock ? clockLabel(g.clock) : t("noClock")}</span></span>
+        <span className={yours ? "card-pill card-pill-action animate-pulse" : "card-pill"}>{yours ? t("yourTurn") : t("computerTurn")}</span>
       </Link>
-      <Button variant="ghost" className="card-x" aria-label={t("delete")} onClick={onDelete}><X className="size-4" /></Button>
+      <Button variant="ghost" className="card-pill" aria-label={t("delete")} onClick={onDelete}><X /></Button>
     </div>
   );
 }

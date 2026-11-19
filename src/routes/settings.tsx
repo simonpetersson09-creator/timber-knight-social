@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Camera, User, Globe, ChevronRight, Volume2, Vibrate, Bell, BellRing, Gamepad2, ShieldCheck, Trash2, Check } from "lucide-react";
+import { Camera, User, Globe, ChevronRight, Vibrate, Bell, BellRing, Gamepad2, ShieldCheck, Trash2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -21,7 +21,7 @@ import { photoToJpeg } from "@/lib/photo";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [
-    { title: "Inställningar – Mr B Chess" }, { name: "description", content: "Ändra namn, profilbild, land, språk, ljud, notiser och annonsval i Mr B Chess." },
+    { title: "Inställningar – Mr B Chess" }, { name: "description", content: "Ändra namn, profilbild, land, språk, notiser och annonsval i Mr B Chess." },
     { property: "og:title", content: "Inställningar – Mr B Chess" }, { property: "og:description", content: "Din profil och dina spelinställningar i Mr B Chess." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
   ] }), component: SettingsPage,
@@ -102,13 +102,10 @@ function SettingsPage() {
     </Section>
     <Section title={t("gameSettings")}><div className="settings-rows">
       <Button variant="ghost" className="settings-row" onClick={() => setLangOpen(true)}><Globe /><span>{t("language")}</span><span className="row-value">{langName}</span><ChevronRight /></Button>
-      <label className="settings-row"><Volume2 className="size-4" /><span className="flex-1">{t("sound")}</span><Switch aria-label={t("sound")} checked={s?.sound ?? true} onCheckedChange={(v) => update({ sound: v })} /></label>
       <label className="settings-row"><Vibrate className="size-4" /><span className="flex-1">{t("haptics")}</span><Switch aria-label={t("haptics")} checked={s?.haptics ?? true} onCheckedChange={(v) => update({ haptics: v })} /></label>
     </div></Section>
     <Section title={t("notifications")}><div className="settings-rows">{notificationRows.map(([key, Icon, label]) => <label key={key} className="settings-row"><Icon className="size-4" /><span className="flex-1">{t(label)}</span><Switch aria-label={t(label)} disabled={!me || (key !== "notify" && !prefs.notify)} checked={prefs[key]} onCheckedChange={(v) => void toggleNotify(key, v)} /></label>)}</div></Section>
     <Section title={t("stats")}><div className="settings-rows">
-      <div className="settings-row"><Gamepad2 /><span>{t("played")}</span><span className="row-value">{stats?.played ?? 0}</span></div>
-      <div className="settings-row"><Check /><span>{t("wins")}</span><span className="row-value">{stats?.wins ?? 0}</span></div>
       <Button variant="ghost" className="settings-row text-destructive" onClick={() => setConfirm(true)}><Trash2 />{t("resetStats")}</Button>
     </div></Section>
     <Section title={t("adChoices")}><div className="settings-rows"><Button variant="ghost" className="settings-row" onClick={async () => { if (!isNative() || !(await openAdChoices())) toast(t("adChoicesApp")); }}><ShieldCheck /><span className="flex-1">{t("adChoices")}</span><ChevronRight /></Button></div></Section>

@@ -1,4 +1,6 @@
 import { getSettings } from "./storage";
+/** Sound is switched off app-wide for now; only vibration is used. */
+const SOUND_ENABLED = false;
 
 let ctx: AudioContext | null = null;
 function ac() {
@@ -27,7 +29,7 @@ function tone(freq: number, delay: number, dur: number, gain = 0.12) {
 export type Fx = "move" | "capture" | "check" | "win" | "lose" | "draw";
 export function feedback(kind: Fx) {
   const s = getSettings();
-  if (s.sound) {
+  if (SOUND_ENABLED && s.sound) {
     try {
       if (kind === "move") knock(900, 0.09, 1.4);
       if (kind === "capture") { knock(500, 0.12, 1.8); knock(1100, 0.06, 0.8, 0.04); }
