@@ -1,6 +1,6 @@
 import type { Color, PieceSymbol, Square } from "chess.js";
 
-export const AI_MOVE_DELAY_MS = 900;
+export const AI_MOVE_DELAY_MS = 1800;
 
 export type BoardPiece = { square: Square; color: Color; type: PieceSymbol };
 export type PieceIds = Partial<Record<Square, string>>;

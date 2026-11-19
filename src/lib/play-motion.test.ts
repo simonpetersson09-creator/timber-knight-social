@@ -12,8 +12,8 @@ function factory() {
 }
 
 describe("play motion", () => {
-  it("gives the computer a 900 ms pause before calculating", () => {
-    expect(AI_MOVE_DELAY_MS).toBe(900);
+  it("gives the computer an 1800 ms pause before calculating", () => {
+    expect(AI_MOVE_DELAY_MS).toBe(1800);
   });
 
   it("keeps the moved pawn identity and all untouched identities", () => {

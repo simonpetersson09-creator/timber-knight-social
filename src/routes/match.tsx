@@ -210,9 +210,9 @@ function Match() {
         <button className="action-ghost flex size-10 items-center justify-center rounded-full" aria-label={t("quickChat")} disabled={g.status !== "active"} onClick={() => setAsk("chat")}><MessageCircle className="size-5" /></button>
       </header>
       <div className="play-col relative">
-        <div className="player-top">{card(oppId, myColor === "w" ? "b" : "w")}{clock(myColor === "w" ? "b" : "w")}<CapturedPieces game={game} mine={myColor === "w" ? "b" : "w"} /></div>
+        <div className="player-top">{card(oppId, myColor === "w" ? "b" : "w")}<CapturedPieces game={game} mine={myColor === "w" ? "b" : "w"} />{clock(myColor === "w" ? "b" : "w")}</div>
         <ChessBoard game={game} orientation={myColor} disabled={!myTurn} lastMove={(() => { const h = game.history({ verbose: true }); const l = h[h.length - 1]; return l ? { from: l.from, to: l.to } : null; })()} onMove={onBoardMove} />
-        <div className="player-bottom"><CapturedPieces game={game} mine={myColor} />{clock(myColor)}{card(me, myColor)}</div>
+        <div className="player-bottom">{clock(myColor)}<CapturedPieces game={game} mine={myColor} />{card(me, myColor)}</div>
         {bubble && <div className="chat-bubble" data-mine={bubble.mine}>{bubble.text}</div>}
       </div>
       <div className="play-side">

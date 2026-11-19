@@ -256,9 +256,9 @@ function Play() {
       </header>
 
       <div className="play-col">
-        <div className="player-top">{card(top)}{clock(top)}<CapturedPieces game={game} mine={top} /></div>
+        <div className="player-top">{card(top)}<CapturedPieces game={game} mine={top} />{clock(top)}</div>
         <ChessBoard game={game} orientation={vsAi ? human : "w"} disabled={aiTurn || !!result} lastMove={lastMove} onMove={onBoardMove} />
-        <div className="player-bottom"><CapturedPieces game={game} mine={bottom} />{clock(bottom)}{card(bottom)}</div>
+        <div className="player-bottom">{clock(bottom)}<CapturedPieces game={game} mine={bottom} />{card(bottom)}</div>
       </div>
 
       <div className="play-side">
