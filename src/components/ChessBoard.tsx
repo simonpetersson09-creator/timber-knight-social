@@ -71,7 +71,7 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
                   <motion.span
                     key={`${sq}-${p.color}${p.type}`}
                     initial={reduceMotion ? false : { scale: 0.85, opacity: 0 }}
-                    animate={{ scale: selected === sq ? 1.12 : 1, opacity: 1, y: selected === sq ? -4 : 0 }}
+                    animate={{ scale: selected === sq ? 1.06 : 1, opacity: 1 }}
                     transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 24 }}
                     className="piece-slot"
                   >

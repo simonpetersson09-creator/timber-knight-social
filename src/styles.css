@@ -104,8 +104,8 @@
   --board-shade: oklch(0.12 0.025 40 / 55%);
   --board-bevel: oklch(0.66 0.07 52 / 45%);
   --board-contact: oklch(0.1 0.02 40 / 65%);
-  --piece-contact: radial-gradient(ellipse, var(--board-contact) 0%, transparent 72%);
-  --piece-shadow: drop-shadow(1px 2px 0.7px var(--board-contact)) drop-shadow(2px 4px 2px var(--board-shade));
+  --piece-contact: radial-gradient(ellipse, var(--board-contact) 0%, var(--board-shade) 22%, transparent 72%);
+  --piece-shadow: drop-shadow(0 -0.35px 0.35px var(--board-light)) drop-shadow(0 0.7px 0.65px var(--board-contact)) drop-shadow(0.6px 1.3px 1.4px var(--board-shade));
   --ebony: oklch(0.16 0.01 50);
   --ebony-shine: oklch(0.42 0.02 50);
   --highlight: oklch(0.82 0.15 95 / 55%);
@@ -158,7 +158,7 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .action-btn:disabled { opacity: .55; filter: saturate(.6); }
 
 .board-scene { width: min(90vw, 560px, calc(100dvh - 260px)); min-width: 0; aspect-ratio: 1; isolation: isolate; }
-.board-frame { position: relative; width: 100%; height: 100%; padding: 3.2%; transform: perspective(1100px) rotateX(9deg); transform-origin: center; border-radius: 12px;
+.board-frame { position: relative; width: 100%; height: 100%; padding: 3.2%; transform: perspective(900px) rotateX(8deg); transform-origin: center; border-radius: 12px;
   background: linear-gradient(125deg, var(--board-light), transparent 45%, var(--board-shade)), url("./assets/wood-dark.jpg") center/cover, var(--wood-frame);
   box-shadow: inset 0 1px 0 var(--board-light), inset 0 3px 2px var(--board-bevel), inset 0 -3px 2px var(--board-shade),
     0 2px 0 var(--wood-frame), 0 5px 0 var(--wood-frame), 0 8px 0 var(--wood-frame-deep), 0 9px 0 var(--board-contact), var(--shadow-board); }
@@ -195,8 +195,8 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .seg button { padding: 10px 8px; border-radius: 9px; font-weight: 600; font-size: 14px; color: var(--muted-foreground); transition: all .2s; }
 .seg button[data-active="true"] { background: var(--gradient-gold); color: var(--primary-foreground); box-shadow: var(--shadow-gold); }
 
-.piece-slot { position: relative; z-index: 3; width: 90%; height: 90%; display: flex; pointer-events: none; transform-origin: center 85%; }
-.piece-slot::before { content: ""; position: absolute; left: 14%; right: 10%; bottom: 5%; height: 15%; background: var(--piece-contact); pointer-events: none; }
+.piece-slot { position: relative; z-index: 3; width: 90%; height: 90%; display: flex; pointer-events: none; transform-origin: center 87%; }
+.piece-slot::before { content: ""; position: absolute; left: 16%; right: 16%; bottom: 7%; height: 12%; background: var(--piece-contact); pointer-events: none; }
 .piece-img { display: block; user-select: none; -webkit-user-drag: none; filter: drop-shadow(0 2px 1.5px oklch(0 0 0 / 50%)); }
 .piece-slot .piece-img { position: relative; width: 100%; height: 100%; object-fit: contain; filter: var(--piece-shadow); }
 
