@@ -72,7 +72,7 @@ function Home() {
 
   const full = games.length >= MAX_SAVED;
   function start() {
-    // The player always gets the mahogany pieces and moves first.
+    // The player always gets the ivory pieces and moves first.
     const g = createGame({ mode: "ai", level, human: "w", clock: CLOCKS[clock] ?? null });
     if (g) void navigate({ to: "/play", search: { id: g.id } });
   }

@@ -2,7 +2,7 @@
 export const KEYS = [
   "tagline", "playComputer", "twoPlayers", "playOnline", "friends", "soon", "level",
   "beginner", "easy", "medium", "hard", "expert", "master", "unlockHint", "clock", "noClock",
-  "yourPieces", "wood", "black", "random", "start", "ongoing", "yourTurn", "computerTurn",
+  "yourPieces", "ivory", "black", "random", "start", "ongoing", "yourTurn", "computerTurn",
   "toMove", "maxSaved", "delete", "stats", "played", "wins", "losses", "draws", "winRate",
   "streak", "settings", "language", "automatic", "sound", "haptics", "resetStats",
   "confirmReset", "cancel", "back", "you", "computer", "thinking", "check", "checkmate",

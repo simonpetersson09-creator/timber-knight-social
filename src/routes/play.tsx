@@ -210,7 +210,7 @@ function Play() {
 
   if (!saved) return <main className="min-h-dvh" />;
 
-  const side = (c: Color) => (c === "w" ? t("wood") : t("black"));
+  const side = (c: Color) => (c === "w" ? t("ivory") : t("black"));
   const top: Color = vsAi ? other(human) : "b";
   const bottom: Color = other(top);
   const nameOf = (c: Color) => (vsAi ? (c === human ? me ? displayName(me) : t("you") : `${t("computer")} · ${t(saved.level)}`) : side(c));

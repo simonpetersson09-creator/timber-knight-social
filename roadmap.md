@@ -98,8 +98,9 @@
 
 ## Pjäsförslag 19 nov
 - [x] Fem materialvarianter skapade som kontrollerade stillbilder för chatten; appens pjäser är orörda
-- [ ] Användaren väljer ett pjäsförslag att införa
+- [x] Användaren har valt förslag 2 – Elfenben & ebenholts
+- [x] Elfenben och ebenholts införda i befintlig sidovy; 42 språktester samt 64 rutor, 32 pjäser, markeringar och drag med datorsvar verifierade i mobilvyn
 
 ## Toppvy för pjäser 19 nov
 - [x] Tre toppvyförslag skapade och visuellt kontrollerade i båda pjäsfärgerna; appen är orörd
-- [ ] Användaren väljer toppvy eller behåller sidovyn
+- [x] Användaren skippar toppvy och behåller sidovyn
