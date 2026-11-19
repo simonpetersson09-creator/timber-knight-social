@@ -84,7 +84,7 @@ function Home() {
     <main className="relative flex min-h-dvh flex-col items-center overflow-x-hidden px-6 pt-[calc(28px+env(safe-area-inset-top))] pb-[calc(28px+env(safe-area-inset-bottom))]">
       <div className="home-glow" aria-hidden />
       <div className="home-pattern" aria-hidden />
-      <motion.div className="home-stack" initial="hidden" animate="show"
+      <motion.div className="home-stack" initial={false} animate="show"
         variants={{ show: { transition: { staggerChildren: 0.08, delayChildren: 0.15 } } }}>
         <motion.div variants={item} transition={{ duration: 0.45, ease: "easeOut" }} className="mb-8 space-y-1 text-center sm:mb-10">
           <motion.div className="mx-auto mb-2 size-28 drop-shadow-[0_6px_16px_rgba(0,0,0,0.45)] sm:size-32"
@@ -205,9 +205,7 @@ function OnlineCard({ g, onAccept, onDecline }: { g: OnlineRow; onAccept: () => 
 
 function Expand({ children }: { children: React.ReactNode }) {
   return (
-    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-      <div className="panel setup-panel">{children}</div>
-    </motion.div>
+    <div className="panel setup-panel">{children}</div>
   );
 }
 

@@ -183,8 +183,9 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .sq-last::before { background: var(--highlight); opacity: .55; }
 .sq-selected::before { background: radial-gradient(ellipse at 50% 62%, oklch(0.92 0.09 80 / 55%) 0%, var(--highlight) 70%); }
 .sq-check::before { background: radial-gradient(circle, var(--check) 0%, transparent 75%); }
-.hint-dot { position: absolute; width: 28%; height: 28%; border-radius: 50%; background: oklch(0.15 0.03 40 / 35%); z-index: 2; }
-.hint-capture { position: absolute; inset: 6%; border-radius: 50%; border: 4px solid oklch(0.15 0.03 40 / 40%); z-index: 2; }
+.hint-dot { position: absolute; width: 26%; height: 26%; border-radius: 50%; z-index: 2; pointer-events: none; background: radial-gradient(circle at 40% 35%, oklch(0.9 0.09 85 / 95%), oklch(0.74 0.12 76 / 90%) 55%, oklch(0.5 0.09 60 / 85%)); box-shadow: 0 0 0 2px oklch(0.25 0.04 45 / 35%), 0 0 10px oklch(0.85 0.11 82 / 55%); animation: hint-in .18s ease-out; }
+@keyframes hint-in { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.hint-capture { position: absolute; inset: 5%; border-radius: 50%; z-index: 2; pointer-events: none; border: 3px solid oklch(0.82 0.12 80 / 90%); box-shadow: 0 0 10px oklch(0.85 0.11 82 / 55%), inset 0 0 8px oklch(0.85 0.11 82 / 40%); animation: hint-in .18s ease-out; }
 .board-coordinate-rail { z-index: 2; display: grid; color: var(--board-coordinate); font-size: clamp(7px, 1.8vw, 10px); font-weight: 600; line-height: 1; text-shadow: 0 1px 1px var(--board-frame-shade); opacity: .9; }
 .board-coordinate-rail > span { display: grid; place-items: center; }
 .board-coordinate-top, .board-coordinate-bottom { grid-template-columns: repeat(8, 1fr); }
@@ -219,7 +220,9 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .piece-slot[data-piece-type="p"] { --piece-base-width: 53%; }
 .piece-slot::before { content: ""; position: absolute; left: var(--piece-base-x); top: var(--piece-base-y); width: var(--piece-base-width); height: 7%; transform: translate(-50%, -50%); background: var(--piece-contact); pointer-events: none; }
 .piece-img { display: block; object-fit: contain; user-select: none; -webkit-user-drag: none; filter: drop-shadow(0 2px 1.5px oklch(0 0 0 / 50%)); }
-.piece-slot .piece-img { position: relative; width: 100%; height: 100%; object-fit: contain; filter: none; }
+.piece-slot .piece-img { position: relative; width: 100%; height: 100%; object-fit: contain; filter: none; transform-origin: 50% 89.84375%; }
+.piece-slot[data-piece-type="p"] .piece-img { transform: scale(1.05); }
+.piece-slot:is([data-piece-type="k"], [data-piece-type="q"]) .piece-img { transform: scale(.95); }
 
 /* ---------- Mr B shared UI ---------- */
 :root {
@@ -240,9 +243,9 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .home-tile { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 6px; border-radius: 1rem; background: color-mix(in oklab, var(--secondary) 60%, transparent); border: 1px solid color-mix(in oklab, var(--border) 50%, transparent); }
 .home-tile-num { font-size: 18px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; color: var(--foreground); }
 .home-tile-label { font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted-foreground); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.round-label { font-size: 8px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; line-height: 1; color: color-mix(in oklab, var(--primary) 60%, transparent); }
+.round-label { font-size: 8px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; line-height: 1; color: color-mix(in oklab, var(--primary) 85%, transparent); font-weight: 700; }
 
-.game-card { width: 100%; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 10px 0 12px; border-radius: 10px; overflow: hidden; text-align: left; font-family: var(--font-display); transition: box-shadow .2s, transform .15s, filter .2s; }
+.game-card { -webkit-tap-highlight-color: transparent; cursor: pointer; width: 100%; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 10px 0 12px; border-radius: 10px; overflow: hidden; text-align: left; font-family: var(--font-display); transition: box-shadow .2s, transform .15s, filter .2s; }
 .home-stack :is(.game-card, .action-btn) { --press-color: var(--accent); }
 .home-stack .card-you { --press-color: var(--success); }
 .home-stack .card-opp { --press-color: var(--primary); }
@@ -251,7 +254,7 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .card-you { background: var(--gradient-success); color: var(--background); box-shadow: var(--shadow-success); }
 .card-opp { background: var(--gradient-gold); color: var(--background); box-shadow: var(--shadow-gold); }
 .card-invite { background: var(--gradient-invite); color: var(--foreground); box-shadow: 0 4px 16px color-mix(in oklab, var(--invite) 30%, transparent); }
-.card-link { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; height: 100%; }
+.card-link { -webkit-tap-highlight-color: transparent; outline: none; display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; height: 100%; }
 .card-chip { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 7px; font-size: 13px; overflow: hidden; background: var(--background); color: var(--foreground); }
 .card-chip > svg { width: 12px; height: 12px; }
 .card-chip-light { background: var(--background); color: var(--foreground); }
@@ -263,7 +266,10 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .card-pill > svg { width: 10px !important; height: 10px !important; }
 .card-pill:active { transform: scale(.95); }
 .card-pill-action { background: var(--gradient-gold) !important; color: var(--primary-foreground) !important; }
-.round-btn { display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 9999px; background: var(--gradient-gold); color: var(--primary-foreground); box-shadow: var(--shadow-gold); transition: transform .15s, filter .2s; }
+.round-btn { display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 9999px; color: oklch(0.86 0.1 84); border: 1.5px solid color-mix(in oklab, var(--primary) 70%, transparent);
+  background: radial-gradient(circle at 50% 30%, var(--board-frame-glint), transparent 70%), linear-gradient(var(--board-frame-tint), var(--board-frame-tint)), url("./assets/wood-dark.jpg") center/cover, var(--wood-frame);
+  box-shadow: inset 0 2px 3px var(--board-frame-glint), inset 0 -3px 6px var(--board-frame-shade), 0 4px 12px var(--board-frame-shade); transition: transform .15s, filter .2s; -webkit-tap-highlight-color: transparent; }
+.round-btn > svg { filter: drop-shadow(0 1px 1px oklch(0 0 0 / 60%)); }
 .round-btn:active { transform: scale(.94); }
 .round-btn:disabled { filter: saturate(.3); opacity: .55; }
 .stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
@@ -293,7 +299,9 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .player-top { bottom: calc(100% + 10px); }
 .player-bottom { top: calc(100% + 10px); }
 .player-profile-line { display: flex; align-items: center; width: 100%; min-width: 0; gap: 8px; }
-.game-player-card { --player-accent: var(--ivory); --player-on-accent: var(--ivory-ink); display: grid; grid-template-columns: 18px minmax(0, 1fr); align-items: center; flex: 1 1 auto; width: 100%; min-width: 0; min-height: 26px; padding: 2px 8px; gap: 6px; border: 1px solid color-mix(in oklab, var(--player-accent) 18%, transparent); border-radius: 9px; background: linear-gradient(120deg, color-mix(in oklab, var(--player-accent) 8%, var(--card)), var(--card)); box-shadow: 0 3px 10px color-mix(in oklab, var(--background) 55%, transparent); }
+.player-top .player-profile-line { justify-content: flex-start; }
+.player-bottom .player-profile-line { justify-content: flex-end; }
+.game-player-card { --player-accent: var(--ivory); --player-on-accent: var(--ivory-ink); display: grid; grid-template-columns: 18px minmax(0, 1fr); align-items: center; flex: 0 1 auto; width: auto; max-width: 42%; min-width: 0; min-height: 26px; padding: 2px 10px 2px 4px; gap: 6px; border: 1px solid color-mix(in oklab, var(--player-accent) 18%, transparent); border-radius: 9px; background: linear-gradient(120deg, color-mix(in oklab, var(--player-accent) 8%, var(--card)), var(--card)); box-shadow: 0 3px 10px color-mix(in oklab, var(--background) 55%, transparent); }
 .game-player-card[data-piece="b"] { --player-accent: var(--ebony-shine); --player-on-accent: var(--foreground); }
 .game-player-card[data-active="you"], .game-player-card[data-active="opp"] { border-color: color-mix(in oklab, var(--player-accent) 68%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--player-accent) 24%, transparent), 0 4px 12px color-mix(in oklab, var(--player-accent) 13%, transparent); }
 .game-player-photo { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 9999px; overflow: hidden; background: var(--player-accent); color: var(--player-on-accent); font-size: 14px; }

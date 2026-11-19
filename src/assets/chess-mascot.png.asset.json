@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "asset_id": "f8fc55b8-23af-4534-ab74-65479ba86e21",
+  "asset_id": "b3ec1bde-c05a-41ab-a58c-21f739e5d028",
   "project_id": "7d133463-c296-4ecc-bd45-ce07f7d16224",
-  "url": "/__l5e/assets-v1/f8fc55b8-23af-4534-ab74-65479ba86e21/chess-mascot-queen.png",
-  "r2_key": "a/v1/7d133463-c296-4ecc-bd45-ce07f7d16224/f8fc55b8-23af-4534-ab74-65479ba86e21/chess-mascot-queen.png",
-  "original_filename": "chess-mascot-queen.png",
-  "size": 1209934,
+  "url": "/__l5e/assets-v1/b3ec1bde-c05a-41ab-a58c-21f739e5d028/chess-mascot-pawn.png",
+  "r2_key": "a/v1/7d133463-c296-4ecc-bd45-ce07f7d16224/b3ec1bde-c05a-41ab-a58c-21f739e5d028/chess-mascot-pawn.png",
+  "original_filename": "chess-mascot-pawn.png",
+  "size": 714178,
   "content_type": "image/png",
-  "created_at": "2026-11-19T09:45:20Z"
+  "created_at": "2026-11-19T19:44:41Z"
 }
