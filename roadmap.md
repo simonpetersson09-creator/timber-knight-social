@@ -87,3 +87,9 @@
 ## Fördjupat träbräde
 - [x] Fasad träram, djup och kontaktskuggor utan brädets lutning och utan ändrade spelregler
 - [x] Alla 64 tryckytor kontrollerade vid 320, 394, 430 och 768 px; drag och brädvändning verifierade för båda färgerna
+
+## Brädförslag 19 nov
+- [x] Redovisa datorns faktiska svarstid per nivå
+- [x] Tre jämförbara bräden utan pjäser med bredare ram och återhållsamma färgfinishar
+- [x] Tre stillbilder skapade för chatten; den tillfälliga sidan är borttagen ur appen
+- [ ] Användaren väljer vilket förslag som ska ersätta nuvarande spelbräde
