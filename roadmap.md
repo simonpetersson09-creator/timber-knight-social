@@ -85,5 +85,5 @@
 - [x] Inställningar: inget ljud, inga spelade/vinster; profilbild verifierad
 
 ## Fördjupat träbräde
-- [x] Diskret 9° perspektiv, fasad ram och kontaktskuggor utan ändrade spelregler
+- [x] Fasad träram, djup och kontaktskuggor utan brädets lutning och utan ändrade spelregler
 - [x] Alla 64 tryckytor kontrollerade vid 320, 394, 430 och 768 px; drag och brädvändning verifierade för båda färgerna

@@ -42,4 +42,4 @@ use the editor.
 - Daily native installation counts use Stockholm dates and foreground heartbeats; paginated statistics include the full eligible history and exclude web/test activity in admin.
 - Shared GamePlayerCard/CapturedPieces components keep local and online game layouts consistent, with the board centred and actions at the bottom.
 - Capacitor copy/sync hooks configure iOS QR camera permissions automatically when the native project exists, avoiding manual Info.plist edits.
-- The chess board uses a single CSS-perspective surface with native square hit targets and pre-shaded SVG pieces, not a continuous WebGL loop, to keep mobile rendering lightweight without changing game logic.
+- The chess board uses a flat CSS grid surface with native square hit targets and pre-shaded SVG pieces, not a continuous WebGL loop, to keep mobile rendering lightweight without changing game logic.
