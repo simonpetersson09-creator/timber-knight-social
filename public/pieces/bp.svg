@@ -1,1 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="45" height="45" viewBox="0 0 45 45"><defs><radialGradient id="eb" cx="30%" cy="25%" r="80%" gradientTransform="translate(0.02 0) scale(0.98 1.2)"><stop offset="0" stop-color="#090b0c"/><stop offset=".22" stop-color="#1a1e20"/><stop offset=".38" stop-color="#3e4648"/><stop offset=".55" stop-color="#202527"/><stop offset=".82" stop-color="#080a0b"/><stop offset="1" stop-color="#090b0c"/></radialGradient></defs><path d="M22.5 9c-2.21 0-4 1.79-4 4 0 .89.29 1.71.78 2.38C17.33 16.5 16 18.59 16 21c0 2.03.94 3.84 2.41 5.03-3 1.06-7.41 5.55-7.41 13.47h23c0-7.92-4.41-12.41-7.41-13.47 1.47-1.19 2.41-3 2.41-5.03 0-2.41-1.33-4.5-3.28-5.62.49-.67.78-1.49.78-2.38 0-2.21-1.79-4-4-4z" fill="url(#eb)" stroke="#050607" stroke-width="1.3" stroke-linecap="round"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="90" height="110" viewBox="0 0 90 110" shape-rendering="geometricPrecision">
+  <defs>
+    <radialGradient id="body" cx="30%" cy="25%" r="80%" gradientTransform="translate(0.02 0) scale(0.98 1.2)"><stop offset="0" stop-color="#090b0c"/><stop offset=".22" stop-color="#1a1e20"/><stop offset=".38" stop-color="#3e4648"/><stop offset=".55" stop-color="#202527"/><stop offset=".82" stop-color="#080a0b"/><stop offset="1" stop-color="#090b0c"/></radialGradient>
+  </defs>
+  <g fill="url(#body)" stroke="#050607" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" transform="translate(-13.5 0) scale(1.3 1)">
+
+      <ellipse cx="45" cy="103" rx="32" ry="3.5" fill="#050607" opacity=".2" stroke="none"/>
+      <path d="M29 82H61L65 89C68 91 71 93 73 96L72 101C58 106 32 106 18 101L17 96C20 92 24 90 27 88Z"/>
+      <path d="M18 95C31 100 53 96 66 88C69 91 72 94 73 96C59 103 35 105 18 100Z" opacity=".82"/>
+      <path class="detail" d="M21 96C35 100 55 95 66 90M24 103C37 106 55 106 67 103"/>
+
+
+      <circle cx="45" cy="25" r="13"/>
+      <path class="detail" d="M37 19C40 15 46 14 50 16" opacity=".62"/>
+      <path d="M35 37H55L58 44H32Z"/>
+      <path d="M35 44C39 54 39 65 34 78L29 84H61L56 78C51 65 51 54 55 44Z"/>
+      <path class="detail" d="M40 49C43 60 41 69 38 76" opacity=".48"/>
+      <path d="M29 82H61L64 88H26Z"/>
+
+  </g>
+  <style>.detail{fill:none;stroke:#9ca7a8;stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round}.eye{fill:#9ca7a8}</style>
+</svg>

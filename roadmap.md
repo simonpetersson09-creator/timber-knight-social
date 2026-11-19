@@ -110,3 +110,4 @@
 - [x] Kompakta symmetriska spelarkort utan blå ram och med materialanpassad aktivmarkering
 - [x] Snyggare bottenknappar och säkra marginaler utan horisontellt överflöd
 - [x] Längre datorbetänketid och mjuk förflyttningsanimation med bibehållna spelregler
+- [x] Inför valt förslag 5 Mr B Signature i samtliga tolv pjäsfiler med oförändrade färger och verifiera spelbarheten

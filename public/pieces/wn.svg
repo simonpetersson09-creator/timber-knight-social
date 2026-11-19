@@ -1,1 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="45" height="45" viewBox="0 0 45 45"><defs><radialGradient id="wd" cx="30%" cy="25%" r="80%" gradientTransform="translate(0.02 0) scale(0.98 1.2)"><stop offset="0" stop-color="#a9a28f"/><stop offset=".22" stop-color="#ddd7c6"/><stop offset=".38" stop-color="#fffdf0"/><stop offset=".55" stop-color="#ddd7c6"/><stop offset=".82" stop-color="#d2c9b4"/><stop offset="1" stop-color="#8f8879"/></radialGradient></defs><g fill="none" fill-rule="evenodd" stroke="#555249" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10c10.5 1 16.5 8 16 29H15c0-9 10-6.5 8-21" fill="url(#wd)"/><path d="M24 18c.38 2.91-5.55 7.37-8 9-3 2-2.82 4.34-5 4-1.042-.94 1.41-3.04 0-3-1 0 .19 1.23-1 2-1 0-4.003 1-4-4 0-2 6-12 6-12s1.89-1.9 2-3.5c-.73-.994-.5-2-.5-3 1-1 3 2.5 3 2.5h2s.78-1.992 2.5-3c1 0 1 3 1 3" fill="url(#wd)"/><path d="M9.5 25.5a.5.5 0 1 1-1 0 .5.5 0 1 1 1 0zm5.433-9.75a.5 1.5 30 1 1-.866-.5.5 1.5 30 1 1 .866.5z" fill="#000"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="90" height="110" viewBox="0 0 90 110" shape-rendering="geometricPrecision">
+  <defs>
+    <radialGradient id="body" cx="30%" cy="25%" r="80%" gradientTransform="translate(0.02 0) scale(0.98 1.2)"><stop offset="0" stop-color="#a9a28f"/><stop offset=".22" stop-color="#ddd7c6"/><stop offset=".38" stop-color="#fffdf0"/><stop offset=".55" stop-color="#ddd7c6"/><stop offset=".82" stop-color="#d2c9b4"/><stop offset="1" stop-color="#8f8879"/></radialGradient>
+  </defs>
+  <g fill="url(#body)" stroke="#555249" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" transform="translate(-13.5 0) scale(1.3 1)">
+
+      <ellipse cx="45" cy="103" rx="32" ry="3.5" fill="#090b0c" opacity=".2" stroke="none"/>
+      <path d="M29 82H61L65 89C68 91 71 93 73 96L72 101C58 106 32 106 18 101L17 96C20 92 24 90 27 88Z"/>
+      <path d="M18 95C31 100 53 96 66 88C69 91 72 94 73 96C59 103 35 105 18 100Z" opacity=".82"/>
+      <path class="detail" d="M21 96C35 100 55 95 66 90M24 103C37 106 55 106 67 103"/>
+
+
+          <path d="M29 83C28 71 31 60 39 52L35 40L26 46C20 50 15 48 16 42C17 38 23 34 26 28L30 13L38 20L47 12L49 23C61 28 67 41 65 55C64 66 60 75 59 83Z"/>
+          <path d="M49 24C58 34 59 48 55 61C53 69 53 76 54 82" fill="none"/>
+          <path class="detail" d="M34 24C30 34 25 38 21 41M43 28C49 36 50 48 47 58M33 58C30 67 31 74 33 79" opacity=".55"/>
+          <path d="M19 42L27 43M30 27L34 28" fill="none"/>
+          <circle cx="31" cy="29" r="1.8" class="eye" stroke="none"/>
+          <path d="M29 82H61L64 88H26Z"/>
+          <path class="detail" d="M48 30L55 35M49 37L57 42M49 44L57 49M48 51L55 56" opacity=".38"/>
+
+  </g>
+  <style>.detail{fill:none;stroke:#fffdf0;stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round}.eye{fill:#555249}</style>
+</svg>
