@@ -103,6 +103,7 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
                       transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 260, damping: 24, mass: 0.9 }}
                       className="piece-slot"
                       data-piece-id={id}
+                      data-piece-type={p.type}
                     >
                       <Piece color={p.color} type={p.type} />
                     </motion.span>
