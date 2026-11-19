@@ -111,3 +111,4 @@
 - [x] Snyggare bottenknappar och säkra marginaler utan horisontellt överflöd
 - [x] Längre datorbetänketid och mjuk förflyttningsanimation med bibehållna spelregler
 - [x] Inför valt förslag 5 Mr B Signature i samtliga tolv pjäsfiler med oförändrade färger och verifiera spelbarheten
+- [x] Ersätt den för förenklade vektortolkningen med realistiska pjäser som troget återger den godkända Signatur-bilden

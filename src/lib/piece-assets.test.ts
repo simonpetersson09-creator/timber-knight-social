@@ -3,29 +3,27 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const kinds = ["k", "q", "b", "n", "r", "p"];
-const palettes = {
-  w: ["#a9a28f", "#ddd7c6", "#fffdf0", "#ddd7c6", "#d2c9b4", "#8f8879"],
-  b: ["#090b0c", "#1a1e20", "#3e4648", "#202527", "#080a0b", "#090b0c"],
-};
 
-function asset(color: keyof typeof palettes, kind: string) {
-  return readFileSync(resolve(process.cwd(), `public/pieces/${color}${kind}.svg`), "utf8");
+function asset(color: "w" | "b", kind: string) {
+  return readFileSync(resolve(process.cwd(), `public/pieces/${color}${kind}.webp`));
 }
 
 describe("Mr B Signature pieces", () => {
-  it("keeps the exact ivory and ebony gradient colors on all twelve pieces", () => {
+  it("provides twelve optimized, nonempty WebP renders", () => {
     for (const color of ["w", "b"] as const) {
       for (const kind of kinds) {
-        const stops = [...asset(color, kind).matchAll(/stop-color="([^"]+)"/g)].map((match) => match[1]);
-        expect(stops, `${color}${kind}`).toEqual(palettes[color]);
+        const data = asset(color, kind);
+        expect(data.subarray(0, 4).toString("ascii"), `${color}${kind}`).toBe("RIFF");
+        expect(data.subarray(8, 12).toString("ascii"), `${color}${kind}`).toBe("WEBP");
+        expect(data.byteLength, `${color}${kind}`).toBeGreaterThan(5000);
+        expect(data.byteLength, `${color}${kind}`).toBeLessThan(30000);
       }
     }
   });
 
-  it("gives both kings the tilted hat and every piece the signature swept base", () => {
-    for (const color of ["w", "b"] as const) {
-      expect(asset(color, "k")).toContain('transform="rotate(-8 45 25)"');
-      for (const kind of kinds) expect(asset(color, kind)).toContain("M18 95C31 100 53 96 66 88");
-    }
+  it("uses the realistic renders through the shared piece component", () => {
+    const component = readFileSync(resolve(process.cwd(), "src/components/Piece.tsx"), "utf8");
+    expect(component).toContain("/pieces/${color}${type}.webp");
+    expect(component).not.toContain(".svg");
   });
 });
