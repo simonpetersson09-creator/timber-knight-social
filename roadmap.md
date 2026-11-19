@@ -92,4 +92,5 @@
 - [x] Redovisa datorns faktiska svarstid per nivå
 - [x] Tre jämförbara bräden utan pjäser med bredare ram och återhållsamma färgfinishar
 - [x] Tre stillbilder skapade för chatten; den tillfälliga sidan är borttagen ur appen
-- [ ] Användaren väljer vilket förslag som ska ersätta nuvarande spelbräde
+- [x] Användaren har valt förslag 3 – Djup mahogny
+- [x] Förslag 3 infört på det riktiga spelbrädet; 64 tryckytor, markeringar, drag och båda spelriktningarna verifierade på fem skärmstorlekar

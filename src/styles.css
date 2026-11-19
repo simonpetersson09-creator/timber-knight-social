@@ -102,7 +102,13 @@
   --wood-frame-deep: oklch(0.2 0.045 40);
   --board-light: oklch(0.97 0.025 82 / 25%);
   --board-shade: oklch(0.12 0.025 40 / 55%);
-  --board-bevel: oklch(0.66 0.07 52 / 45%);
+  --board-bevel: oklch(0.64 0.105 52 / 54%);
+  --board-light-tint: oklch(0.94 0.05 84 / 35%);
+  --board-dark-tint: oklch(0.35 0.115 30 / 55%);
+  --board-frame-tint: oklch(0.28 0.09 31 / 26%);
+  --board-frame-glint: oklch(0.95 0.03 80 / 25%);
+  --board-frame-shade: oklch(0.1 0.025 35 / 64%);
+  --board-coordinate: oklch(0.89 0.075 82 / 88%);
   --board-contact: oklch(0.1 0.02 40 / 65%);
   --piece-contact: radial-gradient(ellipse, var(--board-contact) 0%, var(--board-shade) 22%, transparent 72%);
   --piece-shadow: drop-shadow(0 -0.35px 0.35px var(--board-light)) drop-shadow(0 0.7px 0.65px var(--board-contact)) drop-shadow(0.6px 1.3px 1.4px var(--board-shade));
@@ -158,26 +164,33 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .action-btn:disabled { opacity: .55; filter: saturate(.6); }
 
 .board-scene { width: min(90vw, 560px, calc(100dvh - 260px)); min-width: 0; aspect-ratio: 1; isolation: isolate; }
-.board-frame { position: relative; width: 100%; height: 100%; padding: 3.2%; border-radius: 12px;
-  background: linear-gradient(125deg, var(--board-light), transparent 45%, var(--board-shade)), url("./assets/wood-dark.jpg") center/cover, var(--wood-frame);
-  box-shadow: inset 0 1px 0 var(--board-light), inset 0 3px 2px var(--board-bevel), inset 0 -3px 2px var(--board-shade),
-    0 2px 0 var(--wood-frame), 0 5px 0 var(--wood-frame), 0 8px 0 var(--wood-frame-deep), 0 9px 0 var(--board-contact), var(--shadow-board); }
-.board-frame::after { content: ""; position: absolute; inset: 1.2%; border: 1px solid var(--board-bevel); border-bottom-color: var(--board-shade); border-radius: 8px; pointer-events: none; }
-.board-grid { position: relative; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(8, minmax(0, 1fr)); width: 100%; height: 100%; border-radius: 3px; overflow: hidden;
-  box-shadow: 0 0 0 1px var(--wood-frame-deep), 0 1px 0 2px var(--board-bevel); }
-.board-grid::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(135deg, var(--board-light), transparent 40%, transparent 70%, var(--board-shade)); opacity: .35; box-shadow: inset 0 2px 5px var(--board-shade); pointer-events: none; z-index: 4; }
-.board-square { position: relative; display: flex; align-items: center; justify-content: center; container-type: size; padding: 0; min-width: 0; min-height: 0; touch-action: manipulation; }
+.board-frame { position: relative; display: grid; grid-template-columns: 7.5% minmax(0, 1fr) 7.5%; grid-template-rows: 7.5% minmax(0, 1fr) 7.5%; width: 100%; height: 100%; border-radius: 10px;
+  background: linear-gradient(125deg, var(--board-frame-glint), transparent 38%, var(--board-frame-shade)),
+    linear-gradient(var(--board-frame-tint), var(--board-frame-tint)), url("./assets/wood-dark.jpg") center/cover, var(--wood-frame);
+  box-shadow: inset 0 1px 0 var(--board-frame-glint), inset 0 3px 3px var(--board-bevel), inset 0 -4px 4px var(--board-frame-shade),
+    0 2px 0 var(--board-frame-tint), 0 5px 0 var(--wood-frame-deep), 0 9px 0 var(--wood-frame-deep), 0 12px 12px var(--board-frame-shade), var(--shadow-board); }
+.board-frame::after { content: ""; position: absolute; inset: 1.4%; z-index: 5; border: 1px solid var(--board-bevel); border-bottom-color: var(--board-frame-shade); border-radius: 7px; pointer-events: none; }
+.board-grid { position: relative; z-index: 1; grid-area: 2 / 2; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(8, minmax(0, 1fr)); width: 100%; height: 100%; border-radius: 2px; overflow: hidden;
+  box-shadow: 0 0 0 1px var(--wood-frame-deep), 0 0 0 3px var(--board-bevel), 0 2px 0 4px var(--board-frame-shade), inset 0 2px 5px var(--board-frame-shade); }
+.board-grid::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(135deg, var(--board-frame-glint), transparent 42%, transparent 72%, var(--board-frame-shade)); opacity: .24; box-shadow: inset 0 2px 5px var(--board-frame-shade); pointer-events: none; z-index: 4; }
+.board-square { position: relative; display: flex; align-items: center; justify-content: center; container-type: size; padding: 0; min-width: 0; min-height: 0; touch-action: manipulation; background-position: var(--grain-x) var(--grain-y); background-size: 800% 800%; }
 .board-square:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
-.sq-light { background: linear-gradient(oklch(0.9 0.045 80 / 0.7), oklch(0.9 0.045 80 / 0.7)), url("./assets/wood-light.jpg") center/400%; }
-.sq-dark { background: linear-gradient(oklch(0.42 0.1 35 / 0.72), oklch(0.42 0.1 35 / 0.72)), url("./assets/wood-dark.jpg") center/400%; }
+.sq-light { background-image: linear-gradient(var(--board-light-tint), var(--board-light-tint)), url("./assets/wood-light.jpg"); }
+.sq-dark { background-image: linear-gradient(var(--board-dark-tint), var(--board-dark-tint)), url("./assets/wood-dark.jpg"); }
 .sq-last::before, .sq-selected::before, .sq-check::before { content: ""; position: absolute; inset: 0; }
 .sq-last::before { background: var(--highlight); opacity: .55; }
 .sq-selected::before { background: var(--highlight); }
 .sq-check::before { background: radial-gradient(circle, var(--check) 0%, transparent 75%); }
 .hint-dot { position: absolute; width: 28%; height: 28%; border-radius: 50%; background: oklch(0.15 0.03 40 / 35%); z-index: 2; }
 .hint-capture { position: absolute; inset: 6%; border-radius: 50%; border: 4px solid oklch(0.15 0.03 40 / 40%); z-index: 2; }
-.coord { position: absolute; font-size: 9px; font-weight: 700; opacity: .7; z-index: 1; color: var(--wood-frame-deep); }
-.coord-rank { top: 2px; left: 3px; } .coord-file { bottom: 1px; right: 3px; }
+.board-coordinate-rail { z-index: 2; display: grid; color: var(--board-coordinate); font-size: clamp(7px, 1.8vw, 10px); font-weight: 600; line-height: 1; text-shadow: 0 1px 1px var(--board-frame-shade); opacity: .9; }
+.board-coordinate-rail > span { display: grid; place-items: center; }
+.board-coordinate-top, .board-coordinate-bottom { grid-template-columns: repeat(8, 1fr); }
+.board-coordinate-left, .board-coordinate-right { grid-template-rows: repeat(8, 1fr); }
+.board-coordinate-top { grid-area: 1 / 2; }
+.board-coordinate-bottom { grid-area: 3 / 2; }
+.board-coordinate-left { grid-area: 2 / 1; }
+.board-coordinate-right { grid-area: 2 / 3; }
 .board-square .piece { font-size: 82cqmin; }
 .piece { position: relative; z-index: 3; line-height: 1; user-select: none; font-family: "Segoe UI Symbol", "DejaVu Sans", serif; }
 .piece-ebony { color: var(--ebony);
@@ -266,7 +279,7 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .play-layout { display: flex; flex-direction: column; align-items: center; min-height: 760px; height: 100dvh; padding: calc(16px + env(safe-area-inset-top)) 12px calc(16px + env(safe-area-inset-bottom)); position: relative; }
 .play-col { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(100% - 36px, 560px, calc(100dvh - 390px)); min-width: 0; }
 .play-col .board-scene { width: 100%; }
-.play-col .board-frame { width: 100%; min-width: 0; padding: 3.2%; }
+.play-col .board-frame { width: 100%; min-width: 0; }
 .player-top { position: absolute; bottom: calc(100% + 12px); left: 0; }
 .player-bottom { position: absolute; top: calc(100% + 22px); right: 0; width: 100%; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .game-player-card { display: grid; grid-template-columns: 40px minmax(0, 1fr); width: 160px; min-height: 96px; padding: 10px; gap: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); }
