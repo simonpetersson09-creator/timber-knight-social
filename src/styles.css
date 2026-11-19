@@ -290,26 +290,26 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .play-col .board-scene { width: 100%; }
 .play-col .board-frame { width: 100%; min-width: 0; }
 .player-top, .player-bottom { position: absolute; left: 0; width: 100%; display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
-.player-top { bottom: calc(100% + 12px); }
-.player-bottom { top: calc(100% + 8px); }
+.player-top { bottom: calc(100% + 10px); }
+.player-bottom { top: calc(100% + 10px); }
 .player-profile-line { display: flex; align-items: center; width: 100%; min-width: 0; gap: 8px; }
-.game-player-card { --player-accent: var(--ivory); --player-on-accent: var(--ivory-ink); display: grid; grid-template-columns: 22px minmax(0, 1fr); align-items: center; flex: 1 1 auto; width: 100%; min-width: 0; min-height: 32px; padding: 3px 9px; gap: 7px; border: 1px solid color-mix(in oklab, var(--player-accent) 18%, transparent); border-radius: 10px; background: linear-gradient(120deg, color-mix(in oklab, var(--player-accent) 8%, var(--card)), var(--card)); box-shadow: 0 3px 10px color-mix(in oklab, var(--background) 55%, transparent); }
+.game-player-card { --player-accent: var(--ivory); --player-on-accent: var(--ivory-ink); display: grid; grid-template-columns: 18px minmax(0, 1fr); align-items: center; flex: 1 1 auto; width: 100%; min-width: 0; min-height: 26px; padding: 2px 8px; gap: 6px; border: 1px solid color-mix(in oklab, var(--player-accent) 18%, transparent); border-radius: 9px; background: linear-gradient(120deg, color-mix(in oklab, var(--player-accent) 8%, var(--card)), var(--card)); box-shadow: 0 3px 10px color-mix(in oklab, var(--background) 55%, transparent); }
 .game-player-card[data-piece="b"] { --player-accent: var(--ebony-shine); --player-on-accent: var(--foreground); }
 .game-player-card[data-active="you"], .game-player-card[data-active="opp"] { border-color: color-mix(in oklab, var(--player-accent) 68%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--player-accent) 24%, transparent), 0 4px 12px color-mix(in oklab, var(--player-accent) 13%, transparent); }
-.game-player-photo { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 9999px; overflow: hidden; background: var(--player-accent); color: var(--player-on-accent); font-size: 17px; }
-.game-player-photo > svg { width: 15px; height: 15px; }
-.game-player-name { min-width: 0; font-size: 11px; font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; }
+.game-player-photo { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 9999px; overflow: hidden; background: var(--player-accent); color: var(--player-on-accent); font-size: 14px; }
+.game-player-photo > svg { width: 13px; height: 13px; }
+.game-player-name { min-width: 0; font-size: 10px; font-weight: 700; line-height: 1.1; overflow-wrap: anywhere; }
 .game-clock { --player-accent: var(--ivory); --player-on-accent: var(--ivory-ink); flex: 0 0 auto; display: grid; place-items: center; min-width: 58px; min-height: 46px; padding: 6px 9px; border: 1px solid color-mix(in oklab, var(--player-accent) 18%, transparent); border-radius: 12px; background: color-mix(in oklab, var(--player-accent) 10%, var(--secondary)); color: var(--foreground); font-weight: 700; font-size: 14px; line-height: 1; font-variant-numeric: tabular-nums; }
 .game-clock[data-piece="b"] { --player-accent: var(--ebony-shine); --player-on-accent: var(--foreground); }
 .game-clock[data-active="you"], .game-clock[data-active="opp"] { border-color: color-mix(in oklab, var(--player-accent) 68%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--player-accent) 24%, transparent), 0 6px 18px color-mix(in oklab, var(--player-accent) 13%, transparent); }
 .game-clock[data-running="true"] { background: var(--player-accent); color: var(--player-on-accent); }
 .game-clock[data-low="true"] { background: var(--destructive); color: var(--destructive-foreground); animation: clock-pulse 1s ease-in-out infinite; }
-.player-profile-line .game-clock { min-height: 32px; height: 32px; border-radius: 10px; }
+.player-profile-line .game-clock { min-height: 26px; height: 26px; border-radius: 9px; }
 .captured-tray { container-type: inline-size; flex: none; width: 100%; min-width: 0; height: 48px; display: flex; align-items: center; justify-content: center; padding: 2px 8px;
   border-radius: 18px; border: 1px solid color-mix(in oklab, var(--primary) 30%, transparent);
   background: radial-gradient(ellipse at 50% 30%, var(--board-frame-shade), transparent 75%), linear-gradient(var(--board-frame-tint), var(--board-frame-tint)), url("./assets/wood-dark.jpg") center/cover, var(--wood-frame);
   box-shadow: inset 0 5px 9px var(--board-frame-shade), inset 0 -2px 3px var(--board-frame-glint), 0 2px 6px var(--board-frame-shade); }
-.captured-row { direction: rtl; display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); align-items: center; width: 100%; height: 100%; gap: clamp(1px, .45cqi, 3px); line-height: 0; }
+.captured-row { direction: ltr; display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); align-items: center; width: 100%; height: 100%; gap: clamp(1px, .45cqi, 3px); line-height: 0; }
 .captured-row > span { display: grid; place-items: center; min-width: 0; height: 100%; overflow: visible; }
 .captured-row .piece-img { width: clamp(28px, 10cqi, 42px); height: clamp(28px, 10cqi, 42px); max-width: none; filter: drop-shadow(0 1px 1px oklch(0 0 0 / 40%)); }
 .captured-row > [data-type="q"] .piece-img { width: clamp(25px, 8.4cqi, 36px); height: clamp(25px, 8.4cqi, 36px); }
