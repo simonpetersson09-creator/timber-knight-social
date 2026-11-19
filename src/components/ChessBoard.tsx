@@ -1,6 +1,7 @@
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import type { Chess, Square } from "chess.js";
+import { assignPieceIds, type BoardPiece, type PieceIds } from "@/lib/play-motion";
 import { Piece } from "./Piece";
 
 const FILES = "abcdefgh";
@@ -9,7 +10,7 @@ type Props = {
   game: Chess;
   orientation: "w" | "b";
   disabled?: boolean;
-  lastMove?: { from: string; to: string } | null;
+  lastMove?: { from: Square; to: Square } | null;
   onMove: (from: Square, to: Square) => void;
 };
 
@@ -17,6 +18,14 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
   const reduceMotion = useReducedMotion();
   const [selected, setSelected] = useState<Square | null>(null);
   const board = game.board();
+  const idsRef = useRef<PieceIds>({});
+  const idSequence = useRef(0);
+  const currentPieces = board.flat().filter((piece): piece is BoardPiece => piece !== null);
+  const pieceIds = useMemo(
+    () => assignPieceIds(currentPieces, idsRef.current, lastMove, (piece) => `${piece.color}${piece.type}:${piece.square}-${++idSequence.current}`),
+    [game.fen(), lastMove], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  useEffect(() => { idsRef.current = pieceIds; }, [pieceIds]);
   const targets = useMemo(
     () => (selected ? new Set(game.moves({ square: selected, verbose: true }).map((m) => m.to)) : new Set<string>()),
     [selected, game, game.fen()],
@@ -69,6 +78,7 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
                 "--grain-x": `${(c / 7) * 100}%`,
                 "--grain-y": `${(r / 7) * 100}%`,
               } as CSSProperties;
+              const id = pieceIds[sq] ?? `${p?.color}${p?.type}:${sq}`;
               return (
                 <button
                   key={sq}
@@ -86,11 +96,13 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
                   {isTarget && <span className={p ? "hint-capture" : "hint-dot"} />}
                   {p && (
                     <motion.span
-                      key={`${sq}-${p.color}${p.type}`}
-                      initial={reduceMotion ? false : { scale: 0.85, opacity: 0 }}
-                      animate={{ scale: selected === sq ? 1.06 : 1, opacity: 1 }}
-                      transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 24 }}
+                      key={id}
+                      layoutId={`chess-${id}`}
+                      initial={false}
+                      animate={{ scale: selected === sq ? 1.06 : 1 }}
+                      transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 260, damping: 24, mass: 0.9 }}
                       className="piece-slot"
+                      data-piece-id={id}
                     >
                       <Piece color={p.color} type={p.type} />
                     </motion.span>

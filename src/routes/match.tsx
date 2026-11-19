@@ -188,7 +188,7 @@ function Match() {
   const bar = (pid: string | null | undefined, c: "w" | "b") => {
     const p = pid ? players[pid] : null;
     return (
-      <GamePlayerCard name={p ? `${displayName(p)}${p.country ? ` ${flagOf(p.country)}` : ""}` : "…"} avatar={p?.avatar}
+      <GamePlayerCard name={p ? `${displayName(p)}${p.country ? ` ${flagOf(p.country)}` : ""}` : "…"} avatar={p?.avatar} color={c}
         time={g.status === "active" && turn === c ? `${deadlineH}h` : "48h"}
         active={g.status === "active" && turn === c ? (c === myColor ? "you" : "opp") : undefined} />
     );
@@ -222,9 +222,9 @@ function Match() {
             </div>
           </div>
         )}
-        <div className="grid grid-cols-2 gap-2">
-          <Button variant="ghost" onClick={() => act("offerDraw")} disabled={g.status !== "active" || game.history().length < 2 || !!g.draw_offer} className="action-btn action-ghost text-sm"><Handshake className="size-4" /> {t("offerDraw")}</Button>
-          <Button variant="ghost" onClick={() => setAsk("resign")} disabled={g.status !== "active"} className="action-btn action-ghost text-sm"><Flag className="size-4" /> {t("resign")}</Button>
+        <div className="game-actions">
+          <Button variant="ghost" onClick={() => act("offerDraw")} disabled={g.status !== "active" || game.history().length < 2 || !!g.draw_offer} className="game-action-button game-action-draw"><Handshake className="size-4" /> {t("offerDraw")}</Button>
+          <Button variant="ghost" onClick={() => setAsk("resign")} disabled={g.status !== "active"} className="game-action-button game-action-resign"><Flag className="size-4" /> {t("resign")}</Button>
         </div>
         {chat.length > 0 && (
           <div className="game-chat-history max-h-16 overflow-y-auto text-xs">

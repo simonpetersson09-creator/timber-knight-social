@@ -104,3 +104,9 @@
 ## Toppvy för pjäser 19 nov
 - [x] Tre toppvyförslag skapade och visuellt kontrollerade i båda pjäsfärgerna; appen är orörd
 - [x] Användaren skippar toppvy och behåller sidovyn
+
+## Spelkänsla och pjäsformer 19 nov
+- [x] Fem nya formförslag som bilder med oförändrade elfenben-/ebenholtsfärger; appens pjäser väntar på val
+- [x] Kompakta symmetriska spelarkort utan blå ram och med materialanpassad aktivmarkering
+- [x] Snyggare bottenknappar och säkra marginaler utan horisontellt överflöd
+- [x] Längre datorbetänketid och mjuk förflyttningsanimation med bibehållna spelregler

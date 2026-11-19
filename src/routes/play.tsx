@@ -13,6 +13,7 @@ import { ChessBoard } from "@/components/ChessBoard";
 import { Piece } from "@/components/Piece";
 import { Modal } from "@/components/Modal";
 import { bestMove, evaluateFen } from "@/lib/engine";
+import { AI_MOVE_DELAY_MS } from "@/lib/play-motion";
 import { useI18n } from "@/lib/i18n";
 import { celebrate, feedback } from "@/lib/feedback";
 import { showGameEndAd } from "@/lib/ads";
@@ -50,7 +51,7 @@ function Play() {
   const game = useRef(new Chess()).current;
   const [saved, setSaved] = useState<SavedGame | null>(null);
   const [, setTick] = useState(0);
-  const [lastMove, setLastMove] = useState<{ from: string; to: string } | null>(null);
+  const [lastMove, setLastMove] = useState<{ from: Square; to: Square } | null>(null);
   const [result, setResult] = useState<Result | null>(null);
   const [thinking, setThinking] = useState(false);
   const [promo, setPromo] = useState<{ from: Square; to: Square } | null>(null);
@@ -144,7 +145,7 @@ function Play() {
       const m = bestMove(game.fen(), saved.level);
       setThinking(false);
       if (m) applyMove({ from: m.from, to: m.to, ...(m.promotion ? { promotion: m.promotion } : {}) });
-    }, 380);
+    }, AI_MOVE_DELAY_MS);
     return () => clearTimeout(timer);
   }, [aiTurn, saved?.id, game.fen()]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -234,7 +235,7 @@ function Play() {
     : result.winner === null ? t("draw") : t("sideWins", { side: side(result.winner) });
 
   const bar = (c: Color) => (
-    <GamePlayerCard name={nameOf(c)} avatar={c === human ? me?.avatar : undefined} computer={vsAi && c !== human}
+    <GamePlayerCard name={nameOf(c)} avatar={c === human ? me?.avatar : undefined} computer={vsAi && c !== human} color={c}
       time={saved.clock ? fmt(remaining(c)) : "∞"} active={activeKind(c)} low={!!saved.clock && !result && game.turn() === c && remaining(c) < 20000} />
   );
 
@@ -257,11 +258,11 @@ function Play() {
 
       <div className="play-side">
         <div key={status} className="game-status">{status}</div>
-        <div className="grid grid-cols-2 gap-2">
-          <Button variant="ghost" onClick={offerDraw} disabled={busy || game.history().length < 2} className="action-btn action-ghost text-sm">
+        <div className="game-actions">
+          <Button variant="ghost" onClick={offerDraw} disabled={busy || game.history().length < 2} className="game-action-button game-action-draw">
             <Handshake className="size-4" /> {t("offerDraw")}
           </Button>
-          <Button variant="ghost" onClick={() => setAsk("resign")} disabled={busy} className="action-btn action-ghost text-sm">
+          <Button variant="ghost" onClick={() => setAsk("resign")} disabled={busy} className="game-action-button game-action-resign">
             <Flag className="size-4" /> {t("resign")}
           </Button>
         </div>
