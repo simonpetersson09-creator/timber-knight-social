@@ -43,6 +43,22 @@ export async function notify(a: DB, playerId: string, key: Key, params: Record<s
   else if (!res.ok) console.error(`FCM send failed [${res.status}]: ${await res.text()}`);
 }
 
+/** Admin-only delivery check. Returns an explicit result instead of silently skipping. */
+export async function notifyTest(a: DB, playerId: string): Promise<"sent" | "missing_token" | "not_configured" | "failed"> {
+  const { data: p } = await a.from("players").select("push_token").eq("id", playerId).maybeSingle();
+  if (!p?.push_token) return "missing_token";
+  const lovable = process.env["LOVABLE_API_KEY"], fcm = process.env["FIREBASE_MESSAGING_API_KEY"];
+  if (!lovable || !fcm) return "not_configured";
+  const res = await fetch("https://connector-gateway.lovable.dev/firebase_messaging/v1/projects/_/messages:send", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${lovable}`, "X-Connection-Api-Key": fcm, "Content-Type": "application/json" },
+    body: JSON.stringify({ message: { token: p.push_token, notification: { title: "Mr B Chess", body: "Testnotis från Mr B Chess" }, data: { test: "admin" } } }),
+  }).catch(() => null);
+  if (!res) return "failed";
+  if (res.status === 404 || res.status === 400) await a.from("players").update({ push_token: null }).eq("id", playerId);
+  return res.ok ? "sent" : "failed";
+}
+
 type GameRow = { id: string; status: string; white: string | null; black: string | null; fen: string; last_move_at: string; reminded: boolean; expires_at: string; kind: string; host: string };
 
 /** Ends a game, records it for statistics (resigned games don't count). */

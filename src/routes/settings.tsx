@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Camera, User, Globe, ChevronRight, Vibrate, Bell, BellRing, Gamepad2, ShieldCheck, Trash2, Check } from "lucide-react";
+import { Camera, User, Globe, ChevronRight, Vibrate, Bell, BellRing, Gamepad2, ShieldCheck, Trash2, Check, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -101,6 +101,7 @@ function SettingsPage() {
       </div>
     </Section>
     <Section title={t("gameSettings")}><div className="settings-rows">
+      <Button asChild variant="ghost" className="settings-row"><Link to="/rules"><BookOpen /><span className="flex-1">{t("rules")}</span><ChevronRight /></Link></Button>
       <Button variant="ghost" className="settings-row" onClick={() => setLangOpen(true)}><Globe /><span>{t("language")}</span><span className="row-value">{langName}</span><ChevronRight /></Button>
       <label className="settings-row"><Vibrate className="size-4" /><span className="flex-1">{t("haptics")}</span><Switch aria-label={t("haptics")} checked={s?.haptics ?? true} onCheckedChange={(v) => update({ haptics: v })} /></label>
     </div></Section>

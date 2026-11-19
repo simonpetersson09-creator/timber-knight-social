@@ -1,7 +1,8 @@
 import { getSettings } from "./storage";
-/** Sound is switched off app-wide for now; only vibration is used. */
-const SOUND_ENABLED = false;
+import { isNative } from "./native";
 
+/** Sound is switched off app-wide for now; native haptics are used on phones. */
+const SOUND_ENABLED = false;
 let ctx: AudioContext | null = null;
 function ac() {
   if (!ctx) ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
@@ -9,20 +10,16 @@ function ac() {
   return ctx;
 }
 function knock(freq: number, dur: number, gain: number, delay = 0) {
-  const c = ac();
-  const buf = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate);
-  const d = buf.getChannelData(0);
+  const c = ac(), buf = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate), d = buf.getChannelData(0);
   for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 5);
-  const src = c.createBufferSource(); src.buffer = buf;
-  const f = c.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = freq; f.Q.value = 4;
-  const g = c.createGain(); g.gain.value = gain;
-  src.connect(f).connect(g).connect(c.destination);
-  src.start(c.currentTime + delay);
+  const src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+  f.type = "bandpass"; f.frequency.value = freq; f.Q.value = 4; g.gain.value = gain;
+  src.connect(f).connect(g).connect(c.destination); src.start(c.currentTime + delay);
 }
 function tone(freq: number, delay: number, dur: number, gain = 0.12) {
-  const c = ac(); const t = c.currentTime + delay;
-  const o = c.createOscillator(); o.type = "triangle"; o.frequency.value = freq;
-  const g = c.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  const c = ac(), t = c.currentTime + delay, o = c.createOscillator(), g = c.createGain();
+  o.type = "triangle"; o.frequency.value = freq; g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(gain, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   o.connect(g).connect(c.destination); o.start(t); o.stop(t + dur + 0.05);
 }
 
@@ -39,7 +36,18 @@ export function feedback(kind: Fx) {
       if (kind === "draw") [523, 523].forEach((f, i) => tone(f, i * 0.2, 0.35, 0.1));
     } catch { /* audio unavailable */ }
   }
-  if (s.haptics && "vibrate" in navigator) {
+  if (!s.haptics) return;
+  if (isNative()) {
+    void import("@capacitor/haptics").then(async ({ Haptics, ImpactStyle, NotificationType }) => {
+      if (kind === "win" || kind === "lose" || kind === "draw") {
+        await Haptics.notification({ type: kind === "win" ? NotificationType.Success : kind === "lose" ? NotificationType.Error : NotificationType.Warning });
+      } else {
+        await Haptics.impact({ style: kind === "capture" ? ImpactStyle.Medium : kind === "check" ? ImpactStyle.Heavy : ImpactStyle.Light });
+      }
+    }).catch(() => {});
+    return;
+  }
+  if ("vibrate" in navigator) {
     const p = { move: 12, capture: [18, 30, 18], check: [25, 40, 25], win: [40, 60, 40, 60, 80], lose: 120, draw: [30, 50, 30] }[kind];
     try { navigator.vibrate(p); } catch { /* ignore */ }
   }

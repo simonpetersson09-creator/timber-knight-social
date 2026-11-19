@@ -51,7 +51,7 @@ export function canShowAppOpen(o: { path: string; finished: number; shownThisLau
   return o.native && o.path === "/" && o.finished >= 1 && !o.shownThisLaunch;
 }
 
-/** Web visitors only see the download page – except joining, legal and admin pages. */
+/** Web visitors only see the download page – except joining, rules, legal and admin pages. */
 export function webPathAllowed(path: string): boolean {
-  return ["/join", "/legal", "/admin", "/add"].some((p) => path === p || path.startsWith(p + "/"));
+  return ["/join", "/legal", "/rules", "/admin", "/add"].some((p) => path === p || path.startsWith(p + "/"));
 }

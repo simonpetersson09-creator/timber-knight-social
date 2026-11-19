@@ -13,7 +13,10 @@ export const KEYS = [
   "adChoices", "adChoicesApp", "confirmDeleteData", "createLobby", "dataDeleted", "deleteMyData", "downloadText", "drawOffered", "expired", "gamesThisMonth", "inactiveLoss", "inviteFriend", "inviteValid", "invitedBy", "join", "joinMe", "joinWeb", "leaderboards", "legal", "lobby", "lobbyCode", "lobbyValid", "monthActive", "noOpponent", "noRanking", "notifications", "onlineStats", "opponentTurn", "pickCountry", "playerNumber", "quickChat", "quickMatch", "resignNoStats", "searching", "shareLink", "waitingFor", "weekTop", "winsThisWeek", "winsThisYear", "world", "pushTurn", "pushInvite", "pushRemindMove", "pushPlayReminder", "pushLobbyJoined", "chat0", "chat1", "chat2", "chat3", "chat4", "chat5", "chat6", "chat7",
   "changePhoto", "removePhoto", "moveReminders", "playReminders", "gameSettings", "createGame", "joinGame", "scanQr",
   "playerN", "clockDesc0", "clockDesc1", "clockDesc2", "clockDesc3", "clockDesc4", "lobbyCreateTitle", "lobbyCreateHint", "lobbyJoinTitle", "lobbyJoinHint", "lobbyFriendsLink", "or", "scanShort", "waitingShort", "close", "lobbyOpen", "youGetMahogany",
-  "privacy",
+  "privacy", "rules", "rulesIntro", "shareResult", "shareCopied", "shareError",
+  "ruleCastling", "ruleCastlingText", "ruleEnPassant", "ruleEnPassantText",
+  "rulePromotion", "rulePromotionText", "ruleStalemate", "ruleStalemateText",
+  "ruleDraws", "ruleDrawsText", "ruleClocks", "ruleClocksText", "ruleMoves", "ruleMovesText",
 ] as const;
 export type Key = (typeof KEYS)[number];
 

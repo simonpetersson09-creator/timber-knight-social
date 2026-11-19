@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { stockholmDay } from "./server/core";
 import { buildAdminStats, type AdminAppDay, type AdminEvent, type AdminMatch, type AdminPlayer } from "./admin-stats";
+import { buildRetention } from "./admin-retention";
 
 async function check(pw: string) {
   const want = process.env["ADMIN_PASSWORD"];
@@ -9,13 +9,17 @@ async function check(pw: string) {
   return (await import("@/integrations/supabase/client.server")).supabaseAdmin;
 }
 
-/** Full native-app statistics for the latest 30 Stockholm days; web and test devices are excluded. */
+const Period = z.union([z.literal(7), z.literal(30), z.literal(90)]).default(30);
+
+/** Native statistics: a fixed 30-day table plus a selectable 7/30/90-day analysis. */
 export const adminStats = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ password: z.string().max(200) }).parse(d))
+  .inputValidator((d: unknown) => z.object({ password: z.string().max(200), days: Period }).parse(d))
   .handler(async ({ data }) => {
     const a = await check(data.password);
-    const since = stockholmDay(new Date(Date.now() - 29 * 86_400_000));
-    const eventSince = new Date(Date.now() - 30 * 86_400_000).toISOString();
+    const historyDays = data.days + 30;
+    // Retention needs the full activity history; event and match reads stay period-bounded below.
+    const since = "1970-01-01";
+    const eventSince = new Date(Date.now() - historyDays * 86_400_000).toISOString();
     const { data: tests, error: testError } = await a.from("players").select("id, player_number").eq("is_test", true);
     if (testError) throw new Error("stats_read_failed");
     const testIds = new Set((tests ?? []).map((t) => t.id));
@@ -47,14 +51,30 @@ export const adminStats = createServerFn({ method: "POST" })
       matches.push(...(rows ?? []));
       if (!rows || rows.length < 1000) break;
     }
+    const { data: gameRows, error: gameError } = await a.from("games").select("id, status, kind, host, white, black, invitee").in("status", ["active", "waiting"]).limit(5000);
+    if (gameError) throw new Error("stats_read_failed");
+    const eligibleIds = new Set(players.filter((player) => !testIds.has(player.id)).map((player) => player.id));
+    const liveRows = (gameRows ?? []).filter((game) => eligibleIds.has(game.host) && [game.white, game.black, game.invitee].every((id) => !id || !testIds.has(id)));
+    const liveGames = {
+      active: liveRows.filter((game) => game.status === "active").length,
+      waiting: liveRows.filter((game) => game.status === "waiting").length,
+      byKind: Object.entries(liveRows.reduce<Record<string, number>>((all, game) => ({ ...all, [`${game.status}:${game.kind}`]: (all[`${game.status}:${game.kind}`] ?? 0) + 1 }), {})),
+    };
     const eligibleEvents = events.filter((e) => !e.player || !testIds.has(e.player));
     const stats = buildAdminStats({ players, appDays, events, matches, testIds });
-    const group = (kind: string) => Object.entries(eligibleEvents.filter((e) => e.kind === kind).reduce<Record<string, number>>((m, e) => ({ ...m, [e.name]: (m[e.name] ?? 0) + 1 }), {})).sort((x, y) => y[1] - x[1]);
+    const periodStats = buildAdminStats({ players, appDays, events, matches, testIds, periodDays: data.days });
+    const periodStart = Date.now() - data.days * 86_400_000;
+    const periodEvents = eligibleEvents.filter((event) => Date.parse(event.created_at) >= periodStart);
+    const group = (kind: string) => Object.entries(periodEvents.filter((e) => e.kind === kind).reduce<Record<string, number>>((m, e) => ({ ...m, [e.name]: (m[e.name] ?? 0) + 1 }), {})).sort((x, y) => y[1] - x[1]);
     return {
       ...stats,
+      period: data.days,
+      periodStats,
+      retention: buildRetention(players, appDays, testIds),
+      liveGames,
       ads: group("ad"), errors: group("error"), play: group("play"),
-      recentErrors: eligibleEvents.filter((e) => e.kind === "error").slice(0, 20),
-      diagnostics: eligibleEvents.filter((e) => e.kind === "ad" && e.name.startsWith("app_open")).slice(0, 100),
+      recentErrors: periodEvents.filter((e) => e.kind === "error").slice(0, 20),
+      diagnostics: periodEvents.filter((e) => e.kind === "ad" && e.name.startsWith("app_open")).slice(0, 100),
       testPlayers: (tests ?? []).map((t) => t.player_number),
     };
   });
@@ -65,4 +85,14 @@ export const adminSetTest = createServerFn({ method: "POST" })
     const a = await check(data.password);
     const { data: upd } = await a.from("players").update({ is_test: data.isTest }).eq("player_number", data.playerNumber).select("id");
     return { ok: !!upd?.length };
+  });
+
+export const adminPushTest = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ password: z.string().max(200), playerNumber: z.number().int() }).parse(d))
+  .handler(async ({ data }) => {
+    const a = await check(data.password);
+    const { data: player } = await a.from("players").select("id").eq("player_number", data.playerNumber).maybeSingle();
+    if (!player) return { result: "not_found" as const };
+    const { notifyTest } = await import("./server/core");
+    return { result: await notifyTest(a, player.id) };
   });

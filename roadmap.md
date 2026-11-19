@@ -103,6 +103,13 @@
 - [x] Riktig admininloggning, 30 dagar, diagram och 84 automatiska tester verifierade
 - Lanseringsluckor att prioritera separat: support@example.com kvar, produktionsannons-ID:n saknas, dataradering behöver felkontroll, integritetstexten behöver kontakt/lagringstider och native-länkar/push/offline kräver enhetstester
 
+## Appjämförelse – punkter 1–3
+- [x] 1. Native/offline-bygge, native-haptik, Keychain/Keystore och resultatdelning implementerade
+- [x] 2. Admin: retention D1/D7/D30, pågående/väntande matcher, push-testpanel och valbar analysperiod med kvarvarande 30-dagarstabell
+- [x] 3. Statistik per nivå/spelform samt hjälp för rockad, en passant, bondeförvandling, patt och klockor
+- [x] 89 tester, TypeScript, regelhjälp och statistik i mobilvy samt avslutat parti och resultatdelning verifierade
+- [ ] Fysisk iPhone/Android: verifiera Keychain/Keystore, haptik, offlinepaket och faktisk pushleverans (push är inte konfigurerad ännu)
+
 ## Pjäsförslag 19 nov
 - [x] Fem materialvarianter skapade som kontrollerade stillbilder för chatten; appens pjäser är orörda
 - [x] Användaren har valt förslag 2 – Elfenben & ebenholts

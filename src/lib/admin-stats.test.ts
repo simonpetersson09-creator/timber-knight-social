@@ -34,4 +34,14 @@ describe("admin statistics", () => {
     ] });
     expect(result.days[0]!).toMatchObject({ played: 1, cpu_finished: 1, online_finished: 1, forfeits: 1, issues: 1, issue_devices: 1, total: 2 });
   });
+
+  it("supports a seven-day analysis without changing the native filters", () => {
+    const result = buildAdminStats({ players, testIds: new Set(["test"]), now: NOW, appDays: [
+      { player: "ios", day: "2026-11-13", platform: "ios" },
+      { player: "ios", day: "2026-11-12", platform: "ios" },
+      { player: "web", day: "2026-11-13", platform: "web" },
+    ], events: [], matches: [], periodDays: 7 });
+    expect(result.days).toHaveLength(7);
+    expect(result.days[6]!).toMatchObject({ day: "2026-11-13", devices: 1, ios: 1 });
+  });
 });

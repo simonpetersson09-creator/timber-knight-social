@@ -33,7 +33,7 @@ use the editor.
 - Saved games, stats and settings are device-local (src/lib/storage.ts, localStorage).
 - Players have no login: an anonymous device id+secret (src/lib/identity.ts) is verified by server functions in src/lib/players.functions.ts, which alone touch the players/friendships/matches tables (RLS on, no client policies) — keeps identity tamper-proof without accounts.
 - Online games are server-authoritative: src/lib/online.functions.ts validates every move with chess.js; pure timing/ad/rating rules live in src/lib/online-rules.ts (tested). An hourly managed schedule calls /api/public/jobs/hourly for timeouts and reminders.
-- Native features (AdMob, push, in-app review, back button) load Capacitor plugins lazily and no-op on web; the Capacitor shell loads the published site (capacitor.config.ts server.url). Public web shows only a download page except /join, /legal, /admin.
+- Native features (AdMob, push, in-app review, haptics, sharing, back button) load Capacitor plugins lazily and no-op on web; anonymous credentials use Keychain/Keystore on devices. The normal Capacitor shell loads the published site for online play; native:offline bundles the client for local computer games. Public web shows only a download page except /join, /legal, /rules and /admin.
 - Profile photos use a private Storage bucket, device-verified server uploads and short-lived signed reads; store only a photo marker in the avatar field to avoid arbitrary image URLs.
 - Friend play lives on its own /online route rather than expanding the home button; retain server-authoritative lobby and invitation flows.
 - Notification categories are enforced by allowsNotification on the server so settings actually control delivery.

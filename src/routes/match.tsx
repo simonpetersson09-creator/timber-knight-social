@@ -20,7 +20,8 @@ import { QUICK_WAIT_MS } from "@/lib/online-rules";
 import { celebrate, feedback } from "@/lib/feedback";
 import { showGameEndAd } from "@/lib/ads";
 import { onGameFinished } from "@/lib/rate";
-import { createGame } from "@/lib/storage";
+import { createGame, recordResult } from "@/lib/storage";
+import { ResultShareButton } from "@/components/ResultShareButton";
 
 export const Route = createFileRoute("/match")({
   validateSearch: z.object({ id: z.string() }),
@@ -108,6 +109,7 @@ function Match() {
     if (g?.status !== "finished" || endHandled.current) return;
     endHandled.current = true;
     const won = g.result !== "d" && g.result === myColor;
+    recordResult(g.id, g.result === "d" ? "draw" : won ? "win" : "loss", null, g.end_reason !== "resign", "online");
     void (async () => {
       await showGameEndAd();
       setShowResult(true);
@@ -264,6 +266,7 @@ function Match() {
           <Piece color={g.result === "d" ? "w" : (g.result as "w" | "b")} type="k" className="mx-auto size-20" />
           <h2 className="brand-wordmark text-3xl">{title}</h2>
           <p className="text-muted-foreground">{reasonText}</p>
+          <ResultShareButton title="Mr B Chess" text={`${title} – ${reasonText} · ${opp ? displayName(opp) : t("playOnline")}`} />
           <button className="action-btn action-gold" onClick={() => navigate({ to: "/" })}>{t("home")}</button>
         </div>
       </Modal>

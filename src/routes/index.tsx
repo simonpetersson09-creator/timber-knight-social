@@ -160,9 +160,23 @@ function Home() {
               <Tile icon={Percent} n={stats.played ? `${winRate}%` : "—"} l={t("winRate")} />
             </div>
             {more && (
-              <div className="grid grid-cols-2 gap-2">
-                <Tile icon={Handshake} n={stats.draws} l={t("draws")} />
-                <Tile icon={Flame} n={stats.streak} l={t("streak")} />
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <Tile icon={Handshake} n={stats.draws} l={t("draws")} />
+                  <Tile icon={Flame} n={stats.streak} l={t("streak")} />
+                </div>
+                <div className="panel p-3">
+                  <p className="field-label mb-2 text-center">{t("level")}</p>
+                  <div className="space-y-2">{QUICK_LEVELS.map((level) => {
+                    const row = stats.byLevel?.[level];
+                    return <div key={level} className="grid grid-cols-[1fr_repeat(3,3rem)] items-center gap-1 text-xs"><span>{t(level)}</span><span className="text-right tabular-nums" title={t("played")}>{row?.played ?? 0}</span><span className="text-right tabular-nums" title={t("wins")}>{row?.wins ?? 0}</span><span className="text-right tabular-nums" title={t("winRate")}>{row?.played ? `${Math.round(row.wins / row.played * 100)}%` : "—"}</span></div>;
+                  })}</div>
+                  <div className="mt-2 grid grid-cols-[1fr_repeat(3,3rem)] gap-1 text-[9px] text-muted-foreground"><span /><span className="text-right">{t("played")}</span><span className="text-right">{t("wins")}</span><span className="text-right" title={t("winRate")} aria-label={t("winRate")}>%</span></div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">{(["ai", "local", "online"] as const).map((mode) => {
+                  const row = stats.byMode?.[mode];
+                  return <div key={mode} className="home-tile"><span className="home-tile-label">{mode === "ai" ? t("computer") : mode === "local" ? t("twoPlayers") : t("playOnline")}</span><span className="home-tile-num">{row?.played ?? 0}</span><span className="text-[10px] text-muted-foreground">{row?.wins ?? 0} {t("wins").toLowerCase()} · {row?.draws ?? 0} {t("draws").toLowerCase()}</span></div>;
+                })}</div>
               </div>
             )}
           </motion.div>

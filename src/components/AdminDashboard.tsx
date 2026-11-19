@@ -1,9 +1,9 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, ChartLine, ChevronLeft, ChevronRight, Copy, LogOut, RefreshCw } from "lucide-react";
+import { ArrowLeft, BellRing, ChartLine, ChevronLeft, ChevronRight, Copy, LogOut, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AdminLineChart from "@/components/AdminLineChart";
-import { adminSetTest, adminStats } from "@/lib/admin.functions";
+import { adminPushTest, adminSetTest, adminStats } from "@/lib/admin.functions";
 import {
   adminForfeitShare, adminOnlineOutcomes, adminRecordIndexes, adminReturningShare,
   adminRollingMean, buildRibbon, type AdminColumnKey, type AdminDayRow, type StarPoint,
@@ -37,7 +37,10 @@ export default function AdminDashboard({ diagram = false }: { diagram?: boolean 
   const [collapsedColumns, setCollapsedColumns] = useState<AdminColumnKey[]>([]);
   const [num, setNum] = useState("");
   const [copied, setCopied] = useState(false);
+  const [period, setPeriod] = useState<7 | 30 | 90>(30);
+  const [pushMessage, setPushMessage] = useState("");
   const rows = stats?.days ?? null;
+  const chartRows = stats?.periodStats.days ?? null;
   const records = useMemo(() => adminRecordIndexes(rows ?? [], COLUMNS.map((c) => c.key)), [rows]);
   const means = useMemo(() => Object.fromEntries((rows ?? []).map((row) => [row.day,
     Object.fromEntries([...COLUMNS.map((column) => column.key), "android" as const, "issue_devices" as const, "post_match_opportunities" as const].map((key) => [key, adminRollingMean(rows ?? [], row.day, key)])),
@@ -75,10 +78,10 @@ export default function AdminDashboard({ diagram = false }: { diagram?: boolean 
     return () => { observer?.disconnect(); cancelAnimationFrame(raf); window.removeEventListener("resize", measure); };
   }, [rows, diagram, collapsedColumns]);
 
-  const load = async (key: string) => {
+  const load = async (key: string, selectedPeriod: 7 | 30 | 90 = period) => {
     setLoading(true); setError(null);
     try {
-      const result = await adminStats({ data: { password: key } });
+      const result = await adminStats({ data: { password: key, days: selectedPeriod } });
       setStats(result);
       try { localStorage.setItem(ADMIN_KEY_STORAGE, key); } catch { /* storage unavailable */ }
     } catch {
@@ -107,10 +110,11 @@ export default function AdminDashboard({ diagram = false }: { diagram?: boolean 
 
   const sum = (key: AdminColumnKey): number => rows!.reduce((total, row) => total + (key === "total" ? row.cpu_finished + row.online_finished : Number(row[key] ?? 0)), 0);
   const diagnostics = stats.diagnostics.map((row) => JSON.stringify(row)).join("\n");
-  const best = stats.best;
+  const best = stats.periodStats.best;
+  const retentionCards = [["D1", stats.retention.d1], ["D7", stats.retention.d7], ["D30", stats.retention.d30]] as const;
   return <div className="max-h-screen min-h-screen overflow-y-auto overscroll-contain bg-background p-4 text-foreground md:p-8">
     <div className="mb-4 flex flex-wrap items-center justify-between gap-4"><div>
-      <h1 className="text-xl font-semibold">{diagram ? "Linjediagram – senaste 30 dagarna" : "Senaste 30 dagarna, per dag"}</h1>
+      <h1 className="text-xl font-semibold">{diagram ? `Linjediagram – senaste ${period} dagarna` : "Senaste 30 dagarna, per dag"}</h1>
       <p className="text-sm text-muted-foreground">Svensk tid, bara appen (iPhone/Android). Dagens rad är inte komplett. Parentes: dagsmedel för upp till 30 dagar.</p>
     </div><div className="flex flex-wrap gap-2">
       <Button asChild variant="outline" size="sm"><Link to={diagram ? "/admin" : "/admin/diagram"}>{diagram ? <ArrowLeft /> : <ChartLine />}{diagram ? "Till tabellen" : "Diagram"}</Link></Button>
@@ -118,11 +122,16 @@ export default function AdminDashboard({ diagram = false }: { diagram?: boolean 
       <Button variant="outline" size="sm" disabled={loading} onClick={() => { try { localStorage.removeItem(ADMIN_KEY_STORAGE); } catch { /* storage unavailable */ } setAdminKey(""); setStats(null); setError(null); }}><LogOut />Logga ut</Button>
     </div></div>
     {error && <p className="mb-2 text-sm text-destructive">{error}</p>}
+    <section aria-label="Periodanalys" className="mb-5 grid gap-3 lg:grid-cols-[auto_1fr_1fr]">
+      <div className="rounded-lg border border-border bg-card p-3"><label className="text-xs text-muted-foreground" htmlFor="admin-period">Analysera period</label><select id="admin-period" className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm" value={period} disabled={loading} onChange={(event) => { const next = Number(event.target.value) as 7 | 30 | 90; setPeriod(next); void load(adminKey, next); }}><option value={7}>7 dagar</option><option value={30}>30 dagar</option><option value={90}>90 dagar</option></select><p className="mt-1 text-xs text-muted-foreground">30-dagarstabellen finns alltid kvar.</p></div>
+      <div className="rounded-lg border border-border bg-card p-3"><p className="mb-2 text-xs text-muted-foreground">Återkommande appenheter · mogna kohorter</p><div className="grid grid-cols-3 gap-2">{retentionCards.map(([label, value]) => <div key={label}><p className="font-semibold">{label}: {value.rate == null ? "—" : `${value.rate.toLocaleString("sv-SE", { maximumFractionDigits: 1 })} %`}</p><p className="text-xs text-muted-foreground">{value.returned} av {value.eligible}</p></div>)}</div></div>
+      <div className="rounded-lg border border-border bg-card p-3"><p className="text-xs text-muted-foreground">Onlineläge just nu</p><div className="mt-1 flex gap-5"><p><b className="text-xl">{stats.liveGames.active}</b><span className="ml-1 text-sm">pågående</span></p><p><b className="text-xl">{stats.liveGames.waiting}</b><span className="ml-1 text-sm">väntande</span></p></div><p className="mt-1 text-xs text-muted-foreground">{stats.liveGames.byKind.map(([key, count]) => `${key.replace(":", " · ")}: ${count}`).join(" · ") || "Inga aktiva eller väntande matcher"}</p></div>
+    </section>
     {diagram ? <div className="flex flex-col items-start gap-5 lg:flex-row">
       <section aria-label="Bästa tider" className="flex shrink-0 gap-3 lg:w-56 lg:flex-col">
         <div className="flex-1 rounded-lg border border-border bg-card px-4 py-3"><p className="text-xs text-muted-foreground">Bästa veckodag</p><p className="text-lg font-semibold capitalize">{best.weekday ? WEEKDAYS[best.weekday.dow] : "—"}</p>{best.weekday && <p className="text-xs text-muted-foreground">i snitt {best.weekday.avg_devices.toLocaleString("sv-SE", { maximumFractionDigits: 1 })} spelande enheter/dag</p>}</div>
         <div className="flex-1 rounded-lg border border-border bg-card px-4 py-3"><p className="text-xs text-muted-foreground">Bästa timme</p><p className="text-lg font-semibold tabular-nums">{best.hour ? `${String(best.hour.hour).padStart(2, "0")}–${String((best.hour.hour + 1) % 24).padStart(2, "0")}` : "—"}</p>{best.hour && <p className="text-xs text-muted-foreground">{best.hour.devices} unika spelande enheter</p>}</div>
-      </section><div className="w-full min-w-0 flex-1"><AdminLineChart rows={rows!} /></div>
+      </section><div className="w-full min-w-0 flex-1"><AdminLineChart rows={chartRows!} /></div>
     </div> : <>
       <div ref={wrapRef} className="relative overflow-x-auto rounded-lg border border-border"><svg className="pointer-events-none absolute left-0 top-0 z-0" width={lines.w} height={lines.h} aria-hidden="true">
         <path d={buildRibbon(lines.gold)} fill="none" strokeWidth={1.25} strokeLinecap="round" strokeLinejoin="round" style={{ stroke: "var(--primary)" }} /><path d={buildRibbon(lines.red)} fill="none" strokeWidth={1.25} strokeLinecap="round" strokeLinejoin="round" style={{ stroke: "var(--destructive)" }} />
@@ -134,7 +143,7 @@ export default function AdminDashboard({ diagram = false }: { diagram?: boolean 
       <p className="mt-3 text-xs text-muted-foreground">Appålder bygger på första registrerade appaktivitet, inte verifierad nedladdningsdag. Nya appenheter är nya enhets-ID:n, inte verifierade nya personer. Partiannonser är bekräftade visningar / registrerade tillfällen. Avhoppsandel är avhopp / (färdiga onlinematcher + avhopp).</p>
       <p className="mt-3 text-xs text-muted-foreground">★ = högsta värdet i kolumnen under perioden. För avhopp och problem är röd stjärna den sämsta dagen. Enhetssummor visas inte eftersom samma enhet kan spela flera dagar.</p>
       <details className="mt-6 border-t border-border pt-4"><summary className="cursor-pointer font-semibold">Testenheter och loggdetaljer</summary>
-        <div className="mt-4 grid gap-5 lg:grid-cols-2"><section><h2 className="mb-2 font-semibold">Testtelefoner</h2><p className="text-sm text-muted-foreground">Spelarnummer syns i appens inställningar. Nu: {stats.testPlayers.join(", ") || "inga"}</p><div className="mt-2 flex flex-wrap gap-2"><input className="text-field max-w-40" inputMode="numeric" aria-label="Spelarnummer" value={num} onChange={(e) => setNum(e.target.value.replace(/\D/g, ""))} placeholder="Spelarnummer" /><Button size="sm" disabled={!num} onClick={async () => { await adminSetTest({ data: { password: adminKey, playerNumber: Number(num), isTest: true } }); setNum(""); await load(adminKey); }}>Lägg till</Button><Button size="sm" variant="outline" disabled={!num} onClick={async () => { await adminSetTest({ data: { password: adminKey, playerNumber: Number(num), isTest: false } }); setNum(""); await load(adminKey); }}>Ta bort</Button></div></section>
+        <div className="mt-4 grid gap-5 lg:grid-cols-2"><section><h2 className="mb-2 font-semibold">Testtelefoner</h2><p className="text-sm text-muted-foreground">Spelarnummer syns i appens inställningar. Nu: {stats.testPlayers.join(", ") || "inga"}</p><div className="mt-2 flex flex-wrap gap-2"><input className="text-field max-w-40" inputMode="numeric" aria-label="Spelarnummer" value={num} onChange={(e) => setNum(e.target.value.replace(/\D/g, ""))} placeholder="Spelarnummer" /><Button size="sm" disabled={!num} onClick={async () => { await adminSetTest({ data: { password: adminKey, playerNumber: Number(num), isTest: true } }); setNum(""); await load(adminKey); }}>Lägg till</Button><Button size="sm" variant="outline" disabled={!num} onClick={async () => { await adminSetTest({ data: { password: adminKey, playerNumber: Number(num), isTest: false } }); setNum(""); await load(adminKey); }}>Ta bort</Button><Button size="sm" variant="outline" disabled={!num} onClick={async () => { const response = await adminPushTest({ data: { password: adminKey, playerNumber: Number(num) } }); setPushMessage({ sent: "Testnotisen skickades.", missing_token: "Enheten har ingen registrerad notismottagare.", not_configured: "Notisleveransen är inte konfigurerad ännu.", not_found: "Spelarnumret hittades inte.", failed: "Testnotisen kunde inte skickas." }[response.result]); }}><BellRing />Skicka testnotis</Button></div>{pushMessage && <p className="mt-2 text-sm" role="status">{pushMessage}</p>}</section>
         <section><h2 className="mb-2 font-semibold">Händelser under perioden</h2>{[["Annonser", stats.ads], ["Fel", stats.errors], ["Spel", stats.play]].map(([label, values]) => <div key={label as string} className="mb-2"><p className="text-sm font-medium">{label as string}</p>{(values as [string, number][]).length ? (values as [string, number][]).map(([name, count]) => <p key={name} className="truncate text-xs text-muted-foreground">{name}: <b>{count}</b></p>) : <p className="text-xs text-muted-foreground">Inga rapporter ännu.</p>}</div>)}</section></div>
         <section className="mt-5"><h2 className="mb-2 font-semibold">Senaste feldetaljer</h2>{stats.recentErrors.length ? <div className="space-y-2">{stats.recentErrors.map((event, index) => <details key={`${event.created_at}-${index}`} className="rounded-md border border-border p-2 text-xs"><summary className="cursor-pointer">{event.created_at.slice(0, 16).replace("T", " ")} · {event.platform} · {event.name}</summary><pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words text-muted-foreground">{event.detail || "Ingen detalj"}</pre></details>)}</div> : <p className="text-xs text-muted-foreground">Inga feldetaljer under perioden.</p>}</section>
       </details>

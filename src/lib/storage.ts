@@ -12,15 +12,21 @@ export type SavedGame = {
   id: string; mode: "ai" | "local"; level: Level; human: Color; clock: ClockCfg;
   times: { w: number; b: number } | null; pgn: string; updatedAt: number;
 };
+export type Outcome = "win" | "loss" | "draw";
+export type ResultStats = { played: number; wins: number; losses: number; draws: number };
 export type Stats = {
   played: number; wins: number; losses: number; draws: number; streak: number; bestStreak: number;
-  levelWins: Partial<Record<Level, number>>; recorded: string[];
+  levelWins: Partial<Record<Level, number>>;
+  byLevel: Partial<Record<Level, ResultStats>>;
+  byMode: Partial<Record<"ai" | "local" | "online", ResultStats>>;
+  recorded: string[];
 };
 export type Settings = { lang: string; sound: boolean; haptics: boolean };
 
 export const MAX_SAVED = 3;
 const G = "mrbchess.games.v1", S = "mrbchess.stats.v1", P = "mrbchess.settings.v1";
-const EMPTY_STATS: Stats = { played: 0, wins: 0, losses: 0, draws: 0, streak: 0, bestStreak: 0, levelWins: {}, recorded: [] };
+const EMPTY_RESULT: ResultStats = { played: 0, wins: 0, losses: 0, draws: 0 };
+const EMPTY_STATS: Stats = { played: 0, wins: 0, losses: 0, draws: 0, streak: 0, bestStreak: 0, levelWins: {}, byLevel: {}, byMode: {}, recorded: [] };
 
 function read<T>(key: string, fallback: T): T {
   try { const v = localStorage.getItem(key); return v ? (JSON.parse(v) as T) : fallback; } catch { return fallback; }
@@ -47,17 +53,27 @@ export function turnOf(pgn: string): Color {
 }
 
 export const getStats = (): Stats => ({ ...EMPTY_STATS, ...read<Partial<Stats>>(S, {}) });
-export const resetStats = () => write(S, { ...EMPTY_STATS, levelWins: {}, recorded: getStats().recorded });
+export const resetStats = () => write(S, { ...EMPTY_STATS, levelWins: {}, byLevel: {}, byMode: {}, recorded: getStats().recorded });
 
-/** Records a finished game vs the computer once; returns a level newly unlocked by this win. */
-export function recordResult(id: string, outcome: "win" | "loss" | "draw", level: Level, counts = true): Level | null {
+function addResult(target: ResultStats | undefined, outcome: Outcome): ResultStats {
+  const next = { ...EMPTY_RESULT, ...target, played: (target?.played ?? 0) + 1 };
+  if (outcome === "win") next.wins++;
+  else if (outcome === "loss") next.losses++;
+  else next.draws++;
+  return next;
+}
+
+/** Records a completed local game once, with detailed level and game-mode totals. */
+export function recordResult(id: string, outcome: Outcome, level: Level | null, counts = true, mode: "ai" | "local" | "online" = "ai"): Level | null {
   if (!counts) return null;
   const s = getStats();
   if (s.recorded.includes(id)) return null;
   const before = LEVELS.filter((l) => isUnlocked(l, s.levelWins));
   s.played++;
-  if (outcome === "win") { s.wins++; s.streak++; s.bestStreak = Math.max(s.bestStreak, s.streak); s.levelWins[level] = (s.levelWins[level] ?? 0) + 1; }
+  if (outcome === "win") { s.wins++; s.streak++; s.bestStreak = Math.max(s.bestStreak, s.streak); if (level) s.levelWins[level] = (s.levelWins[level] ?? 0) + 1; }
   else { s.streak = 0; if (outcome === "loss") s.losses++; else s.draws++; }
+  if (level) s.byLevel = { ...s.byLevel, [level]: addResult(s.byLevel[level], outcome) };
+  s.byMode = { ...s.byMode, [mode]: addResult(s.byMode[mode], outcome) };
   s.recorded = [...s.recorded, id];
   write(S, s);
   return LEVELS.find((l) => isUnlocked(l, s.levelWins) && !before.includes(l)) ?? null;

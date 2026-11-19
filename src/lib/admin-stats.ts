@@ -31,12 +31,13 @@ export function buildAdminStats(input: {
   matches: AdminMatch[];
   testIds: Set<string>;
   now?: Date;
+  periodDays?: number;
 }): { days: AdminDayRow[]; best: AdminBestTimes } {
   const now = input.now ?? new Date();
   const today = adminStockholmDay(now);
   const players = new Map(input.players.filter((p) => NATIVE.has(p.platform) && !input.testIds.has(p.id)).map((p) => [p.id, p]));
   const days = new Map<string, AdminDayRow>();
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < (input.periodDays ?? 30); i++) {
     const day = adminStockholmDay(new Date(now.getTime() - i * 86_400_000));
     days.set(day, { day, devices: 0, ios: 0, android: 0, played: 0, avg_app_age_days: null, total: 0, cpu_finished: 0, online_finished: 0, forfeits: 0, issues: 0, issue_devices: 0, new_players: 0, returning_played: 0, post_match_shown: 0, post_match_opportunities: 0 });
   }

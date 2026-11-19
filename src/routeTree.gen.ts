@@ -20,6 +20,7 @@ import { Route as MatchRouteImport } from './routes/match'
 import { Route as OnlineRouteImport } from './routes/online'
 import { Route as PlayRouteImport } from './routes/play'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as RulesRouteImport } from './routes/rules'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminDiagramRouteImport } from './routes/admin.diagram'
@@ -80,6 +81,11 @@ const ProfileRoute = ProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RulesRoute = RulesRouteImport.update({
+  id: '/rules',
+  path: '/rules',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/online': typeof OnlineRoute
   '/play': typeof PlayRoute
   '/profile': typeof ProfileRoute
+  '/rules': typeof RulesRoute
   '/settings': typeof SettingsRoute
   '/admin/diagram': typeof AdminDiagramRoute
   '/admin/': typeof AdminIndexRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/online': typeof OnlineRoute
   '/play': typeof PlayRoute
   '/profile': typeof ProfileRoute
+  '/rules': typeof RulesRoute
   '/settings': typeof SettingsRoute
   '/admin/diagram': typeof AdminDiagramRoute
   '/admin': typeof AdminIndexRoute
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   '/online': typeof OnlineRoute
   '/play': typeof PlayRoute
   '/profile': typeof ProfileRoute
+  '/rules': typeof RulesRoute
   '/settings': typeof SettingsRoute
   '/admin/diagram': typeof AdminDiagramRoute
   '/admin/': typeof AdminIndexRoute
@@ -166,6 +175,7 @@ export interface FileRouteTypes {
     | '/online'
     | '/play'
     | '/profile'
+    | '/rules'
     | '/settings'
     | '/admin/diagram'
     | '/admin/'
@@ -182,6 +192,7 @@ export interface FileRouteTypes {
     | '/online'
     | '/play'
     | '/profile'
+    | '/rules'
     | '/settings'
     | '/admin/diagram'
     | '/admin'
@@ -199,6 +210,7 @@ export interface FileRouteTypes {
     | '/online'
     | '/play'
     | '/profile'
+    | '/rules'
     | '/settings'
     | '/admin/diagram'
     | '/admin/'
@@ -217,6 +229,7 @@ export interface RootRouteChildren {
   OnlineRoute: typeof OnlineRoute
   PlayRoute: typeof PlayRoute
   ProfileRoute: typeof ProfileRoute
+  RulesRoute: typeof RulesRoute
   SettingsRoute: typeof SettingsRoute
   ApiPublicJobsHourlyRoute: typeof ApiPublicJobsHourlyRoute
 }
@@ -300,6 +313,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rules': {
+      id: '/rules'
+      path: '/rules'
+      fullPath: '/rules'
+      preLoaderRoute: typeof RulesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -355,6 +375,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnlineRoute: OnlineRoute,
   PlayRoute: PlayRoute,
   ProfileRoute: ProfileRoute,
+  RulesRoute: RulesRoute,
   SettingsRoute: SettingsRoute,
   ApiPublicJobsHourlyRoute: ApiPublicJobsHourlyRoute,
 }

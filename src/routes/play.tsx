@@ -23,6 +23,7 @@ import { celebrate, feedback } from "@/lib/feedback";
 import { showGameEndAd } from "@/lib/ads";
 import { onGameFinished } from "@/lib/rate";
 import { createGame, deleteGame, getGame, recordResult, saveGame, type Color, type SavedGame } from "@/lib/storage";
+import { ResultShareButton } from "@/components/ResultShareButton";
 
 export const Route = createFileRoute("/play")({
   validateSearch: (s: Record<string, unknown>): { id: string } => ({ id: typeof s["id"] === "string" ? s["id"] : "" }),
@@ -112,11 +113,13 @@ function Play() {
     report("play", "local_game_finished", JSON.stringify({ game: s.id, reason: res.reason, winner: res.winner, level: s.level }));
     if (s.mode === "ai") {
       const outcome = res.winner === null ? "draw" : res.winner === s.human ? "win" : "loss";
-      const unlocked = recordResult(s.id, outcome, s.level, res.reason !== "resigned");
+      const unlocked = recordResult(s.id, outcome, s.level, res.reason !== "resigned", s.mode);
       feedback(outcome === "win" ? "win" : outcome === "loss" ? "lose" : "draw");
       if (outcome === "win") void celebrate();
       if (unlocked) setTimeout(() => toast.success(t("unlocked", { level: t(unlocked) })), 900);
     } else {
+      const outcome = res.winner === null ? "draw" : res.winner === s.human ? "win" : "loss";
+      recordResult(s.id, outcome, s.level, res.reason !== "resigned", s.mode);
       feedback(res.winner ? "win" : "draw");
       if (res.winner) void celebrate();
     }
@@ -342,6 +345,7 @@ function Play() {
           <Piece color={result?.winner ?? "w"} type="k" className="mx-auto size-20" />
           <h2 className="brand-wordmark text-3xl">{title}</h2>
           <p className="text-muted-foreground">{resultText()}</p>
+          <ResultShareButton title="Mr B Chess" text={`${title} – ${resultText()}${vsAi ? ` · ${t(saved.level)}` : ""}`} />
           <button onClick={playAgain} className="action-btn action-gold">{t("playAgain")}</button>
           <Link to="/" className="action-btn action-ghost">{t("home")}</Link>
         </div>
