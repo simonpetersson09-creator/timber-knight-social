@@ -62,9 +62,9 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-display: "Inter", -apple-system, system-ui, sans-serif;
   --font-brand: "Bodoni Moda", Georgia, serif;
-  --font-sans: "Space Grotesk", system-ui, sans-serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -150,7 +150,8 @@
   }
 }
 
-body { background: var(--gradient-scene); background-attachment: fixed; min-height: 100dvh; font-family: var(--font-sans); }
+body { background: var(--gradient-scene); background-attachment: fixed; min-height: 100dvh; font-family: var(--font-sans); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+h1, h2, h3, h4 { font-family: "Space Grotesk", system-ui, sans-serif; }
 
 .brand-wordmark { font-family: var(--font-brand); font-weight: 700; font-variation-settings: 'opsz' 14; text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.14;
   background: linear-gradient(180deg, oklch(0.905 0.085 88) 0%, oklch(0.905 0.085 88) 38%, oklch(0.81 0.12 82) 74%, oklch(0.72 0.12 76) 100%);
