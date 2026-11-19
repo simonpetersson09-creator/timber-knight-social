@@ -182,7 +182,7 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .sq-dark { background-image: linear-gradient(var(--board-dark-tint), var(--board-dark-tint)), url("./assets/wood-dark.jpg"); }
 .sq-last::before, .sq-selected::before, .sq-check::before { content: ""; position: absolute; inset: 0; }
 .sq-last::before { background: var(--highlight); opacity: .55; }
-.sq-selected::before { background: var(--highlight); }
+.sq-selected::before { background: radial-gradient(ellipse at 50% 62%, oklch(0.92 0.09 80 / 55%) 0%, var(--highlight) 70%); }
 .sq-check::before { background: radial-gradient(circle, var(--check) 0%, transparent 75%); }
 .hint-dot { position: absolute; width: 28%; height: 28%; border-radius: 50%; background: oklch(0.15 0.03 40 / 35%); z-index: 2; }
 .hint-capture { position: absolute; inset: 6%; border-radius: 50%; border: 4px solid oklch(0.15 0.03 40 / 40%); z-index: 2; }
@@ -218,7 +218,7 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .piece-slot[data-piece-type="n"] { --piece-base-width: 57%; }
 .piece-slot[data-piece-type="r"] { --piece-base-width: 56%; }
 .piece-slot[data-piece-type="p"] { --piece-base-width: 53%; }
-.piece-slot::before { content: ""; position: absolute; left: 50%; bottom: 5.5%; width: var(--piece-base-width); height: 6.5%; transform: translateX(-50%); background: var(--piece-contact); pointer-events: none; }
+.piece-slot::before { content: ""; position: absolute; left: 50%; bottom: 5.5%; width: var(--piece-base-width); height: 6.5%; transform: translateX(-46%) translateY(8%); background: var(--piece-contact); pointer-events: none; }
 .piece-img { display: block; object-fit: contain; user-select: none; -webkit-user-drag: none; filter: drop-shadow(0 2px 1.5px oklch(0 0 0 / 50%)); }
 .piece-slot .piece-img { position: relative; width: 100%; height: 100%; object-fit: contain; filter: var(--piece-shadow); }
 
