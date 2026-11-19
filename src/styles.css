@@ -315,8 +315,9 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
   background: radial-gradient(ellipse at 50% 30%, var(--board-frame-shade), transparent 75%), linear-gradient(var(--board-frame-tint), var(--board-frame-tint)), url("./assets/wood-dark.jpg") center/cover, var(--wood-frame);
   box-shadow: inset 0 5px 9px var(--board-frame-shade), inset 0 -2px 3px var(--board-frame-glint), 0 2px 6px var(--board-frame-shade); }
 .captured-row { direction: ltr; display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); align-items: center; width: 100%; height: 100%; gap: clamp(1px, .45cqi, 3px); line-height: 0; }
-.captured-row > span { display: flex; align-items: flex-end; justify-content: center; min-width: 0; height: 100%; overflow: hidden; }
-.captured-row .piece-img { width: 100%; height: auto; aspect-ratio: 1; max-height: 100%; object-fit: contain; object-position: bottom; filter: drop-shadow(0 1px 1px oklch(0 0 0 / 40%)); }
+.captured-row > span { display: flex; align-items: flex-end; justify-content: center; min-width: 0; height: 100%; overflow: visible; }
+.captured-row .piece-img { flex: none; width: min(clamp(28px, 10cqi, 42px), var(--cap-max, 150%)); height: auto; aspect-ratio: 1; max-width: none; object-fit: contain; object-position: bottom; filter: drop-shadow(0 1px 1px oklch(0 0 0 / 40%)); }
+.captured-row > [data-type="k"] { --cap-max: 124%; } .captured-row > [data-type="q"] { --cap-max: 97%; } .captured-row > [data-type="r"] { --cap-max: 154%; } .captured-row > [data-type="b"] { --cap-max: 184%; } .captured-row > [data-type="n"] { --cap-max: 166%; } .captured-row > [data-type="p"] { --cap-max: 176%; }
 .captured-tray[data-owner="w"] { border-color: color-mix(in oklab, var(--wood-frame-deep) 45%, transparent);
   background: radial-gradient(ellipse at 50% 30%, transparent, color-mix(in oklab, var(--wood-frame-deep) 30%, transparent) 90%), linear-gradient(var(--board-light-tint), var(--board-light-tint)), url("./assets/wood-light.jpg") center/cover;
   box-shadow: inset 0 5px 9px color-mix(in oklab, var(--wood-frame-deep) 40%, transparent), 0 2px 6px var(--board-frame-shade); }
