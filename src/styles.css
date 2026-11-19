@@ -303,7 +303,7 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .game-clock[data-active="you"], .game-clock[data-active="opp"] { border-color: color-mix(in oklab, var(--player-accent) 68%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--player-accent) 24%, transparent), 0 6px 18px color-mix(in oklab, var(--player-accent) 13%, transparent); }
 .game-clock[data-running="true"] { background: var(--player-accent); color: var(--player-on-accent); }
 .game-clock[data-low="true"] { background: var(--destructive); color: var(--destructive-foreground); animation: clock-pulse 1s ease-in-out infinite; }
-.captured-tray { flex: 1 1 auto; min-width: 0; min-height: 50px; display: flex; flex-direction: column; justify-content: center; padding: 4px 10px;
+.captured-tray { flex: 1 1 auto; min-width: 0; height: 92px; justify-content: center; display: flex; flex-direction: column; justify-content: center; padding: 4px 10px;
   border-radius: 24px; border: 1px solid color-mix(in oklab, var(--primary) 30%, transparent);
   background: radial-gradient(ellipse at 50% 30%, var(--board-frame-shade), transparent 75%), linear-gradient(var(--board-frame-tint), var(--board-frame-tint)), url("./assets/wood-dark.jpg") center/cover, var(--wood-frame);
   box-shadow: inset 0 6px 12px var(--board-frame-shade), inset 0 -2px 3px var(--board-frame-glint), 0 2px 6px var(--board-frame-shade); }
@@ -312,8 +312,8 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .player-bottom .captured-row { justify-content: flex-end; }
 .captured-row:empty { display: none; }
 .captured-row .piece-img { width: 36px; height: 42px; }
-.captured-row > * { margin-inline: -6px; }
-.captured-row { padding-inline: 5px; }
+.captured-row > * { margin-inline: -9px; height: 40px; display: grid; place-items: center; }
+.captured-row { padding-inline: 9px; align-content: center; }
 .captured-new { animation: captured-arrive 0s 1.4s both; }
 @keyframes captured-arrive { from { visibility: hidden; } }
 .capture-layer { position: relative; z-index: 4; grid-area: 2 / 2; pointer-events: none; }
