@@ -98,7 +98,7 @@
   --border: oklch(0.376 0.035 221);
   --input: oklch(0.376 0.035 221);
   --ring: oklch(0.76 0.14 70);
-  --wood-frame: oklch(0.3 0.06 45);
+  --wood-frame: oklch(0.36 0.1 32);
   --wood-frame-deep: oklch(0.2 0.045 40);
   --ebony: oklch(0.16 0.01 50);
   --ebony-shine: oklch(0.42 0.02 50);
@@ -157,8 +157,8 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .board-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; height: 100%; border-radius: 4px; overflow: hidden;
   box-shadow: 0 0 0 2px var(--wood-frame-deep), inset 0 0 12px oklch(0 0 0 / 35%); }
 .board-square { position: relative; display: flex; align-items: center; justify-content: center; container-type: size; }
-.sq-light { background: linear-gradient(oklch(0.8 0.08 70 / 0.35), oklch(0.8 0.08 70 / 0.35)), url("./assets/wood-light.jpg") center/400%; }
-.sq-dark { background: linear-gradient(oklch(0.5 0.09 50 / 0.5), oklch(0.5 0.09 50 / 0.5)), url("./assets/wood-dark.jpg") center/400%; }
+.sq-light { background: linear-gradient(oklch(0.9 0.045 80 / 0.7), oklch(0.9 0.045 80 / 0.7)), url("./assets/wood-light.jpg") center/400%; }
+.sq-dark { background: linear-gradient(oklch(0.42 0.1 35 / 0.72), oklch(0.42 0.1 35 / 0.72)), url("./assets/wood-dark.jpg") center/400%; }
 .sq-last::before, .sq-selected::before, .sq-check::before { content: ""; position: absolute; inset: 0; }
 .sq-last::before { background: var(--highlight); opacity: .55; }
 .sq-selected::before { background: var(--highlight); }
@@ -211,13 +211,13 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 
 .game-card { width: 100%; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 10px 0 12px; border-radius: 10px; overflow: hidden; text-align: left; font-family: var(--font-display); transition: box-shadow .2s, filter .2s; }
 .game-card:active { filter: brightness(.96); }
-.card-you { background: var(--gradient-success); color: var(--primary-foreground); box-shadow: var(--shadow-success); }
+.card-you { background: var(--gradient-success); color: var(--background); box-shadow: var(--shadow-success); }
 .card-opp { background: var(--gradient-gold); color: var(--background); box-shadow: var(--shadow-gold); }
 .card-invite { background: var(--gradient-invite); color: var(--foreground); box-shadow: 0 4px 16px color-mix(in oklab, var(--invite) 30%, transparent); }
 .card-link { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; height: 100%; }
 .card-chip { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 7px; font-size: 13px; overflow: hidden; background: var(--background); color: var(--foreground); }
 .card-chip > svg { width: 12px; height: 12px; }
-.card-chip-light { background: oklch(1 0 0 / 22%); color: var(--foreground); }
+.card-chip-light { background: var(--background); color: var(--foreground); }
 .card-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
 .card-name { display: block; font-size: 11px; font-weight: 700; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card-sub { display: flex; align-items: center; gap: 4px; font-size: 8px; line-height: 1; opacity: .9; white-space: nowrap; overflow: hidden; }

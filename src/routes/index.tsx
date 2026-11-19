@@ -197,7 +197,7 @@ function OnlineCard({ g, onAccept, onDecline }: { g: OnlineRow; onAccept: () => 
     <Link to="/match" search={{ id: g.id }} className={`game-card ${g.myTurn ? "card-you" : "card-opp"}`}>
       <span className={`card-chip${g.myTurn ? " card-chip-light" : ""}`}><Play /></span>
       <span className="card-body"><span className="card-name">{name}</span>
-        <span className="card-sub"><Clock className="size-2.5" />{g.myTurn ? t("yourTurn") : t("opponentTurn")}</span></span>
+        <span className="card-sub">♟ {g.moveNo}</span></span>
       <span className={g.myTurn ? "card-pill card-pill-action animate-pulse" : "card-pill"}>{g.myTurn ? t("yourTurn") : t("waitingShort")}</span>
     </Link>
   );

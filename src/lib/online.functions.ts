@@ -46,6 +46,7 @@ export const myOnline = createServerFn({ method: "POST" })
         myTurn: g.status === "active" && myColor === turn,
         opponent: (ps ?? []).find((p) => p.id === oppId) ?? null,
         expires_at: g.expires_at,
+        moveNo: Number(g.fen.split(" ")[5] ?? 1),
       };
     });
   });
