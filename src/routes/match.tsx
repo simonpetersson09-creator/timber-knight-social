@@ -1,4 +1,5 @@
 import { GamePlayerCard } from "@/components/GamePlayerCard";
+import { GameClock } from "@/components/GameClock";
 import { CapturedPieces } from "@/components/CapturedPieces";
 import { Button } from "@/components/ui/button";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -185,14 +186,17 @@ function Match() {
     await sendChat({ data: { ...getCred(), gameId: id, phrase: i } }).catch(() => {});
   }
 
-  const bar = (pid: string | null | undefined, c: "w" | "b") => {
+  const card = (pid: string | null | undefined, c: "w" | "b") => {
     const p = pid ? players[pid] : null;
     return (
       <GamePlayerCard name={p ? `${displayName(p)}${p.country ? ` ${flagOf(p.country)}` : ""}` : "…"} avatar={p?.avatar} color={c}
-        time={g.status === "active" && turn === c ? `${deadlineH}h` : "48h"}
         active={g.status === "active" && turn === c ? (c === myColor ? "you" : "opp") : undefined} />
     );
   };
+  const clock = (c: "w" | "b") => (
+    <GameClock time={g.status === "active" && turn === c ? `${deadlineH}h` : "48h"} color={c}
+      active={g.status === "active" && turn === c ? (c === myColor ? "you" : "opp") : undefined} />
+  );
   const reasonText = g.end_reason === "resign" ? t("resignNoStats") : g.end_reason === "timeout" ? t("inactiveLoss") : g.end_reason === "checkmate" ? t("checkmate") : t("draw");
   const title = g.result === "d" ? t("draw") : g.result === myColor ? t("youWon") : t("youLost");
   const status = g.status === "finished" ? title : game.inCheck() ? t("check") : myTurn ? t("yourTurn") : t("opponentTurn");
@@ -206,9 +210,9 @@ function Match() {
         <button className="action-ghost flex size-10 items-center justify-center rounded-full" aria-label={t("quickChat")} disabled={g.status !== "active"} onClick={() => setAsk("chat")}><MessageCircle className="size-5" /></button>
       </header>
       <div className="play-col relative">
-        <div className="player-top">{bar(oppId, myColor === "w" ? "b" : "w")}<CapturedPieces game={game} mine={myColor === "w" ? "b" : "w"} /></div>
+        <div className="player-top">{card(oppId, myColor === "w" ? "b" : "w")}{clock(myColor === "w" ? "b" : "w")}<CapturedPieces game={game} mine={myColor === "w" ? "b" : "w"} /></div>
         <ChessBoard game={game} orientation={myColor} disabled={!myTurn} lastMove={(() => { const h = game.history({ verbose: true }); const l = h[h.length - 1]; return l ? { from: l.from, to: l.to } : null; })()} onMove={onBoardMove} />
-        <div className="player-bottom"><CapturedPieces game={game} mine={myColor} />{bar(me, myColor)}</div>
+        <div className="player-bottom"><CapturedPieces game={game} mine={myColor} />{clock(myColor)}{card(me, myColor)}</div>
         {bubble && <div className="chat-bubble" data-mine={bubble.mine}>{bubble.text}</div>}
       </div>
       <div className="play-side">

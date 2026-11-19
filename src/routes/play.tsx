@@ -4,6 +4,7 @@ import { Chess, type Square } from "chess.js";
 import { ArrowLeft, Flag, Handshake } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GamePlayerCard } from "@/components/GamePlayerCard";
+import { GameClock } from "@/components/GameClock";
 import { CapturedPieces } from "@/components/CapturedPieces";
 import { useMe } from "@/hooks/use-me";
 import { displayName } from "@/lib/profile";
@@ -234,9 +235,13 @@ function Play() {
     ? result.winner === null ? t("draw") : result.winner === human ? t("youWon") : t("youLost")
     : result.winner === null ? t("draw") : t("sideWins", { side: side(result.winner) });
 
-  const bar = (c: Color) => (
+  const card = (c: Color) => (
     <GamePlayerCard name={nameOf(c)} avatar={c === human ? me?.avatar : undefined} computer={vsAi && c !== human} color={c}
-      time={saved.clock ? fmt(remaining(c)) : "∞"} active={activeKind(c)} low={!!saved.clock && !result && game.turn() === c && remaining(c) < 20000} />
+      active={activeKind(c)} />
+  );
+  const clock = (c: Color) => (
+    <GameClock time={saved.clock ? fmt(remaining(c)) : "∞"} color={c} active={activeKind(c)}
+      low={!!saved.clock && !result && game.turn() === c && remaining(c) < 20000} />
   );
 
   const busy = thinking || !!result;
@@ -251,9 +256,9 @@ function Play() {
       </header>
 
       <div className="play-col">
-        <div className="player-top">{bar(top)}<CapturedPieces game={game} mine={top} /></div>
+        <div className="player-top">{card(top)}{clock(top)}<CapturedPieces game={game} mine={top} /></div>
         <ChessBoard game={game} orientation={vsAi ? human : "w"} disabled={aiTurn || !!result} lastMove={lastMove} onMove={onBoardMove} />
-        <div className="player-bottom"><CapturedPieces game={game} mine={bottom} />{bar(bottom)}</div>
+        <div className="player-bottom"><CapturedPieces game={game} mine={bottom} />{clock(bottom)}{card(bottom)}</div>
       </div>
 
       <div className="play-side">
