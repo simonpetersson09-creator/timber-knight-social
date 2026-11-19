@@ -111,14 +111,14 @@
   --board-frame-deep: oklch(0.18 0.045 35);
   --board-coordinate: oklch(0.89 0.075 82 / 88%);
   --board-contact: oklch(0.1 0.02 40 / 65%);
-  --piece-contact: radial-gradient(ellipse, oklch(0.12 0.025 40 / 32%) 0%, oklch(0.12 0.025 40 / 12%) 45%, transparent 72%);
+  --piece-contact: radial-gradient(ellipse, oklch(0.12 0.025 40 / 34%) 0%, oklch(0.12 0.025 40 / 15%) 36%, transparent 72%);
   --piece-shadow: none;
   --ebony: oklch(0.16 0.01 50);
   --ebony-shine: oklch(0.42 0.02 50);
   --ivory: oklch(0.94 0.025 91);
   --ivory-ink: oklch(0.3 0.018 70);
   --highlight: oklch(0.82 0.15 95 / 55%);
-  --check: oklch(0.6 0.22 27 / 75%);
+  --check: oklch(0.52 0.12 35 / 60%);
   --gradient-gold: linear-gradient(to bottom right, var(--primary-glow), var(--primary));
   --gradient-blue: linear-gradient(90deg, var(--accent-glow), var(--accent));
   --gradient-scene: var(--background);
@@ -212,13 +212,13 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
 .seg button[data-active="true"] { background: var(--gradient-gold); color: var(--primary-foreground); box-shadow: var(--shadow-gold); }
 
 .piece-slot { --piece-base-width: 50%; position: relative; z-index: 3; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; pointer-events: none; transform-origin: center 87%; will-change: transform; }
-.piece-slot[data-piece-type="k"] { --piece-base-width: 58%; }
-.piece-slot[data-piece-type="q"] { --piece-base-width: 56%; }
-.piece-slot[data-piece-type="b"] { --piece-base-width: 51%; }
-.piece-slot[data-piece-type="n"] { --piece-base-width: 54%; }
-.piece-slot[data-piece-type="r"] { --piece-base-width: 53%; }
-.piece-slot[data-piece-type="p"] { --piece-base-width: 44%; }
-.piece-slot::before { content: ""; position: absolute; left: 50%; bottom: 8%; width: var(--piece-base-width); height: 7%; transform: translateX(-50%); background: var(--piece-contact); pointer-events: none; }
+.piece-slot[data-piece-type="k"] { --piece-base-width: 60%; }
+.piece-slot[data-piece-type="q"] { --piece-base-width: 58%; }
+.piece-slot[data-piece-type="b"] { --piece-base-width: 55%; }
+.piece-slot[data-piece-type="n"] { --piece-base-width: 57%; }
+.piece-slot[data-piece-type="r"] { --piece-base-width: 56%; }
+.piece-slot[data-piece-type="p"] { --piece-base-width: 49%; }
+.piece-slot::before { content: ""; position: absolute; left: 50%; bottom: 5.5%; width: var(--piece-base-width); height: 6.5%; transform: translateX(-50%); background: var(--piece-contact); pointer-events: none; }
 .piece-img { display: block; object-fit: contain; user-select: none; -webkit-user-drag: none; filter: drop-shadow(0 2px 1.5px oklch(0 0 0 / 50%)); }
 .piece-slot .piece-img { position: relative; width: 100%; height: 100%; object-fit: contain; filter: var(--piece-shadow); }
 
