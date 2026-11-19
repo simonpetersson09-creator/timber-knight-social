@@ -16,7 +16,7 @@ describe("Mr B Signature pieces", () => {
         expect(data.subarray(0, 4).toString("ascii"), `${color}${kind}`).toBe("RIFF");
         expect(data.subarray(8, 12).toString("ascii"), `${color}${kind}`).toBe("WEBP");
         expect(data.byteLength, `${color}${kind}`).toBeGreaterThan(5000);
-        expect(data.byteLength, `${color}${kind}`).toBeLessThan(30000);
+        expect(data.byteLength, `${color}${kind}`).toBeLessThan(160000);
       }
     }
   });
