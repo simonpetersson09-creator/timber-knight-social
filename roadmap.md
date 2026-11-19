@@ -10,7 +10,7 @@
 ## Design
 - [x] Anpassa startknappar, separat vänspelsida och neutral språkikon
 - [x] Yatzy-liknande inställningar med namn och uppladdad profilbild
-- [x] Schackmaskot/appikon med sned svart hatt och monokel med kedja
+- [x] Mahognymaskot/appikon utan bakgrund, vänsterlutande svart hatt och monokel med kedja
 - [x] Dölj rullningslister utan att hindra scrollning
 
 ## Språk
