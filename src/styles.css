@@ -308,12 +308,15 @@ body { background: var(--gradient-scene); background-attachment: fixed; min-heig
   background: radial-gradient(ellipse at 50% 30%, var(--board-frame-shade), transparent 75%), linear-gradient(var(--board-frame-tint), var(--board-frame-tint)), url("./assets/wood-dark.jpg") center/cover, var(--wood-frame);
   box-shadow: inset 0 6px 12px var(--board-frame-shade), inset 0 -2px 3px var(--board-frame-glint), 0 2px 6px var(--board-frame-shade); }
 .captured-row { display: flex; flex-wrap: wrap; align-items: center; gap: 1px; line-height: 0; }
-.player-top .captured-row { justify-content: flex-start; }
-.player-bottom .captured-row { justify-content: flex-end; }
+.captured-row { direction: rtl; justify-content: flex-start; align-content: flex-start; row-gap: 0; }
 .captured-row:empty { display: none; }
-.captured-row .piece-img { width: 36px; height: 42px; }
-.captured-row > * { margin-inline: -9px; height: 40px; display: grid; place-items: center; }
-.captured-row { padding-inline: 9px; align-content: center; }
+.captured-row .piece-img { width: 30px; height: 36px; }
+.captured-row > * { margin-inline: -2px; height: 34px; display: grid; place-items: center; }
+.captured-tray { justify-content: flex-start; height: 118px; padding: 6px 12px; }
+.captured-tray[data-owner="w"] { border-color: color-mix(in oklab, var(--wood-frame-deep) 45%, transparent);
+  background: radial-gradient(ellipse at 50% 30%, transparent, color-mix(in oklab, var(--wood-frame-deep) 30%, transparent) 90%), linear-gradient(var(--board-light-tint), var(--board-light-tint)), url("./assets/wood-light.jpg") center/cover;
+  box-shadow: inset 0 6px 12px color-mix(in oklab, var(--wood-frame-deep) 40%, transparent), 0 2px 6px var(--board-frame-shade); }
+.captured-tray[data-owner="b"] { background: radial-gradient(ellipse at 50% 30%, var(--board-frame-shade), transparent 75%), linear-gradient(color-mix(in oklab, var(--ebony) 55%, transparent), color-mix(in oklab, var(--ebony) 55%, transparent)), url("./assets/wood-dark.jpg") center/cover; }
 .captured-new { animation: captured-arrive 0s 1.4s both; }
 @keyframes captured-arrive { from { visibility: hidden; } }
 .capture-layer { position: relative; z-index: 4; grid-area: 2 / 2; pointer-events: none; }
