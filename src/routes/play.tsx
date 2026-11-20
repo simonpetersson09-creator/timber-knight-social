@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { GamePlayerCard } from "@/components/GamePlayerCard";
 import { GameClock } from "@/components/GameClock";
 import { CapturedPieces } from "@/components/CapturedPieces";
+import { MoveHistory } from "@/components/MoveHistory";
+import { gameAtPly, lastMoveOf } from "@/lib/game-presentation";
 import { useMe } from "@/hooks/use-me";
 import { displayName } from "@/lib/profile";
 import { computerDisplayName } from "@/lib/computer-opponent";
@@ -74,6 +76,7 @@ function Play() {
   };
   const [now, setNow] = useState(() => Date.now());
   const [showEnd, setShowEnd] = useState(false);
+  const [reviewPly, setReviewPly] = useState<number | null>(null);
   const [startingNewGame, setStartingNewGame] = useState(false);
   const startingNewGameRef = useRef(false);
   const turnStart = useRef(Date.now());
@@ -97,6 +100,7 @@ function Play() {
     setLastMove(l ? { from: l.from, to: l.to } : null);
     setResult(null);
     setShowEnd(false);
+    setReviewPly(null);
     if (endTimer.current) clearTimeout(endTimer.current);
     finishedGame.current = null;
     turnStart.current = Date.now();
@@ -304,6 +308,9 @@ function Play() {
     ? result.winner === null ? t("draw") : result.winner === human ? t("youWon") : t("youLost")
     : result.winner === null ? t("draw") : t("sideWins", { side: side(result.winner) });
 
+  const boardGame = gameAtPly(game, reviewPly);
+  const reviewing = reviewPly !== null;
+  const boardLastMove = reviewing ? lastMoveOf(boardGame) : lastMove;
   const card = (c: Color) => (
     <GamePlayerCard name={nameOf(c)} avatar={c === human ? me?.avatar : undefined} computer={vsAi && c !== human} level={saved.level} color={c}
       active={activeKind(c)} thinking={thinking && vsAi && c !== human} thinkingLabel={t("thinking")} />
@@ -325,9 +332,9 @@ function Play() {
       </header>
 
       <div className="play-col">
-        <div className="player-top"><div className="player-profile-line">{card(top)}{clock(top)}</div><CapturedPieces game={game} mine={top} /></div>
-        <ChessBoard game={game} orientation={vsAi ? human : "w"} disabled={aiTurn || !!result} lastMove={lastMove} onMove={onBoardMove} />
-        <div className="player-bottom"><CapturedPieces game={game} mine={bottom} /><div className="player-profile-line">{clock(bottom)}{card(bottom)}</div></div>
+        <div className="player-top"><div className="player-profile-line">{card(top)}{clock(top)}</div><CapturedPieces game={boardGame} mine={top} /></div>
+        <ChessBoard key={reviewing ? `review-${reviewPly}` : "live"} game={boardGame} orientation={vsAi ? human : "w"} disabled={reviewing || aiTurn || !!result} lastMove={boardLastMove} onMove={onBoardMove} />
+        <div className="player-bottom"><CapturedPieces game={boardGame} mine={bottom} /><div className="player-profile-line">{clock(bottom)}{card(bottom)}</div></div>
         <AnimatePresence>
           {notice && (
             <motion.div key={notice.text} className="board-notice" data-tone={notice.kind} role="status"
@@ -340,6 +347,7 @@ function Play() {
       </div>
 
       <div className="play-side">
+        <MoveHistory key={saved.id} game={game} canReview={!!result} reviewPly={reviewPly} onReview={setReviewPly} />
         {result && !showEnd ? (
           <div className="finished-review">
             <button className="finished-review-result" onClick={() => setShowEnd(true)}><Eye className="size-4" />{resultText()}</button>

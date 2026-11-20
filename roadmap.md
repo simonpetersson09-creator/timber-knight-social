@@ -1,6 +1,9 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
 ## Spelvyn 20 nov
+- [x] Utfällbar draghistorik med positionsgranskning efter match, lokalt och online; e4/slutställning provspelade på 320/394 px
+- [x] Materialfördel i skålkanten enligt 1/3/3/5/9, endast vid ledning; schackmatt +1 och bondeförvandling testade
+- [x] Mjuk schackmarkering som guld-/mahognyring runt kungen, visuellt kontrollerad vid schackmatt
 - [x] Tre tänkprickar i datorns namnkort medan den tänker; oförändrad kortbredd provspelad
 - [x] Diskreta guldhörn för senaste draget i stället för heltäckande gul yta
 - [x] Mjuk kantpuls vid låg tid utan helt rött klockkort; riktig 15-sekundarstid och 320/394 px verifierade

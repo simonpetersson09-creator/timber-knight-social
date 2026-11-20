@@ -1,6 +1,8 @@
 import { GamePlayerCard } from "@/components/GamePlayerCard";
 import { GameClock } from "@/components/GameClock";
 import { CapturedPieces } from "@/components/CapturedPieces";
+import { MoveHistory } from "@/components/MoveHistory";
+import { gameAtPly, lastMoveOf } from "@/lib/game-presentation";
 import { Button } from "@/components/ui/button";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -51,6 +53,7 @@ function Match() {
   const [promo, setPromo] = useState<{ from: Square; to: Square } | null>(null);
   const [ask, setAsk] = useState<"resign" | "chat" | null>(null);
   const [showResult, setShowResult] = useState(false);
+  const [reviewPly, setReviewPly] = useState<number | null>(null);
   const [notice, setNotice] = useState<"check" | "checkmate" | null>(null);
   const [qr, setQr] = useState("");
   const [started] = useState(() => Date.now());
@@ -90,6 +93,7 @@ function Match() {
   }, [id, game, t, navigate, notifyCheck]);
 
   useEffect(() => { void load(); const i = setInterval(() => void load(), 2000); return () => clearInterval(i); }, [load]);
+  useEffect(() => setReviewPly(null), [id]);
   useEffect(() => () => {
     if (noticeTimer.current) clearTimeout(noticeTimer.current);
     if (resultTimer.current) clearTimeout(resultTimer.current);
@@ -221,6 +225,8 @@ function Match() {
   const reasonText = g.end_reason === "resign" ? t("resignNoStats") : g.end_reason === "timeout" ? t("inactiveLoss") : g.end_reason === "checkmate" ? t("checkmate") : t("draw");
   const title = g.result === "d" ? t("draw") : g.result === myColor ? t("youWon") : t("youLost");
   const status = g.status === "finished" ? title : game.inCheck() ? t("check") : myTurn ? t("yourTurn") : t("opponentTurn");
+  const boardGame = gameAtPly(game, reviewPly);
+  const reviewing = reviewPly !== null;
   void meP;
 
   return (
@@ -231,13 +237,14 @@ function Match() {
         <button className="action-ghost flex size-10 items-center justify-center rounded-full" aria-label={t("quickChat")} disabled={g.status !== "active"} onClick={() => setAsk("chat")}><MessageCircle className="size-5" /></button>
       </header>
       <div className="play-col relative">
-        <div className="player-top"><div className="player-profile-line">{card(oppId, myColor === "w" ? "b" : "w")}{clock(myColor === "w" ? "b" : "w")}</div><CapturedPieces game={game} mine={myColor === "w" ? "b" : "w"} /></div>
-        <ChessBoard game={game} orientation={myColor} disabled={!myTurn} lastMove={(() => { const h = game.history({ verbose: true }); const l = h[h.length - 1]; return l ? { from: l.from, to: l.to } : null; })()} onMove={onBoardMove} />
-        <div className="player-bottom"><CapturedPieces game={game} mine={myColor} /><div className="player-profile-line">{clock(myColor)}{card(me, myColor)}</div></div>
+        <div className="player-top"><div className="player-profile-line">{card(oppId, myColor === "w" ? "b" : "w")}{clock(myColor === "w" ? "b" : "w")}</div><CapturedPieces game={boardGame} mine={myColor === "w" ? "b" : "w"} /></div>
+        <ChessBoard key={reviewing ? `review-${reviewPly}` : "live"} game={boardGame} orientation={myColor} disabled={reviewing || !myTurn} lastMove={lastMoveOf(boardGame)} onMove={onBoardMove} />
+        <div className="player-bottom"><CapturedPieces game={boardGame} mine={myColor} /><div className="player-profile-line">{clock(myColor)}{card(me, myColor)}</div></div>
         {notice && <div className="board-notice" data-tone={notice} role="status">{notice === "checkmate" ? <Crown className="size-5" /> : <ShieldAlert className="size-5" />}{t(notice)}</div>}
         {bubble && <div className="chat-bubble" data-mine={bubble.mine}>{bubble.text}</div>}
       </div>
       <div className="play-side">
+        <MoveHistory game={game} canReview={g.status === "finished"} reviewPly={reviewPly} onReview={setReviewPly} />
         <div className="game-status">{status}</div>
         {g.draw_offer && g.draw_offer !== myColor && g.status === "active" && (
           <div className="panel flex flex-col gap-2 p-3 text-center">
