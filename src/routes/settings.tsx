@@ -19,6 +19,7 @@ import { isNative } from "@/lib/native";
 import { PRIVACY_POLICY_URL } from "@/lib/legal-links";
 import { COUNTRIES, NAME_MAX, displayName, flagOf } from "@/lib/profile";
 import { photoToJpeg } from "@/lib/photo";
+import { report } from "@/lib/report";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [
@@ -43,7 +44,7 @@ function SettingsPage() {
   const [busy, setBusy] = useState(false);
   const [stats, setStats] = useState<ReturnType<typeof getStats> | null>(null);
   const [prefs, setPrefs] = useState({ notify: true, notify_turn: true, notify_reminders: true, notify_play: true });
-  useEffect(() => { setS(getSettings()); setStats(getStats()); }, []);
+  useEffect(() => { setS(getSettings()); setStats(getStats()); report("play", "settings_opened"); }, []);
   useEffect(() => { if (me) { setName(me.name ?? ""); setAvatar(me.avatar); setCountry(me.country); setPrefs({ notify: me.notify, notify_turn: me.notify_turn, notify_reminders: me.notify_reminders, notify_play: me.notify_play }); } }, [me]);
   const region = (cc: string) => { try { return new Intl.DisplayNames([lang], { type: "region" }).of(cc) ?? cc; } catch { return cc; } };
   const langName = choice === "auto" ? t("automatic") : LANGUAGES.find((l) => l.code === choice)?.name;

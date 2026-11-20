@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { Chess } from "chess.js";
 import { z } from "zod";
-import { INVITE_TTL_MS, LOBBY_TTL_MS, QUICK_WAIT_MS, MOVE_LIMIT_MS, moveDeadline, statsFor, type MatchRow } from "./online-rules";
+import { canCloseOnlineGame, INVITE_TTL_MS, LOBBY_TTL_MS, QUICK_WAIT_MS, MOVE_LIMIT_MS, moveDeadline, statsFor, type MatchRow } from "./online-rules";
 import { Cred, PLAYER_COLS, allMatches, auth, finishGame, nameOf, notify, sweepGames, type DB } from "./server/core";
 
 const GAME_COLS = "id, kind, status, host, invitee, white, black, code, pgn, fen, result, end_reason, draw_offer, last_move_at, reminded, expires_at, created_at";
@@ -102,13 +102,18 @@ export const joinGame = createServerFn({ method: "POST" })
     return { result: "ok" as const, id: g.id };
   });
 
-/** Declines an invitation, withdraws my own, or closes my lobby. */
+/** Removes an unfinished game and its chat; completed match history is preserved. */
 export const cancelGame = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Cred.extend({ gameId: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     const { a, me } = await auth(data);
-    await a.from("games").update({ status: "expired" }).eq("id", data.gameId).eq("status", "waiting").or(`host.eq.${me},invitee.eq.${me}`);
-    return { ok: true };
+    const { data: g } = await a.from("games").select("id, status, host, invitee, white, black").eq("id", data.gameId).maybeSingle();
+    if (!g) return { ok: true };
+    if (!canCloseOnlineGame(g, me)) return { ok: false };
+    const { error } = await a.from("games").delete().eq("id", g.id).in("status", ["waiting", "active"]);
+    if (error) throw new Error("game_close_failed");
+    const { data: remaining } = await a.from("games").select("id").eq("id", g.id).in("status", ["waiting", "active"]).maybeSingle();
+    return { ok: !remaining };
   });
 
 /** Quick match: joins someone searching right now, otherwise starts searching. */

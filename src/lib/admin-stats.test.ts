@@ -35,6 +35,17 @@ describe("admin statistics", () => {
     expect(result.days[0]!).toMatchObject({ played: 1, cpu_finished: 1, online_finished: 1, forfeits: 1, issues: 1, issue_devices: 1, total: 2 });
   });
 
+  it("counts online play events without treating app opens or settings as games", () => {
+    const events = [
+      { player: "ios", kind: "play", name: "app_opened", platform: "ios", detail: null, created_at: "2026-11-19T09:00:00Z" },
+      { player: "ios", kind: "play", name: "settings_opened", platform: "ios", detail: null, created_at: "2026-11-19T09:01:00Z" },
+      { player: "ios", kind: "play", name: "online_game_started", platform: "ios", detail: null, created_at: "2026-11-19T09:02:00Z" },
+      { player: "android", kind: "play", name: "online_game_finished", platform: "android", detail: null, created_at: "2026-11-19T09:03:00Z" },
+    ];
+    const result = buildAdminStats({ players, testIds: new Set(["test"]), now: NOW, appDays: [], events, matches: [] });
+    expect(result.days[0]!.played).toBe(2);
+  });
+
   it("supports a seven-day analysis without changing the native filters", () => {
     const result = buildAdminStats({ players, testIds: new Set(["test"]), now: NOW, appDays: [
       { player: "ios", day: "2026-11-13", platform: "ios" },

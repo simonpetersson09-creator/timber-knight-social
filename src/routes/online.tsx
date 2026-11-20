@@ -10,6 +10,7 @@ import { useI18n } from "@/lib/i18n";
 import { getCred } from "@/lib/identity";
 import { createLobby, joinGame } from "@/lib/online.functions";
 import { askPushOnFirstOnline } from "@/lib/push";
+import { report } from "@/lib/report";
 
 export const Route = createFileRoute("/online")({
   head: () => ({ meta: [
@@ -39,9 +40,11 @@ function FriendPlay() {
       if (kind === "join") {
         const r = await joinGame({ data: { ...getCred(), code } });
         if (r.result !== "ok") { toast.error(t(r.result === "expired" ? "expired" : "notFound")); return; }
+        report("play", "online_room_joined", r.id);
         await navigate({ to: "/match", search: { id: r.id } });
       } else {
         const r = await createLobby({ data: getCred() });
+        report("play", "online_room_created", r.id);
         await navigate({ to: "/match", search: { id: r.id } });
       }
     } catch { toast.error(t("error")); } finally { setBusy(false); }

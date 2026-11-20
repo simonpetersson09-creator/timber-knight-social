@@ -1,5 +1,10 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Serverstängning och Yatzy-loggning 20 nov
+- [x] Radera väntande/aktiva onlinespel vid Stäng och ta bara bort kortet efter serverbekräftelse; båda mobilprovade och noll databasrader kvar
+- [x] Komplettera viktig Yatzy-lik loggning: appstart, globala fel, lokala/onlinepartier, inställningar/statistik och språk
+- [x] Testa serverradering, deduplicering och administrationsräkning; leverans av appstart, lobby, onlinestart och stängning bekräftad
+
 ## Eget perspektiv och dragpluttar 20 nov
 - [x] Säkerställ att spelarens egna pjäser och profil ligger nederst för båda färgerna; svart perspektiv mobilprovat
 - [x] Visa dragpluttar endast på Nybörjare; inga dragtips på övriga nivåer, lokalt eller online; Nybörjare/ Medel mobilprovat

@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { report } from "../lib/report";
 import { I18nProvider, translate } from "../lib/i18n";
 import { Toaster } from "../components/ui/sonner";
 import { NativeHost } from "../components/NativeHost";
@@ -46,6 +47,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   const lang = document.documentElement.lang || "sv";
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    report("error", "app_render_error", error instanceof Error ? error.stack ?? error.message : String(error));
   }, [error]);
 
   return (

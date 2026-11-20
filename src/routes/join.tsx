@@ -8,6 +8,7 @@ import { getCred, loadMe } from "@/lib/identity";
 import { isNative, isPreviewHost } from "@/lib/native";
 import { joinGame } from "@/lib/online.functions";
 import { askPushOnFirstOnline } from "@/lib/push";
+import { report } from "@/lib/report";
 
 export const Route = createFileRoute("/join")({
   validateSearch: z.object({ code: z.string().optional() }),
@@ -35,7 +36,7 @@ function Join() {
     setState("joining");
     void askPushOnFirstOnline();
     loadMe().then(() => joinGame({ data: { ...getCred(), code } })).then((r) => {
-      if (r.result === "ok") void navigate({ to: "/match", search: { id: r.id }, replace: true });
+      if (r.result === "ok") { report("play", "online_room_joined", r.id); void navigate({ to: "/match", search: { id: r.id }, replace: true }); }
       else setState(r.result);
     }).catch(() => setState("not_found"));
   }, [code, navigate]);

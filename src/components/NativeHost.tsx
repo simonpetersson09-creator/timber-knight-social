@@ -15,18 +15,20 @@ export function NativeHost() {
   const router = useRouter();
   const { pathname } = useLocation();
   const path = useRef(pathname);
+  const opened = useRef(false);
   path.current = pathname;
 
   useEffect(() => { setAdLocation(pathname); }, [pathname]);
 
   useEffect(() => {
+    if (!opened.current) { opened.current = true; report("play", "app_opened"); }
     void loadMe().catch(() => {});
     const foreground = () => { if (document.visibilityState === "visible") { void loadMe(true).catch(() => {}); void flushReports(); } };
     const heartbeat = setInterval(foreground, 60_000);
     window.addEventListener("online", foreground);
     document.addEventListener("visibilitychange", foreground);
-    const onErr = (e: ErrorEvent) => report("error", e.message || "error", `${e.filename}:${e.lineno}`);
-    const onRej = (e: PromiseRejectionEvent) => report("error", String(e.reason).slice(0, 80), String((e.reason as Error)?.stack ?? ""));
+    const onErr = (e: ErrorEvent) => report("error", "app_uncaught_error", `${e.message || "error"}\n${e.filename}:${e.lineno}`);
+    const onRej = (e: PromiseRejectionEvent) => report("error", "app_unhandled_rejection", String((e.reason as Error)?.stack ?? e.reason));
     window.addEventListener("error", onErr);
     window.addEventListener("unhandledrejection", onRej);
     return () => { clearInterval(heartbeat); window.removeEventListener("online", foreground); document.removeEventListener("visibilitychange", foreground); window.removeEventListener("error", onErr); window.removeEventListener("unhandledrejection", onRej); };

@@ -28,6 +28,7 @@ import { noteGameFinished, setGameplayActive } from "@/lib/ads";
 import { onGameFinished } from "@/lib/rate";
 import { createGame, recordResult } from "@/lib/storage";
 import { ResultShareButton } from "@/components/ResultShareButton";
+import { report, reportOnce } from "@/lib/report";
 
 export const Route = createFileRoute("/match")({
   validateSearch: z.object({ id: z.string() }),
@@ -139,10 +140,15 @@ function Match() {
       if (r.status === "active") return;
       toast(t("noOpponent"));
       const local = createGame({ mode: "ai", level: "medium", human: Math.random() < 0.5 ? "w" : "b", clock: null });
-      if (local) void navigate({ to: "/play", search: { id: local.id }, replace: true });
+      if (local) { report("play", "local_game_started", JSON.stringify({ game: local.id, level: local.level, mode: local.mode, fallback: true })); void navigate({ to: "/play", search: { id: local.id }, replace: true }); }
       else void navigate({ to: "/" });
     })();
   }, [g?.kind, g?.status, g?.id, now, started, navigate, t]);
+
+  useEffect(() => {
+    if (g?.status !== "active") return;
+    reportOnce("play", "online_game_started", JSON.stringify({ game: g.id, kind: g.kind }), `online-started:${g.id}`);
+  }, [g?.id, g?.kind, g?.status]);
 
   // Results and statistics complete immediately; the next-match ad only preloads here.
   useEffect(() => {
@@ -150,6 +156,7 @@ function Match() {
     endHandled.current = true;
     const won = g.result !== "d" && g.result === myColor;
     recordResult(g.id, g.result === "d" ? "draw" : won ? "win" : "loss", null, g.end_reason !== "resign", "online");
+    reportOnce("play", "online_game_finished", JSON.stringify({ game: g.id, kind: g.kind, result: g.result, reason: g.end_reason }), `online-finished:${g.id}`);
     noteGameFinished(g.id);
     setShowResult(false);
     setReviewPly(null);

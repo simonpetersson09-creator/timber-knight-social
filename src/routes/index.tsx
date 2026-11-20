@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { Bot, Globe, Settings, Users, UserPlus, X, Cpu, Infinity as InfinityIcon, Trophy, ChevronDown, Gamepad2, Percent, Handshake, Flame, Play, Send, Clock } from "lucide-react";
+import { Bot, Globe, Settings, Users, UserPlus, X, Cpu, Infinity as InfinityIcon, Trophy, ChevronDown, Gamepad2, Percent, Handshake, Flame, Play, Send, Clock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getCred } from "@/lib/identity";
 import { useMe } from "@/hooks/use-me";
@@ -48,6 +48,8 @@ function Home() {
   const [open, setOpen] = useState<"ai" | null>(null);
   const { me } = useMe();
   const [online, setOnline] = useState<OnlineRow[]>([]);
+  const [closingOnline, setClosingOnline] = useState<string | null>(null);
+  const closingRef = useRef(false);
   const [level, setLevel] = useState<Level>("beginner");
   const [clock, setClock] = useState(0);
   const [langOpen, setLangOpen] = useState(false);
@@ -77,9 +79,22 @@ function Home() {
   }, [me]);
   async function acceptInvite(id: string) {
     const r = await joinGame({ data: { ...getCred(), gameId: id } });
-    if (r.result === "ok") void navigate({ to: "/match", search: { id: r.id } }); else toast.error(t("expired"));
+    if (r.result === "ok") { report("play", "online_room_joined", id); void navigate({ to: "/match", search: { id: r.id } }); } else toast.error(t("expired"));
   }
-  async function decline(id: string) { await cancelGame({ data: { ...getCred(), gameId: id } }); setOnline((o) => o.filter((x) => x.id !== id)); }
+  async function closeOnline(id: string) {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    setClosingOnline(id);
+    try {
+      const result = await cancelGame({ data: { ...getCred(), gameId: id } });
+      if (!result.ok) { toast.error(t("error")); return; }
+      setOnline((rows) => rows.filter((row) => row.id !== id));
+      report("play", "online_game_closed", id);
+    } catch (error) {
+      report("error", "online_game_close_failed", error instanceof Error ? error.message : String(error));
+      toast.error(t("error"));
+    } finally { closingRef.current = false; setClosingOnline(null); }
+  }
 
   const full = games.length >= MAX_SAVED;
   function toggleQuick() {
@@ -100,7 +115,12 @@ function Home() {
       void navigate({ to: "/play", search: { id: g.id } });
     }
   }
-  function remove(id: string) { deleteGame(id); setGames(listGames()); }
+  function remove(id: string) {
+    const game = games.find((row) => row.id === id);
+    deleteGame(id);
+    setGames(listGames());
+    if (game) report("play", "local_game_abandoned", JSON.stringify({ game: id, level: game.level, mode: game.mode }));
+  }
 
   const winRate = stats && stats.played ? Math.round((stats.wins / stats.played) * 100) : 0;
 
@@ -121,7 +141,7 @@ function Home() {
         {online.length > 0 && (
           <motion.div variants={item} className="flex flex-col gap-2">
             <p className="field-label text-center">{t("playOnline")}</p>
-            {online.map((g) => <OnlineCard key={g.id} g={g} onAccept={() => acceptInvite(g.id)} onDecline={() => decline(g.id)} />)}
+            {online.map((g) => <OnlineCard key={g.id} g={g} busy={closingOnline !== null} closing={closingOnline === g.id} onAccept={() => acceptInvite(g.id)} onDecline={() => void closeOnline(g.id)} />)}
           </motion.div>
         )}
 
@@ -167,7 +187,7 @@ function Home() {
 
         {stats && (
           <motion.div variants={item} transition={{ duration: 0.45, ease: "easeOut" }} className="mt-4 flex flex-col gap-2">
-            <Button variant="ghost" className="flex items-center justify-center gap-1.5" onClick={() => setMore(!more)} aria-expanded={more}>
+            <Button variant="ghost" className="flex items-center justify-center gap-1.5" onClick={() => { if (!more) report("play", "stats_opened"); setMore(!more); }} aria-expanded={more}>
               <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">{t("stats")}</span>
               <ChevronDown className={`size-3 text-muted-foreground transition-transform ${more ? "rotate-180" : ""}`} />
             </Button>
@@ -206,7 +226,7 @@ function Home() {
 
 type OnlineRow = Awaited<ReturnType<typeof myOnline>>[number];
 
-function OnlineCard({ g, onAccept, onDecline }: { g: OnlineRow; onAccept: () => void; onDecline: () => void }) {
+function OnlineCard({ g, busy, closing, onAccept, onDecline }: { g: OnlineRow; busy: boolean; closing: boolean; onAccept: () => void; onDecline: () => void }) {
   const { t } = useI18n();
   const name = g.opponent ? displayName(g.opponent) : "…";
   if (g.role === "invited") return (
@@ -214,8 +234,8 @@ function OnlineCard({ g, onAccept, onDecline }: { g: OnlineRow; onAccept: () => 
       <span className="card-chip"><PlayerAvatar avatar={g.opponent?.avatar} /></span>
       <span className="card-body"><span className="card-name">{t("invitedBy", { name })}</span>
         <span className="card-sub"><span className="card-dot" />{t("inviteValid")}</span></span>
-      <Button variant="ghost" className="card-pill card-pill-action" onClick={onAccept}>{t("accept")}</Button>
-      <Button variant="ghost" className="card-pill" aria-label={t("decline")} onClick={onDecline}><X /></Button>
+      <Button variant="ghost" className="card-pill card-pill-action" disabled={busy} onClick={onAccept}>{t("accept")}</Button>
+      <Button variant="ghost" className="card-pill" disabled={busy} aria-label={t("decline")} onClick={onDecline}>{closing ? <Loader2 className="animate-spin" /> : <X />}</Button>
     </div>
   );
   if (g.role === "host") return (
@@ -225,16 +245,19 @@ function OnlineCard({ g, onAccept, onDecline }: { g: OnlineRow; onAccept: () => 
         <span className="card-body"><span className="card-name">{g.kind === "lobby" ? t("lobbyOpen", { code: g.code ?? "" }) : name}</span>
           <span className="card-sub"><span className="card-dot" />{g.kind === "lobby" ? `${t("waitingShort")}…` : t("waitingFor", { name })}</span></span>
       </Link>
-      <Button variant="ghost" className="card-pill" onClick={onDecline}>{g.kind === "lobby" ? t("close") : t("cancel")}</Button>
+      <Button variant="ghost" className="card-pill" disabled={busy} onClick={onDecline}>{closing ? <Loader2 className="animate-spin" /> : g.kind === "lobby" ? t("close") : t("cancel")}</Button>
     </div>
   );
   return (
-    <Link to="/match" search={{ id: g.id }} className={`game-card ${g.myTurn ? "card-you" : "card-opp"}`}>
-      <span className={`card-chip${g.myTurn ? " card-chip-light" : ""}`}><Play /></span>
-      <span className="card-body"><span className="card-name">{name}</span>
-        <span className="card-sub">♟ {g.moveNo}</span></span>
-      <span className={g.myTurn ? "card-pill card-pill-action animate-pulse" : "card-pill"}>{g.myTurn ? t("yourTurn") : t("waitingShort")}</span>
-    </Link>
+    <div className={`game-card ${g.myTurn ? "card-you" : "card-opp"}`}>
+      <Link to="/match" search={{ id: g.id }} className="card-link">
+        <span className={`card-chip${g.myTurn ? " card-chip-light" : ""}`}><Play /></span>
+        <span className="card-body"><span className="card-name">{name}</span>
+          <span className="card-sub">♟ {g.moveNo}</span></span>
+        <span className={g.myTurn ? "card-pill card-pill-action animate-pulse" : "card-pill"}>{g.myTurn ? t("yourTurn") : t("waitingShort")}</span>
+      </Link>
+      <Button variant="ghost" className="card-pill" disabled={busy} aria-label={t("close")} onClick={onDecline}>{closing ? <Loader2 className="animate-spin" /> : <X />}</Button>
+    </div>
   );
 }
 

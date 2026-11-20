@@ -13,6 +13,13 @@ export const RATE_AT = [5, 15, 35] as const; // after 5, then +10, then +20 — 
 export type MatchRow = { white: string; black: string; result: "w" | "b" | "d"; counts: boolean; finished_at: string };
 export type OnlineStats = { played: number; wins: number; losses: number; draws: number; winRate: number; streak: number };
 
+export type ClosableGame = { status: string; host: string; invitee: string | null; white: string | null; black: string | null };
+/** Only participants may remove an unfinished game; completed history is never deleted here. */
+export function canCloseOnlineGame(game: ClosableGame, me: string): boolean {
+  if (game.status !== "waiting" && game.status !== "active") return false;
+  return [game.host, game.invitee, game.white, game.black].includes(me);
+}
+
 /** Resigned games (counts=false) never affect statistics. Rows newest first. */
 export function statsFor(me: string, rows: MatchRow[]): OnlineStats {
   const own = rows.filter((r) => r.counts && (r.white === me || r.black === me));

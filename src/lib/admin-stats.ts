@@ -9,7 +9,7 @@ export type AdminBestTimes = {
   hour: { hour: number; devices: number } | null;
 };
 
-const PLAY_EVENTS = new Set(["local_game_started", "local_game_finished", "game_active", "game_finished", "move_committed"]);
+const PLAY_EVENTS = new Set(["local_game_started", "local_game_finished", "online_game_started", "online_game_finished", "game_active", "game_finished", "move_committed"]);
 const NATIVE = new Set(["ios", "android"]);
 
 export function adminStockholmDay(now = new Date()): string {

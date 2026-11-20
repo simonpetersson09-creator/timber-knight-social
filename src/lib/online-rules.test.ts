@@ -1,9 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { DAY, HOUR, INVITE_TTL_MS, LOBBY_TTL_MS, moveDeadline, shouldAskRating, shouldSendPlayReminder, statsFor, webPathAllowed } from "./online-rules";
+import { canCloseOnlineGame, DAY, HOUR, INVITE_TTL_MS, LOBBY_TTL_MS, moveDeadline, shouldAskRating, shouldSendPlayReminder, statsFor, webPathAllowed } from "./online-rules";
 
 const m = (white: string, black: string, result: "w" | "b" | "d", counts = true) => ({ white, black, result, counts, finished_at: "" });
 describe("online rules", () => {
   it("invites last 24 h, lobbies 6 h", () => { expect(INVITE_TTL_MS).toBe(24 * HOUR); expect(LOBBY_TTL_MS).toBe(6 * HOUR); });
+  it("lets participants delete waiting and active games, but never finished history", () => {
+    const game = { status: "waiting", host: "host", invitee: "guest", white: null, black: null };
+    expect(canCloseOnlineGame(game, "host")).toBe(true);
+    expect(canCloseOnlineGame(game, "guest")).toBe(true);
+    expect(canCloseOnlineGame(game, "stranger")).toBe(false);
+    expect(canCloseOnlineGame({ ...game, status: "active", white: "host", black: "guest" }, "guest")).toBe(true);
+    expect(canCloseOnlineGame({ ...game, status: "finished" }, "host")).toBe(false);
+  });
   it("resigned games do not affect stats", () => {
     const s = statsFor("a", [m("a", "b", "w"), m("a", "b", "b", false), m("b", "a", "b"), m("a", "c", "d")]);
     expect(s).toEqual({ played: 3, wins: 2, losses: 0, draws: 1, winRate: 67, streak: 2 });

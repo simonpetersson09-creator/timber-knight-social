@@ -1,10 +1,11 @@
 import { Check } from "lucide-react";
 import { LANGUAGES, useI18n } from "@/lib/i18n";
 import { Modal } from "./Modal";
+import { report } from "@/lib/report";
 
 export function LanguageSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t, choice, setLang } = useI18n();
-  const pick = (c: string) => { setLang(c); onClose(); };
+  const pick = (c: string) => { if (c !== choice) report("play", "language_changed", c); setLang(c); onClose(); };
   return (
     <Modal open={open} onClose={onClose}>
       <h2 className="brand-wordmark mb-3 text-center text-2xl">{t("language")}</h2>

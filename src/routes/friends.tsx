@@ -15,6 +15,7 @@ import { getCred } from "@/lib/identity";
 import { getFriends, respondFriend, sendFriendRequest } from "@/lib/players.functions";
 import { inviteFriend } from "@/lib/online.functions";
 import { displayName, flagOf, isOnline } from "@/lib/profile";
+import { report } from "@/lib/report";
 
 export const Route = createFileRoute("/friends")({
   validateSearch: z.object({ code: z.string().optional() }),
@@ -47,7 +48,7 @@ function FriendsPage() {
   const sentLink = useRef(false);
   const navigate = useNavigate();
   async function invite(friend: string) {
-    try { const r = await inviteFriend({ data: { ...getCred(), friend } }); await navigate({ to: "/match", search: { id: r.id } }); }
+    try { const r = await inviteFriend({ data: { ...getCred(), friend } }); report("play", "online_room_created", r.id); await navigate({ to: "/match", search: { id: r.id } }); }
     catch { toast.error(t("error")); }
   }
 
