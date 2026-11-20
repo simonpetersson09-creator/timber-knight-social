@@ -1,5 +1,17 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Releasegranskning – nästa tio åtgärder 20 nov
+- [ ] S01: missbruksskydd, kvoter och adminspärr utan nya adminprofiler
+- [ ] S08: åtgärda sårbara beroenden och verifiera regressioner
+- [ ] A01: annonser stoppas omedelbart när samtycket ändras eller återkallas
+- [ ] A02: förhindra dubbla och samtidiga helskärmsannonser
+- [ ] L01: integritetstexten beskriver faktisk data, lagring, annonser och push
+- [ ] L02: riktiga support-/butikslänkar och korrekt app-ads.txt; supportadress väntar på användaren
+- [ ] L03: snabbspelstexter på samtliga språk
+- [ ] R01: Stockfish- och medielicenser med korrekt attribution
+- [ ] N01: komplett iOS-push med APNs; extern konfiguration och enhetstest kan återstå
+- [ ] N02: komplett Android-push med Firebase; extern konfiguration och enhetstest kan återstå
+
 ## Releasegranskning – första tio åtgärderna 20 nov
 - [x] G01: korrekt tredragupprepning samt automatisk 50-/75-dragsregel lokalt och online; delade regeltester och riktiga serverdrag verifierade
 - [x] G02: tidsförlust blir oavgjort när motståndaren saknar mattmöjlighet; båda timeoutfallen verifierade mot backend
