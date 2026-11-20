@@ -1,5 +1,10 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Releasegranskning C01–C03 (K1–K3)
+- [x] Rätta iOS bundle-ID utan att ändra befintligt Android-paket; signering/provisioning verifieras separat i Xcode
+- [x] Gör korta/liggande spelvyer spelbara utan överlapp eller kollapsat bräde; normalflöde med rullning, mobilprov och drag verifierade
+- [x] Gör 404- och felgränser säkra vid serverrendering; okänd URL ger HTTP 404 i stället för 500
+
 ## Snabbspel med onlinesökning 20 nov
 - [x] Starta 20 sekunders onlinesökning från startsidans Snabbspel
 - [x] Använd vald nivå och klocka om datorn får ta över utan motståndare

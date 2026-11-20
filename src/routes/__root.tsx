@@ -9,7 +9,7 @@ import {
   Scripts,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -20,8 +20,14 @@ import { NativeHost } from "../components/NativeHost";
 import { WebGate } from "../components/WebGate";
 import brandIcon from "../assets/chess-mascot.png.asset.json";
 
+function useBoundaryLanguage() {
+  const [lang, setLang] = useState("sv");
+  useEffect(() => { setLang(document.documentElement.lang || "sv"); }, []);
+  return lang;
+}
+
 function NotFoundComponent() {
-  const lang = document.documentElement.lang || "sv";
+  const lang = useBoundaryLanguage();
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
@@ -44,7 +50,7 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
-  const lang = document.documentElement.lang || "sv";
+  const lang = useBoundaryLanguage();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
     report("error", "app_render_error", error instanceof Error ? error.stack ?? error.message : String(error));

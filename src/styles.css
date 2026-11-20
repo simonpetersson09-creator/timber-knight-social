@@ -427,6 +427,14 @@ h1, h2, h3, h4 { font-family: "Space Grotesk", system-ui, sans-serif; }
   .play-col { width: min(720px, calc(100dvh - 420px), 88vw); }
   .play-side { max-width: 720px; }
 }
+/* Short viewports use normal flow: profiles, trays and actions never compete
+   with a board size derived from a negative viewport-height budget. */
+@media (max-height: 620px) {
+  .play-layout { height: auto; min-height: 100dvh; gap: 20px; }
+  .play-col { position: relative; top: auto; left: auto; transform: none; display: flex; flex-direction: column; gap: 10px; width: min(100%, 400px); max-width: 100%; }
+  .player-top, .player-bottom { position: static; }
+  .play-side { margin-top: 0; flex-shrink: 0; max-width: 400px; }
+}
 
 /* Profile & friends */
 .text-field { width: 100%; border-radius: 0.9rem; border: 1px solid var(--border); background: color-mix(in oklab, var(--background) 70%, transparent); padding: 0.7rem 0.9rem; font-weight: 600; color: var(--foreground); outline: none; }

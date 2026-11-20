@@ -4,7 +4,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 // complete client locally so computer games, rules and saved games also open without internet.
 const offline = process.env.CAPACITOR_OFFLINE === "1";
 const config: CapacitorConfig = {
-  appId: "com.simonpetersson.mrbchess",
+  appId: process.argv.includes("android") ? "com.simonpetersson.mrbchess" : "se.shiningdays.mrbchess",
   appName: "Mr B Chess",
   webDir: offline ? ".output/public" : "public",
   server: offline ? undefined : { url: "https://timber-knight-social.lovable.app", cleartext: false },

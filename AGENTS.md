@@ -46,3 +46,6 @@ use the editor.
 - Capacitor copy/sync hooks configure iOS QR camera and AdMob/ATT permissions plus Android AdMob application metadata and AD_ID automatically; shared full-screen ad policy lives in pure ad-rules.ts, with native SDK orchestration in ads.ts so consent/timing remain testable without affecting chess rules.
 - The chess board uses a flat CSS grid surface with native square hit targets and pre-shaded SVG pieces, not a continuous WebGL loop, to keep mobile rendering lightweight without changing game logic.
 - Computer levels above beginner use Stockfish 18 lite (WASM in a Web Worker: public/engine/stockfish.js, wasm via lovable-assets, src/lib/stockfish.ts); local minimax stays for beginner and as offline fallback — gives real strength without a server.
+- Capacitor selects the existing Android package only for explicit Android CLI commands; its default matches the iOS Xcode bundle identifier so iOS packaging is consistent without migrating Android identity.
+- Short game viewports use normal-flow profiles, trays, board and actions instead of absolute viewport-height budgeting, so scrolling preserves usable board dimensions.
+- Root error and not-found boundaries resolve browser language only after hydration, so SSR and initial client rendering share a safe fallback.
