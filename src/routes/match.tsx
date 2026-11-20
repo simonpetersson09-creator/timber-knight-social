@@ -19,10 +19,10 @@ import { Modal } from "@/components/Modal";
 import { PromotionPicker } from "@/components/PromotionPicker";
 import { useI18n, type Key } from "@/lib/i18n";
 import { getCred } from "@/lib/identity";
-import { cancelGame, gameAction, getOnlineGame, makeMove, quickMatch, sendChat } from "@/lib/online.functions";
+import { abandonQuickMatch, cancelGame, gameAction, getOnlineGame, makeMove, quickMatch, sendChat } from "@/lib/online.functions";
 import { displayName, flagOf } from "@/lib/profile";
 import { QUICK_WAIT_MS } from "@/lib/online-rules";
-import { CHECKMATE_RESULT_DELAY_MS, MATCH_NOTICE_MS, PLAY_FALLBACK_NOTICE } from "@/lib/play-motion";
+import { CHECKMATE_RESULT_DELAY_MS, MATCH_NOTICE_MS, MAX_DRAW_OFFERS, PLAY_FALLBACK_NOTICE } from "@/lib/play-motion";
 import { celebrate, feedback } from "@/lib/feedback";
 import { hideSearchBanner, noteGameFinished, setGameplayActive, showPostMatchAd, showSearchBanner } from "@/lib/ads";
 import { onGameFinished } from "@/lib/rate";
@@ -89,6 +89,13 @@ function Match() {
   const load = useCallback(async () => {
     try {
       const r = await getOnlineGame({ data: { ...getCred(), gameId: id, after: lastChat.current } });
+      if (r.game.kind === "quick" && r.game.status === "waiting" && r.game.host === r.me) {
+        const matched = await quickMatch({ data: { ...getCred(), gameId: id } });
+        if (matched.status === "active" && matched.id !== id) {
+          await navigate({ to: "/match", search: { id: matched.id, level: fallbackLevel, clock: fallbackClock }, replace: true });
+          return;
+        }
+      }
       const color = r.game.black === r.me ? "b" : "w";
       const samePosition = r.game.pgn === prevPgn.current;
       if (samePosition && prevDrawOffer.current === color && !r.game.draw_offer && r.game.status === "active") {
@@ -116,7 +123,7 @@ function Match() {
       }
       setD(r);
     } catch { toast.error(t("error")); void navigate({ to: "/" }); }
-  }, [id, game, t, navigate, notifyCheck, showNotice]);
+  }, [id, game, t, navigate, notifyCheck, showNotice, fallbackLevel, fallbackClock]);
 
   useEffect(() => { void load(); const i = setInterval(() => void load(), 2000); return () => clearInterval(i); }, [load]);
   useEffect(() => setReviewPly(null), [id]);
@@ -141,8 +148,13 @@ function Match() {
     void (async () => {
       try {
         const current = await quickMatch({ data: { ...getCred(), gameId: g.id } });
-        if (current.status === "active") return;
-        await cancelGame({ data: { ...getCred(), gameId: g.id } });
+        if (current.status === "active") {
+          if (current.id !== g.id) await navigate({ to: "/match", search: { id: current.id, level: fallbackLevel, clock: fallbackClock }, replace: true });
+          return;
+        }
+        const abandoned = await abandonQuickMatch({ data: { ...getCred(), gameId: g.id } });
+        if (abandoned.status === "active") return;
+        if (abandoned.status !== "expired") { fallbackStarted.current = false; return; }
         const local = createGame({ mode: "ai", level: fallbackLevel, human: "w", clock: CLOCKS[fallbackClock] ?? null });
         if (local) {
           report("play", "local_game_started", JSON.stringify({ game: local.id, level: local.level, mode: local.mode, fallback: true }));
@@ -201,7 +213,10 @@ function Match() {
   }
 
   if (g.kind === "quick" && g.status === "waiting") {
-    return <QuickSearchScreen key={g.id} onCancel={async () => { await cancelGame({ data: { ...getCred(), gameId: g.id } }).catch(() => {}); void navigate({ to: "/" }); }} />;
+    return <QuickSearchScreen key={g.id} onCancel={async () => {
+      const result = await abandonQuickMatch({ data: { ...getCred(), gameId: g.id } }).catch(() => null);
+      if (result?.status === "expired") void navigate({ to: "/" });
+    }} />;
   }
 
   if (g.status === "waiting" || g.status === "expired") {
@@ -238,13 +253,14 @@ function Match() {
   }
 
   const turn = game.turn();
-  const myTurn = g.status === "active" && turn === myColor;
+  const myTurn = g.status === "active" && turn === myColor && new Date(g.expires_at).getTime() > now;
   const oppId = myColor === "w" ? g.black : g.white;
   const opp = oppId ? players[oppId] : null;
   const meP = players[me];
   const deadlineH = Math.min(48, Math.max(0, Math.ceil((new Date(g.expires_at).getTime() - now) / 3_600_000)));
 
   async function move(from: Square, to: Square, promotion?: "q" | "r" | "b" | "n") {
+    if (g?.status !== "active" || new Date(g.expires_at).getTime() <= Date.now()) { void load(); return; }
     const backup = game.pgn();
     try { game.move({ from, to, ...(promotion ? { promotion } : {}) }); } catch { return; }
     prevPgn.current = game.pgn();
@@ -262,9 +278,9 @@ function Match() {
   async function act(action: "resign" | "offerDraw" | "acceptDraw" | "declineDraw") {
     setAsk(null);
     try {
-      await gameAction({ data: { ...getCred(), gameId: id, action } });
-      if (action === "offerDraw") showNotice(t("drawOffered"));
-      else if (action === "declineDraw") showNotice(t("drawDeclined"));
+      const result = await gameAction({ data: { ...getCred(), gameId: id, action } });
+      if (action === "offerDraw" && result.ok) showNotice(t("drawOffered"));
+      else if (action === "declineDraw" && result.ok) showNotice(t("drawDeclined"));
       void load();
     } catch {
       toast.error(t("error"));
@@ -287,7 +303,8 @@ function Match() {
     <GameClock time={g.status === "active" && turn === c ? `${deadlineH}h` : "48h"} color={c}
       active={g.status === "active" && turn === c ? (c === myColor ? "you" : "opp") : undefined} />
   );
-  const reasonText = g.end_reason === "resign" ? t("resignNoStats") : g.end_reason === "timeout" ? t("inactiveLoss") : g.end_reason === "checkmate" ? t("checkmate") : t("draw");
+  const myDrawOffers = myColor === "w" ? g.draw_offers_w : g.draw_offers_b;
+  const reasonText = g.end_reason === "resign" ? t("resignNoStats") : g.end_reason === "timeout" && g.result !== "d" ? t("inactiveLoss") : g.end_reason === "checkmate" ? t("checkmate") : t("draw");
   const title = g.result === "d" ? t("draw") : g.result === myColor ? t("youWon") : t("youLost");
   const status = g.status === "finished" ? title : game.inCheck() ? t("check") : myTurn ? t("yourTurn") : t("opponentTurn");
   const boardGame = gameAtPly(game, reviewPly);
@@ -321,7 +338,7 @@ function Match() {
           </div>
         )}
         <div className="game-actions">
-          <Button variant="ghost" onClick={() => setAsk("offerDraw")} disabled={g.status !== "active" || game.history().length < 2 || !!g.draw_offer} className="game-action-button game-action-draw"><Handshake className="size-4" /> {t("offerDraw")}</Button>
+          <Button variant="ghost" onClick={() => setAsk("offerDraw")} disabled={g.status !== "active" || game.history().length < 2 || !!g.draw_offer || myDrawOffers >= MAX_DRAW_OFFERS} className="game-action-button game-action-draw"><Handshake className="size-4" /> {t("offerDraw")}</Button>
           <Button variant="ghost" onClick={() => setAsk("resign")} disabled={g.status !== "active"} className="game-action-button game-action-resign"><Flag className="size-4" /> {t("resign")}</Button>
         </div>
         {g.status === "finished" && !showResult && <button className="action-btn action-gold" disabled={leavingHome} onClick={() => void goHome()}>{t("home")}</button>}

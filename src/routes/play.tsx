@@ -15,7 +15,8 @@ import { computerDisplayName } from "@/lib/computer-opponent";
 import { report } from "@/lib/report";
 import { toast } from "sonner";
 import { BoardNotice, type BoardNoticeData } from "@/components/BoardNotice";
-import { CHECKMATE_RESULT_DELAY_MS, FALLBACK_NOTICE_MS, MATCH_NOTICE_MS, MAX_DRAW_OFFERS, PLAY_FALLBACK_NOTICE, playNoticeFromSearch, shouldSendDrawOffer } from "@/lib/play-motion";
+import { CHECKMATE_RESULT_DELAY_MS, FALLBACK_NOTICE_MS, MATCH_NOTICE_MS, MAX_DRAW_OFFERS, PLAY_FALLBACK_NOTICE, normalizedDrawOffers, playNoticeFromSearch, shouldSendDrawOffer } from "@/lib/play-motion";
+import { automaticDrawReason, otherColor, timeoutWinner } from "@/lib/chess-rules";
 import { ChessBoard } from "@/components/ChessBoard";
 import { Piece } from "@/components/Piece";
 import { Modal } from "@/components/Modal";
@@ -27,7 +28,7 @@ import { useI18n } from "@/lib/i18n";
 import { celebrate, feedback } from "@/lib/feedback";
 import { noteGameFinished, setGameplayActive, showPostMatchAd } from "@/lib/ads";
 import { onGameFinished } from "@/lib/rate";
-import { createGame, deleteGame, getGame, recordResult, rematchConfig, saveGame, type Color, type SavedGame } from "@/lib/storage";
+import { completeSavedGame, createGame, getGame, rematchConfig, saveGame, type Color, type SavedGame } from "@/lib/storage";
 import { ResultShareButton } from "@/components/ResultShareButton";
 
 export const Route = createFileRoute("/play")({
@@ -70,8 +71,8 @@ function Play() {
   const [thinking, setThinking] = useState(false);
   const [promo, setPromo] = useState<{ from: Square; to: Square } | null>(null);
   const [ask, setAsk] = useState<"resign" | "offerDraw" | "draw" | null>(null);
-  // Each player may propose a draw at most twice per game.
-  const [drawOffers, setDrawOffers] = useState(0);
+  // Persisted separately for both players so resuming cannot reset the limit.
+  const [drawOffers, setDrawOffers] = useState<Record<Color, number>>({ w: 0, b: 0 });
   const [notice, setNotice] = useState<BoardNoticeData | null>(null);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const endTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -105,6 +106,7 @@ function Play() {
     const l = h[h.length - 1];
     setLastMove(l ? { from: l.from, to: l.to } : null);
     setResult(null);
+    setDrawOffers(normalizedDrawOffers(g.drawOffers));
     setShowEnd(false);
     setReviewPly(null);
     if (endTimer.current) clearTimeout(endTimer.current);
@@ -144,31 +146,24 @@ function Play() {
     setResult(res);
     setShowEnd(false);
     setReviewPly(null);
-    deleteGame(s.id);
+    const outcome = res.winner === null ? "draw" : res.winner === s.human ? "win" : "loss";
+    // Never discard the recoverable final position until its result is durably recorded.
+    const { unlocked } = completeSavedGame(s, outcome, res.reason !== "resigned");
     if (res.reason === "checkmate") showNotice(t("checkmate"), "checkmate");
     endTimer.current = setTimeout(() => setShowEnd(true), res.reason === "checkmate" ? CHECKMATE_RESULT_DELAY_MS : 0);
     noteGameFinished(s.id);
     void onGameFinished();
     report("play", "local_game_finished", JSON.stringify({ game: s.id, reason: res.reason, winner: res.winner, level: s.level }));
-    if (s.mode === "ai") {
-      const outcome = res.winner === null ? "draw" : res.winner === s.human ? "win" : "loss";
-      const unlocked = recordResult(s.id, outcome, s.level, res.reason !== "resigned", s.mode);
-      feedback(outcome === "win" ? "win" : outcome === "loss" ? "lose" : "draw");
-      if (outcome === "win") void celebrate();
-      if (unlocked) setTimeout(() => toast.success(t("unlocked", { level: t(unlocked) })), 900);
-    } else {
-      const outcome = res.winner === null ? "draw" : res.winner === s.human ? "win" : "loss";
-      recordResult(s.id, outcome, s.level, res.reason !== "resigned", s.mode);
-      feedback(res.winner ? "win" : "draw");
-      if (res.winner) void celebrate();
-    }
+    feedback(outcome === "win" ? "win" : outcome === "loss" ? "lose" : "draw");
+    if (outcome === "win") void celebrate();
+    if (unlocked) setTimeout(() => toast.success(t("unlocked", { level: t(unlocked) })), 900);
   }, [t]);
 
   // Recover a game closed between saving the final move and recording its result.
   useEffect(() => {
     if (!saved || result || finishedGame.current === saved.id) return;
     if (game.isCheckmate()) finish({ winner: other(game.turn()), reason: "checkmate" });
-    else if (game.isDraw()) finish({ winner: null, reason: "draw" });
+    else if (automaticDrawReason(game)) finish({ winner: null, reason: "draw" });
   }, [saved, result, game, finish]);
 
   const persist = useCallback((times: SavedGame["times"]) => {
@@ -183,6 +178,11 @@ function Play() {
     const s = savedRef.current;
     if (!s) return;
     const mover = game.turn();
+    if (s.times && s.times[mover] - (Date.now() - turnStart.current) <= 0) {
+      persist({ ...s.times, [mover]: 0 });
+      finish({ winner: timeoutWinner(game, mover), reason: "timeout" });
+      return;
+    }
     let m;
     try { m = game.move(mv); } catch { return; }
     setReviewPly(null);
@@ -196,7 +196,7 @@ function Play() {
     persist(times);
     refresh();
     if (game.isCheckmate()) { feedback("check"); finish({ winner: mover, reason: "checkmate" }); }
-    else if (game.isDraw() || game.isStalemate()) finish({ winner: null, reason: "draw" });
+    else if (automaticDrawReason(game)) finish({ winner: null, reason: "draw" });
     else if (game.inCheck()) { feedback("check"); showNotice(t("check"), "check"); }
     else feedback(m.captured ? "capture" : "move");
   }, [game, persist, finish, t]);
@@ -235,7 +235,7 @@ function Play() {
       if (remaining(c) <= 0) {
         const times = savedRef.current?.times;
         if (times) persist({ ...times, [c]: 0 });
-        finish({ winner: other(c), reason: "timeout" });
+        finish({ winner: timeoutWinner(game, c), reason: "timeout" });
       }
     }, 200);
     return () => clearInterval(iv);
@@ -257,18 +257,35 @@ function Play() {
   }, [game, persist, result]);
 
   function onBoardMove(from: Square, to: Square) {
+    const s = savedRef.current;
+    const mover = game.turn();
+    if (s?.times && s.times[mover] - (Date.now() - turnStart.current) <= 0) {
+      persist({ ...s.times, [mover]: 0 });
+      finish({ winner: timeoutWinner(game, mover), reason: "timeout" });
+      return;
+    }
     const needsPromo = game.moves({ square: from, verbose: true }).some((m) => m.to === to && m.promotion);
     if (needsPromo) setPromo({ from, to });
     else applyMove({ from, to });
   }
 
   function offerDraw(confirmed = false) {
-    if (!shouldSendDrawOffer(confirmed, drawOffers)) {
-      if (drawOffers < MAX_DRAW_OFFERS) setAsk("offerDraw");
+    const offerer = vsAi ? human : game.turn();
+    const previous = normalizedDrawOffers(savedRef.current?.drawOffers)[offerer];
+    if (!shouldSendDrawOffer(confirmed, previous)) {
+      if (previous < MAX_DRAW_OFFERS) setAsk("offerDraw");
       return;
     }
     setAsk(null);
-    setDrawOffers((n) => n + 1);
+    const next = { ...normalizedDrawOffers(savedRef.current?.drawOffers), [offerer]: previous + 1 };
+    setDrawOffers(next);
+    const current = savedRef.current;
+    if (current) {
+      const updated = { ...current, drawOffers: next };
+      saveGame(updated);
+      savedRef.current = updated;
+      setSaved(updated);
+    }
     if (vsAi) {
       const ai = other(human);
       const e = evaluateFen(game.fen());
@@ -281,7 +298,7 @@ function Play() {
   function resign() {
     setAsk(null);
     const loser = vsAi ? human : game.turn();
-    finish({ winner: other(loser), reason: "resigned" });
+    finish({ winner: otherColor(loser), reason: "resigned" });
   }
 
   async function goHomeAfterMatch() {
@@ -383,7 +400,7 @@ function Play() {
           </div>
         ) : (
           <div className="game-actions">
-            <Button variant="ghost" onClick={() => offerDraw()} disabled={busy || game.history().length < 2 || drawOffers >= MAX_DRAW_OFFERS} className="game-action-button game-action-draw">
+            <Button variant="ghost" onClick={() => offerDraw()} disabled={busy || game.history().length < 2 || drawOffers[vsAi ? human : game.turn()] >= MAX_DRAW_OFFERS} className="game-action-button game-action-draw">
               <Handshake className="size-4" /> {t("offerDraw")}
             </Button>
             <Button variant="ghost" onClick={() => setAsk("resign")} disabled={busy} className="game-action-button game-action-resign">

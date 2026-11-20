@@ -1,5 +1,17 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Releasegranskning – första tio åtgärderna 20 nov
+- [x] G01: korrekt tredragupprepning samt automatisk 50-/75-dragsregel lokalt och online; delade regeltester och riktiga serverdrag verifierade
+- [x] G02: tidsförlust blir oavgjort när motståndaren saknar mattmöjlighet; båda timeoutfallen verifierade mot backend
+- [x] G03: blockera lokala och onlinedrag/promotion när tiden är ute; mobilgränssnitt och serveråtgärder provade
+- [x] G04: Stockfish-timeout avslutar sökningen, terminerar workern och startar rent vid nästa drag; isolerat test passerat
+- [x] G08: slutresultat sparas beständigt och deduplicerat innan pågående spel tas bort; lagringsfel lämnar slutställningen kvar
+- [x] O01: datorfallback och Avbryt raderar bara väntande snabbspel, aldrig en match som hunnit aktiveras; backendprov passerat
+- [x] O02: snabbmatchning paras ihop i en atomisk databasåtgärd; två samtidiga spelare fick samma aktiva match
+- [x] O03: endast aktivt oavgjortförslag från motståndaren kan accepteras; eget/stale svar avvisades i backendprov
+- [x] O04: deadline kontrolleras vid drag, oavgjort, uppgivande, chatt och schemalagd städning; samtliga spärrar provade
+- [x] O09: högst två oavgjortförslag per spelare sparas lokalt och online; omladdning och backendgräns verifierade
+
 ## Releasegranskning C01–C03 (K1–K3)
 - [x] Rätta iOS bundle-ID utan att ändra befintligt Android-paket; signering/provisioning verifieras separat i Xcode
 - [x] Gör korta/liggande spelvyer spelbara utan överlapp eller kollapsat bräde; normalflöde med rullning, mobilprov och drag verifierade

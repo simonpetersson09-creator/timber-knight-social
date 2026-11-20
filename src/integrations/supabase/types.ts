@@ -165,6 +165,8 @@ export type Database = {
           code: string | null
           created_at: string
           draw_offer: string | null
+          draw_offers_b: number
+          draw_offers_w: number
           end_reason: string | null
           expires_at: string
           fen: string
@@ -185,6 +187,8 @@ export type Database = {
           code?: string | null
           created_at?: string
           draw_offer?: string | null
+          draw_offers_b?: number
+          draw_offers_w?: number
           end_reason?: string | null
           expires_at: string
           fen?: string
@@ -205,6 +209,8 @@ export type Database = {
           code?: string | null
           created_at?: string
           draw_offer?: string | null
+          draw_offers_b?: number
+          draw_offers_w?: number
           end_reason?: string | null
           expires_at?: string
           fen?: string
@@ -396,6 +402,13 @@ export type Database = {
           player: string
           player_number: number
           score: number
+        }[]
+      }
+      quick_match: {
+        Args: { p_game?: string; p_player: string }
+        Returns: {
+          id: string
+          status: string
         }[]
       }
     }

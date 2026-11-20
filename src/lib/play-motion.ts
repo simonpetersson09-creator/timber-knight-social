@@ -13,7 +13,15 @@ export const MAX_DRAW_OFFERS = 2;
 
 /** The first click only opens confirmation; a confirmed click may send within the limit. */
 export function shouldSendDrawOffer(confirmed: boolean, previousOffers: number): boolean {
-  return confirmed && previousOffers < MAX_DRAW_OFFERS;
+  return confirmed && previousOffers >= 0 && previousOffers < MAX_DRAW_OFFERS;
+}
+
+/** Keeps persisted per-player offer counters bounded when old saves are opened. */
+export function normalizedDrawOffers(value: Partial<Record<Color, number>> | null | undefined): Record<Color, number> {
+  return {
+    w: Math.min(MAX_DRAW_OFFERS, Math.max(0, Math.floor(value?.w ?? 0))),
+    b: Math.min(MAX_DRAW_OFFERS, Math.max(0, Math.floor(value?.b ?? 0))),
+  };
 }
 
 /** The notice key shown when a quick search ended without an online opponent. */

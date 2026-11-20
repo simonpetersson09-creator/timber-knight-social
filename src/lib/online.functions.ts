@@ -1,10 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { Chess } from "chess.js";
 import { z } from "zod";
-import { canCloseOnlineGame, INVITE_TTL_MS, LOBBY_TTL_MS, QUICK_WAIT_MS, MOVE_LIMIT_MS, moveDeadline, statsFor, type MatchRow } from "./online-rules";
-import { Cred, PLAYER_COLS, allMatches, auth, finishGame, nameOf, notify, sweepGames, type DB } from "./server/core";
+import { canCloseOnlineGame, INVITE_TTL_MS, LOBBY_TTL_MS, MOVE_LIMIT_MS, statsFor, type MatchRow } from "./online-rules";
+import { automaticDrawReason } from "./chess-rules";
+import { Cred, PLAYER_COLS, allMatches, auth, finishGame, finishTimedOutGame, nameOf, notify, sweepGames, type DB } from "./server/core";
 
-const GAME_COLS = "id, kind, status, host, invitee, white, black, code, pgn, fen, result, end_reason, draw_offer, last_move_at, reminded, expires_at, created_at";
+const GAME_COLS = "id, kind, status, host, invitee, white, black, code, pgn, fen, result, end_reason, draw_offer, draw_offers_w, draw_offers_b, last_move_at, reminded, expires_at, created_at";
 const later = (ms: number) => new Date(Date.now() + ms).toISOString();
 function lobbyCode() {
   const a = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -20,7 +21,7 @@ async function start(a: DB, gameId: string, host: string, guest: string) {
   const { data } = await a.from("games").update({
     status: "active", white: hostWhite ? host : guest, black: hostWhite ? guest : host, invitee: guest,
     last_move_at: new Date().toISOString(), expires_at: later(MOVE_LIMIT_MS), updated_at: new Date().toISOString(),
-  }).eq("id", gameId).eq("status", "waiting").select("id").maybeSingle();
+  }).eq("id", gameId).eq("status", "waiting").gt("expires_at", new Date().toISOString()).select("id").maybeSingle();
   return !!data;
 }
 
@@ -116,24 +117,33 @@ export const cancelGame = createServerFn({ method: "POST" })
     return { ok: !remaining };
   });
 
-/** Quick match: joins someone searching right now, otherwise starts searching. */
+/** The database serializes pairing so simultaneous searches cannot create crossed games. */
 export const quickMatch = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Cred.extend({ gameId: z.string().uuid().optional() }).parse(d))
   .handler(async ({ data }) => {
     const { a, me } = await auth(data);
-    if (data.gameId) {
-      const { data: g } = await a.from("games").select("status").eq("id", data.gameId).maybeSingle();
-      return { id: data.gameId, status: g?.status ?? "expired" };
-    }
-    const { data: open } = await a.from("games").select("id, host").eq("kind", "quick").eq("status", "waiting").neq("host", me)
-      .gt("expires_at", new Date().toISOString()).order("created_at").limit(3);
-    for (const g of open ?? []) {
-      if (await start(a, g.id, g.host, me)) return { id: g.id, status: "active" };
-    }
-    await a.from("games").update({ status: "expired" }).eq("kind", "quick").eq("status", "waiting").eq("host", me);
-    const { data: g } = await a.from("games").insert({ kind: "quick", host: me, expires_at: later(QUICK_WAIT_MS + 5000) }).select("id").single();
-    if (!g) throw new Error("quick_match_failed");
-    return { id: g.id, status: "waiting" };
+    const args = data.gameId ? { p_player: me, p_game: data.gameId } : { p_player: me };
+    const { data: rows, error } = await a.rpc("quick_match", args);
+    if (error) throw new Error("quick_match_failed");
+    const row = rows?.[0];
+    if (!row) throw new Error("quick_match_failed");
+    return { id: row.id, status: row.status };
+  });
+
+/** A quick-search exit deletes only a still-waiting row, never a newly active match. */
+export const abandonQuickMatch = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => Cred.extend({ gameId: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const { a, me } = await auth(data);
+    const { data: g } = await a.from("games").select("id, status, host, kind").eq("id", data.gameId).maybeSingle();
+    if (!g || g.kind !== "quick" || g.host !== me) return { status: "expired" as const };
+    if (g.status !== "waiting") return { status: g.status };
+    const { data: removed, error } = await a.from("games").delete()
+      .eq("id", g.id).eq("kind", "quick").eq("host", me).eq("status", "waiting").select("id");
+    if (error) throw new Error("quick_match_close_failed");
+    if (removed?.length) return { status: "expired" as const };
+    const { data: fresh } = await a.from("games").select("status").eq("id", g.id).maybeSingle();
+    return { status: fresh?.status ?? "expired" };
   });
 
 export const getOnlineGame = createServerFn({ method: "POST" })
@@ -154,6 +164,10 @@ export const getOnlineGame = createServerFn({ method: "POST" })
 async function loadActive(a: DB, gameId: string, me: string) {
   const { data: g } = await a.from("games").select(GAME_COLS).eq("id", gameId).maybeSingle();
   if (!g || g.status !== "active" || (g.white !== me && g.black !== me)) throw new Error("not_active");
+  if (new Date(g.expires_at).getTime() <= Date.now()) {
+    await finishTimedOutGame(a, g);
+    throw new Error("not_active");
+  }
   return { g, color: (g.white === me ? "w" : "b") as "w" | "b" };
 }
 
@@ -163,21 +177,17 @@ export const makeMove = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { a, me } = await auth(data);
     const { g, color } = await loadActive(a, data.gameId, me);
-    if (moveDeadline(new Date(g.last_move_at).getTime(), Date.now()) === "timeout") {
-      await finishGame(a, g, new Chess(g.fen).turn() === "w" ? "b" : "w", "timeout");
-      return { ok: false };
-    }
-    const c = new Chess();
+    const c = g.pgn ? new Chess() : new Chess(g.fen);
     if (g.pgn) c.loadPgn(g.pgn);
     if (c.turn() !== color) return { ok: false };
     try { c.move({ from: data.from, to: data.to, ...(data.promotion ? { promotion: data.promotion } : {}) }); } catch { return { ok: false }; }
     const movedAt = new Date().toISOString();
-    const result = c.isCheckmate() ? color : c.isDraw() || c.isStalemate() ? "d" : null;
+    const result = c.isCheckmate() ? color : automaticDrawReason(c) ? "d" : null;
     const { data: upd } = await a.from("games").update({
       pgn: c.pgn(), fen: c.fen(), last_move_at: movedAt, reminded: false, draw_offer: null,
       expires_at: later(MOVE_LIMIT_MS), updated_at: new Date().toISOString(),
       ...(result ? { status: "finished", result, end_reason: result === "d" ? "draw" : "checkmate" } : {}),
-    }).eq("id", g.id).eq("status", "active").eq("pgn", g.pgn).select("id");
+    }).eq("id", g.id).eq("status", "active").eq("pgn", g.pgn).gt("expires_at", movedAt).select("id");
     if (!upd?.length) return { ok: false };
     if (!result) {
       const opp = color === "w" ? g.black : g.white;
@@ -191,11 +201,32 @@ export const gameAction = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { a, me } = await auth(data);
     const { g, color } = await loadActive(a, data.gameId, me);
-    if (data.action === "resign") await finishGame(a, g, color === "w" ? "b" : "w", "resign");
-    else if (data.action === "offerDraw") await a.from("games").update({ draw_offer: color }).eq("id", g.id).eq("status", "active").eq("pgn", g.pgn);
-    else if (data.action === "acceptDraw" && g.draw_offer && g.draw_offer !== color) await finishGame(a, g, "d", "agreed");
-    else if (data.action === "declineDraw") await a.from("games").update({ draw_offer: null }).eq("id", g.id).eq("status", "active").eq("pgn", g.pgn);
-    return { ok: true };
+    if (data.action === "resign") {
+      return { ok: await finishGame(a, g, color === "w" ? "b" : "w", "resign", { enforceDeadline: true }) };
+    }
+    if (data.action === "offerDraw") {
+      const field = color === "w" ? "draw_offers_w" as const : "draw_offers_b" as const;
+      const previous = g[field];
+      if (previous >= 2 || g.draw_offer) return { ok: false, reason: previous >= 2 ? "limit" as const : "pending" as const };
+      const changes = { draw_offer: color, draw_offers_w: g.draw_offers_w, draw_offers_b: g.draw_offers_b, updated_at: new Date().toISOString() };
+      changes[field] = previous + 1;
+      const { data: offered, error } = await a.from("games").update(changes)
+        .eq("id", g.id).eq("status", "active").eq("pgn", g.pgn).eq(field, previous).is("draw_offer", null)
+        .gt("expires_at", new Date().toISOString()).select("id");
+      if (error) throw new Error("draw_offer_failed");
+      return { ok: !!offered?.length, reason: offered?.length ? undefined : "stale" as const };
+    }
+    const pendingOffer = g.draw_offer === "w" || g.draw_offer === "b" ? g.draw_offer : null;
+    if (data.action === "acceptDraw") {
+      if (!pendingOffer || pendingOffer === color) return { ok: false, reason: "stale" as const };
+      return { ok: await finishGame(a, g, "d", "agreed", { expectedDrawOffer: pendingOffer, enforceDeadline: true }) };
+    }
+    if (!pendingOffer || pendingOffer === color) return { ok: false, reason: "stale" as const };
+    const { data: declined, error } = await a.from("games").update({ draw_offer: null, updated_at: new Date().toISOString() })
+      .eq("id", g.id).eq("status", "active").eq("pgn", g.pgn).eq("draw_offer", pendingOffer)
+      .gt("expires_at", new Date().toISOString()).select("id");
+    if (error) throw new Error("draw_decline_failed");
+    return { ok: !!declined?.length };
   });
 
 export const sendChat = createServerFn({ method: "POST" })

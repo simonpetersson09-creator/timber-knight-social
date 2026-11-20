@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Chess } from "chess.js";
-import { AI_MOVE_DELAY_MS, CAPTURE_DURATION_MS, CHECKMATE_RESULT_DELAY_MS, FALLBACK_NOTICE_MS, MATCH_NOTICE_MS, MAX_DRAW_OFFERS, PLAY_FALLBACK_NOTICE, assignPieceIds, playNoticeFromSearch, shouldSendDrawOffer, type BoardPiece, type PieceIds } from "./play-motion";
+import { AI_MOVE_DELAY_MS, CAPTURE_DURATION_MS, CHECKMATE_RESULT_DELAY_MS, FALLBACK_NOTICE_MS, MATCH_NOTICE_MS, MAX_DRAW_OFFERS, PLAY_FALLBACK_NOTICE, assignPieceIds, normalizedDrawOffers, playNoticeFromSearch, shouldSendDrawOffer, type BoardPiece, type PieceIds } from "./play-motion";
 
 function pieces(game: Chess): BoardPiece[] {
   return game.board().flat().filter((piece): piece is BoardPiece => piece !== null);
@@ -17,8 +17,14 @@ describe("play motion", () => {
     expect(shouldSendDrawOffer(false, 0)).toBe(false);
     expect(shouldSendDrawOffer(true, 0)).toBe(true);
   });
-  it("does not send a confirmed draw offer after two earlier offers", () => {
+  it("does not send a confirmed draw offer after two earlier or invalid offers", () => {
     expect(shouldSendDrawOffer(true, 2)).toBe(false);
+    expect(shouldSendDrawOffer(true, -1)).toBe(false);
+  });
+  it("restores independent bounded offer counters after a reload", () => {
+    expect(normalizedDrawOffers({ w: 2, b: 1 })).toEqual({ w: 2, b: 1 });
+    expect(normalizedDrawOffers(null)).toEqual({ w: 0, b: 0 });
+    expect(normalizedDrawOffers({ w: 99, b: -4 })).toEqual({ w: 2, b: 0 });
   });
   it("gives the computer an 1800 ms pause before calculating", () => {
     expect(AI_MOVE_DELAY_MS).toBe(1800);

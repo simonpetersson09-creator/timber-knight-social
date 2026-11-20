@@ -3,6 +3,7 @@ import { Chess } from "chess.js";
 import { z } from "zod";
 import { translate, type Key } from "@/lib/i18n/translate";
 import { moveDeadline } from "@/lib/online-rules";
+import { timeoutWinner } from "@/lib/chess-rules";
 import { allowsNotification } from "@/lib/notification-preferences";
 
 export const Cred = z.object({ id: z.string().uuid(), secret: z.string().min(20).max(100) });
@@ -61,11 +62,27 @@ export async function notifyTest(a: DB, playerId: string): Promise<"sent" | "mis
 
 type GameRow = { id: string; status: string; white: string | null; black: string | null; fen: string; last_move_at: string; reminded: boolean; expires_at: string; kind: string; host: string };
 
-/** Ends a game, records it for statistics (resigned games don't count). */
-export async function finishGame(a: DB, g: { id: string; white: string | null; black: string | null; fen: string; last_move_at: string }, result: "w" | "b" | "d", reason: string) {
-  const { error } = await a.from("games").update({ status: "finished", result, end_reason: reason, draw_offer: null, updated_at: new Date().toISOString() })
+/** Ends exactly the observed active position; optional guards reject stale draw/time actions. */
+export async function finishGame(
+  a: DB,
+  g: { id: string; white: string | null; black: string | null; fen: string; last_move_at: string },
+  result: "w" | "b" | "d",
+  reason: string,
+  options: { expectedDrawOffer?: "w" | "b"; enforceDeadline?: boolean } = {},
+): Promise<boolean> {
+  let query = a.from("games").update({ status: "finished", result, end_reason: reason, draw_offer: null, updated_at: new Date().toISOString() })
     .eq("id", g.id).eq("status", "active").eq("fen", g.fen).eq("last_move_at", g.last_move_at);
+  if (options.expectedDrawOffer) query = query.eq("draw_offer", options.expectedDrawOffer);
+  if (options.enforceDeadline ?? true) query = query.gt("expires_at", new Date().toISOString());
+  const { data, error } = await query.select("id");
   if (error) throw new Error("game_finish_failed");
+  return !!data?.length;
+}
+
+/** Settles a flag fall using the actual position, including insufficient mating material. */
+export async function finishTimedOutGame(a: DB, g: GameRow): Promise<boolean> {
+  const game = new Chess(g.fen);
+  return finishGame(a, g, timeoutWinner(game, game.turn()) ?? "d", "timeout", { enforceDeadline: false });
 }
 
 export function stockholmDay(now = new Date()) { return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Stockholm", year: "numeric", month: "2-digit", day: "2-digit" }).format(now); }
@@ -90,8 +107,9 @@ export async function sweepGames(a: DB, rows: GameRow[]) {
     } else if (g.status === "active") {
       const turn = new Chess(g.fen).turn();
       const toMove = turn === "w" ? g.white : g.black;
+      const expired = new Date(g.expires_at).getTime() <= now;
       const d = moveDeadline(new Date(g.last_move_at).getTime(), now);
-      if (d === "timeout") { await finishGame(a, g, turn === "w" ? "b" : "w", "timeout"); g.status = "finished"; }
+      if (expired || d === "timeout") { await finishTimedOutGame(a, g); g.status = "finished"; }
       else if (d === "remind" && !g.reminded && toMove) {
         await a.from("games").update({ reminded: true }).eq("id", g.id);
         g.reminded = true;

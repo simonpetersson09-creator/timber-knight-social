@@ -12,6 +12,8 @@ export type GameConfig = { mode: "ai" | "local"; level: Level; human: Color; clo
 export type SavedGame = GameConfig & {
   id: string;
   times: { w: number; b: number } | null; pgn: string; updatedAt: number;
+  /** Confirmed offers per colour; older saves fall back to zero when opened. */
+  drawOffers: Record<Color, number>;
 };
 export type Outcome = "win" | "loss" | "draw";
 export type ResultStats = { played: number; wins: number; losses: number; draws: number };
@@ -47,7 +49,7 @@ export function rematchConfig(game: GameConfig): GameConfig {
 export function createGame(cfg: GameConfig): SavedGame | null {
   if (listGames().length >= MAX_SAVED) return null;
   const ms = cfg.clock ? cfg.clock.minutes * 60_000 : 0;
-  const g: SavedGame = { ...cfg, id: crypto.randomUUID(), times: cfg.clock ? { w: ms, b: ms } : null, pgn: "", updatedAt: Date.now() };
+  const g: SavedGame = { ...cfg, id: crypto.randomUUID(), times: cfg.clock ? { w: ms, b: ms } : null, pgn: "", updatedAt: Date.now(), drawOffers: { w: 0, b: 0 } };
   saveGame(g);
   return g;
 }
@@ -83,6 +85,14 @@ export function recordResult(id: string, outcome: Outcome, level: Level | null, 
   s.recorded = [...s.recorded, id];
   write(S, s);
   return LEVELS.find((l) => isUnlocked(l, s.levelWins) && !before.includes(l)) ?? null;
+}
+
+/** Records a final result before removing its recoverable saved position. */
+export function completeSavedGame(game: SavedGame, outcome: Outcome, counts: boolean): { unlocked: Level | null; stored: boolean } {
+  const unlocked = recordResult(game.id, outcome, game.level, counts, game.mode);
+  const stored = !counts || getStats().recorded.includes(game.id);
+  if (stored) deleteGame(game.id);
+  return { unlocked, stored };
 }
 
 export const getSettings = (): Settings => ({ lang: "auto", sound: true, haptics: true, ...read<Partial<Settings>>(P, {}) });

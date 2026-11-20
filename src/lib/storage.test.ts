@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import { STATS_CHANGED, createGame, deleteGame, getStats, recordResult, rematchConfig, resetStats, saveGame } from "./storage";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { STATS_CHANGED, completeSavedGame, createGame, deleteGame, getGame, getStats, recordResult, rematchConfig, resetStats, saveGame } from "./storage";
 describe("local statistics", () => {
   beforeEach(() => localStorage.clear());
   it("keeps mode, level, color and the exact clock for a direct rematch", () => {
@@ -66,5 +66,33 @@ describe("local statistics", () => {
   it("old games cannot count again after 200 games", () => {
     for (let i = 0; i < 205; i++) recordResult(String(i), "win", "beginner");
     recordResult("0", "win", "beginner"); expect(getStats().played).toBe(205);
+  });
+  it("keeps both players' draw-offer limits when a game is resumed", () => {
+    const game = createGame({ mode: "local", level: "beginner", human: "w", clock: null });
+    if (!game) throw new Error("Expected a new game");
+    saveGame({ ...game, drawOffers: { w: 2, b: 1 } });
+    expect(getGame(game.id)?.drawOffers).toEqual({ w: 2, b: 1 });
+  });
+  it("stores a completed result before deleting the saved position", () => {
+    const game = createGame({ mode: "ai", level: "hard", human: "w", clock: null });
+    if (!game) throw new Error("Expected a new game");
+    const completion = completeSavedGame(game, "win", true);
+    expect(completion.stored).toBe(true);
+    expect(getStats().played).toBe(1);
+    expect(getGame(game.id)).toBeNull();
+  });
+  it("keeps the final position recoverable when result storage fails", () => {
+    const game = createGame({ mode: "ai", level: "hard", human: "w", clock: null });
+    if (!game) throw new Error("Expected a new game");
+    const original = Storage.prototype.setItem;
+    const spy = vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key: string, value: string) {
+      if (key === "mrbchess.stats.v1") throw new DOMException("full", "QuotaExceededError");
+      original.call(this, key, value);
+    });
+    try {
+      expect(completeSavedGame(game, "win", true).stored).toBe(false);
+      expect(getGame(game.id)?.id).toBe(game.id);
+      expect(getStats().played).toBe(0);
+    } finally { spy.mockRestore(); }
   });
 });
