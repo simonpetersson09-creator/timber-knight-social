@@ -5,3 +5,7 @@ export const platform = (): "ios" | "android" | "web" => { const p = Capacitor.g
 export function isPreviewHost(host = typeof location !== "undefined" ? location.hostname : "") {
   return host === "localhost" || host.startsWith("127.") || host.includes("id-preview--") || host.includes("lovableproject.com") || host.endsWith("-dev.lovable.app");
 }
+/** Gameplay identity and telemetry exist only in the app or the explicitly supported preview. */
+export function allowsGameplayRuntime(host?: string) {
+  return isNative() || isPreviewHost(host);
+}

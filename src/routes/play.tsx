@@ -21,7 +21,7 @@ import { Piece } from "@/components/Piece";
 import { Modal } from "@/components/Modal";
 import { PromotionPicker } from "@/components/PromotionPicker";
 import { bestMove, evaluateFen } from "@/lib/engine";
-import { stockfishMove, preloadStockfish } from "@/lib/stockfish";
+import { stockfishMove, preloadStockfish, cancelStockfish } from "@/lib/stockfish";
 import { AI_MOVE_DELAY_MS } from "@/lib/play-motion";
 import { useI18n } from "@/lib/i18n";
 import { celebrate, feedback } from "@/lib/feedback";
@@ -214,20 +214,22 @@ function Play() {
     const position = new Chess();
     position.loadPgn(game.pgn());
     const started = Date.now();
+    let moveTimer: ReturnType<typeof setTimeout> | undefined;
     const timer = setTimeout(async () => {
       let mv: { from: string; to: string; promotion?: string } | null = null;
       const uci = await stockfishMove(position, saved.level);
+      if (cancelled) return;
       if (uci) mv = { from: uci.slice(0, 2), to: uci.slice(2, 4), ...(uci[4] ? { promotion: uci[4] } : {}) };
       else { const m = bestMove(fen, saved.level === "beginner" ? "beginner" : saved.level === "medium" ? "medium" : "expert"); if (m) mv = { from: m.from, to: m.to, ...(m.promotion ? { promotion: m.promotion } : {}) }; }
       // Keep a natural minimum thinking pause even when the engine answers instantly.
       const wait = Math.max(0, AI_MOVE_DELAY_MS - (Date.now() - started));
-      setTimeout(() => {
+      moveTimer = setTimeout(() => {
         if (cancelled || game.fen() !== fen) return;
         setThinking(false);
         if (mv) applyMove(mv);
       }, wait);
     }, 0);
-    return () => { cancelled = true; clearTimeout(timer); };
+    return () => { cancelled = true; clearTimeout(timer); if (moveTimer) clearTimeout(moveTimer); cancelStockfish(); };
   }, [aiTurn, saved?.id, game.fen()]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Clock ticking + timeout
@@ -403,7 +405,7 @@ function Play() {
           <ArrowLeft className="size-5" />
         </button>
         <span className="brand-wordmark play-wordmark text-2xl">Mr B Chess</span>
-        <span className="size-10" />
+        <span className="size-11" />
       </header>
 
       <div className="play-col">
@@ -446,7 +448,7 @@ function Play() {
         }}
       />
 
-      <Modal open={ask === "resign"} onClose={() => setAsk(null)}>
+      <Modal open={ask === "resign"} title={t("resign")} onClose={() => setAsk(null)}>
         <p className="mb-4 text-center font-semibold">{t("confirmResign")}</p>
         <div className="flex gap-2">
           <button className="action-btn action-ghost" onClick={() => setAsk(null)}>{t("cancel")}</button>
@@ -454,7 +456,7 @@ function Play() {
         </div>
       </Modal>
 
-      <Modal open={ask === "offerDraw"} onClose={() => setAsk(null)}>
+      <Modal open={ask === "offerDraw"} title={t("offerDraw")} onClose={() => setAsk(null)}>
         <p className="mb-4 text-center font-semibold">{t("offerDraw")}</p>
         <div className="flex gap-2">
           <button className="action-btn action-ghost" onClick={() => setAsk(null)}>{t("cancel")}</button>
@@ -462,7 +464,7 @@ function Play() {
         </div>
       </Modal>
 
-      <Modal open={ask === "draw"} onClose={() => setAsk(null)}>
+      <Modal open={ask === "draw"} title={t("offerDraw")} onClose={() => setAsk(null)}>
         <p className="mb-4 text-center font-semibold">{t("drawOffer", { side: nameOf(game.turn()) })}</p>
         <div className="flex gap-2">
           <button className="action-btn action-ghost" onClick={() => { setAsk(null); showNotice(t("drawDeclined")); }}>{t("decline")}</button>
@@ -470,7 +472,7 @@ function Play() {
         </div>
       </Modal>
 
-      <Modal open={!!result && showEnd} onClose={() => setShowEnd(false)}>
+      <Modal open={!!result && showEnd} title={title} onClose={() => setShowEnd(false)}>
         <div className="space-y-4 text-center">
           <Piece color={result?.winner ?? "w"} type="k" className="mx-auto size-20" />
           <h2 className="brand-wordmark text-3xl">{title}</h2>

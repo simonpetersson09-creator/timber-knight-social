@@ -42,7 +42,7 @@ describe("computer levels", () => {
     }
     vi.stubGlobal("Worker", FakeWorker);
     try {
-      const { stockfishMove: isolatedMove, SF_CFG: isolatedCfg } = await import("./stockfish");
+      const { stockfishMove: isolatedMove, cancelStockfish: isolatedCancel, SF_CFG: isolatedCfg } = await import("./stockfish");
       const first = isolatedMove(new (await import("chess.js")).Chess().fen(), "medium");
       await vi.advanceTimersByTimeAsync(0);
       await vi.advanceTimersByTimeAsync((isolatedCfg.medium?.movetime ?? 0) + 4000);
@@ -57,6 +57,21 @@ describe("computer levels", () => {
       await expect(second).resolves.toBe("e2e4");
       expect(FakeWorker.instances).toHaveLength(2);
       expect(FakeWorker.instances[1]?.messages).toContain("position startpos moves g1f3 g8f6");
+
+      FakeWorker.answer = false;
+      const active = isolatedMove(position, "hard");
+      await vi.advanceTimersByTimeAsync(0);
+      const queued = isolatedMove(position, "master");
+      isolatedCancel();
+      await expect(active).resolves.toBeNull();
+      await expect(queued).resolves.toBeNull();
+      expect(FakeWorker.instances[1]?.terminated).toBe(true);
+
+      FakeWorker.answer = true;
+      const restarted = isolatedMove(position, "medium");
+      await vi.advanceTimersByTimeAsync(0);
+      await expect(restarted).resolves.toBe("e2e4");
+      expect(FakeWorker.instances).toHaveLength(3);
     } finally {
       vi.useRealTimers();
       vi.unstubAllGlobals();

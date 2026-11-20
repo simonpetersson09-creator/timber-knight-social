@@ -1,5 +1,14 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Releasegranskning – slutåtgärder U01–U07 20 nov
+- [x] U01: Radix-dialoger med fokusfälla, Escape, återfokus och namn; mobilprov utan konsolfel
+- [x] U02: 64 rutor med roving fokus, pilar/Enter, pjäsnamn, tillgänglig bondeförvandling och radiospråkval provade
+- [x] U03: 44 px-tryckytor; 200 % text på 320/393 px, låg höjd och sidscanning utan overflow eller för små mål
+- [x] U04: dragtips endast för Nybörjare-datorn samt 48 timmar per onlinedrag beskrivet på alla 40 språk
+- [x] U05: fail-closed webbgate och delad telemetriregistreringsspärr; tester visar ingen spelmontering, identitet eller kö på publik webb
+- [x] U06: aktiv/köad Stockfish-sökning avbryts och startar rent; native-/QR-städning samt prioriterad, validerad 100-händelseloggkö testad
+- [x] U07: nedladdningsmetadata, ingen Lovable-attribution eller tolv globala pjäsförladdningar; 404 SSR och routing verifierade
+
 ## Releasegranskning – säkerhet och drift 20 nov
 - [x] S02: 30 minuters HttpOnly-adminsession; inloggning, omladdning, utloggning och borttagning av gammal nyckel provade
 - [x] S03: radering anonymiserar spelaren, kontrollerar varje steg och bevarar motståndarens matchhistorik; inställningsflöde och databasprov verifierade

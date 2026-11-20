@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useLocation, useRouter } from "@tanstack/react-router";
-import { isNative } from "@/lib/native";
+import { allowsGameplayRuntime, isNative } from "@/lib/native";
 import { isBackSwipe, type SwipePoint } from "@/lib/swipe-back";
 import { runTopBackHandler } from "@/lib/back-handler";
 import {
@@ -30,6 +30,7 @@ export function NativeHost() {
   }, [router]);
 
   useEffect(() => {
+    if (!allowsGameplayRuntime()) return;
     if (!opened.current) { opened.current = true; report("play", "app_opened"); }
     void loadMe().catch(() => {});
     const foreground = () => { if (document.visibilityState === "visible") { void loadMe(true).catch(() => {}); void flushReports(); } };
@@ -66,21 +67,27 @@ export function NativeHost() {
     };
     document.addEventListener("visibilitychange", foregroundAds);
     let remove: (() => void) | undefined;
-    void import("@capacitor/app").then(({ App }) => {
-      if (disposed) return;
-      const back = App.addListener("backButton", async () => {
-        if (runTopBackHandler()) return; // close popups first
-        if (path.current === "/") void App.minimizeApp();
-        else if (await leaveMatch()) return;
-        else if (window.history.length > 1) router.history.back();
-        else void router.navigate({ to: "/" });
-      });
-      const state = App.addListener("appStateChange", ({ isActive }) => {
-        nativeActive = isActive;
-        syncForeground();
-      });
-      remove = () => { void Promise.all([back, state]).then((handles) => handles.forEach((handle) => handle.remove())); };
-    });
+    void import("@capacitor/app").then(async ({ App }) => {
+      const listen = async (register: () => Promise<{ remove: () => void | Promise<void> }>) => {
+        try { return await register(); } catch { return null; }
+      };
+      const handles = (await Promise.all([
+        listen(() => App.addListener("backButton", async () => {
+          if (runTopBackHandler()) return; // close popups first
+          if (path.current === "/") void App.minimizeApp();
+          else if (await leaveMatch()) return;
+          else if (window.history.length > 1) router.history.back();
+          else void router.navigate({ to: "/" });
+        })),
+        listen(() => App.addListener("appStateChange", ({ isActive }) => {
+          nativeActive = isActive;
+          syncForeground();
+        })),
+      ])).filter((handle) => handle !== null);
+      const cleanup = () => handles.forEach((handle) => { void Promise.resolve(handle.remove()).catch(() => {}); });
+      if (disposed) cleanup();
+      else remove = cleanup;
+    }).catch(() => { /* native lifecycle is optional when the plugin is unavailable */ });
     return () => {
       disposed = true;
       setAdForeground(false);

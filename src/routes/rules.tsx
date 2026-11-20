@@ -25,7 +25,7 @@ function RulesPage() {
     <PageHeader title={t("rules")} />
     <p className="text-sm leading-6 text-muted-foreground">{t("rulesIntro")}</p>
     <div className="space-y-3">{RULES.map(([title, text]) => <details key={title} className="panel p-4" name="chess-rules">
-      <summary className="cursor-pointer font-semibold text-foreground">{t(title)}</summary>
+      <summary className="min-h-11 cursor-pointer py-3 font-semibold text-foreground">{t(title)}</summary>
       <p className="mt-3 text-sm leading-6 text-muted-foreground">{t(text)}</p>
     </details>)}</div>
   </main>;

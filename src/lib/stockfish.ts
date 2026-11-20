@@ -57,6 +57,15 @@ function boot(): Promise<Worker> {
 export function preloadStockfish() { if (typeof Worker !== "undefined") boot().catch(() => {}); }
 
 let queue: Promise<unknown> = Promise.resolve();
+let generation = 0;
+let activeCancel: (() => void) | null = null;
+
+/** Abort active and queued searches when the game route is no longer active. */
+export function cancelStockfish() {
+  generation++;
+  activeCancel?.();
+  activeCancel = null;
+}
 
 /** Preserve the initial position and every ply, including repeated positions. */
 export function stockfishPosition(game: Chess): string {
@@ -71,20 +80,27 @@ export function stockfishMove(position: string | Chess, level: Level): Promise<s
   const cfg = SF_CFG[level];
   if (!cfg || typeof Worker === "undefined") return Promise.resolve(null);
   const command = typeof position === "string" ? `position fen ${position}` : stockfishPosition(position);
+  const requestGeneration = generation;
   const run = queue.then(async () => {
+    if (requestGeneration !== generation) return null;
     const w = await boot();
+    if (requestGeneration !== generation) return null;
     return new Promise<string | null>((resolve) => {
       let settled = false;
-      const finish = (move: string | null) => {
+      const finish = (move: string | null, dispose = false) => {
         if (settled) return;
         settled = true;
         clearTimeout(timer);
         w.onmessage = null;
         w.onerror = null;
+        if (activeCancel === cancel) activeCancel = null;
+        if (dispose) discard(w);
         resolve(move);
       };
-      const fail = () => { discard(w); finish(null); };
+      const fail = () => finish(null, true);
+      const cancel = () => finish(null, true);
       const timer = setTimeout(fail, cfg.movetime + 4000);
+      activeCancel = cancel;
       w.onerror = fail;
       w.onmessage = (event) => {
         const line = String(event.data);

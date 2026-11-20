@@ -24,12 +24,12 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Mr B Chess – Schack i trä" },
-      { name: "description", content: "Spela schack på ett vackert träbräde mot datorn eller mot en vän." },
-      { property: "og:title", content: "Mr B Chess – Schack i trä" },
-      { property: "og:description", content: "Spela schack på ett vackert träbräde mot datorn eller mot en vän." },
+      { title: "Mr B Chess – Ladda ner och spela schack" },
+      { name: "description", content: "Ladda ner Mr B Chess och spela schack på ett handgjort träbräde mot datorn eller vänner." },
+      { property: "og:title", content: "Mr B Chess – Ladda ner och spela schack" },
+      { property: "og:description", content: "Ladda ner Mr B Chess och spela schack på ett handgjort träbräde mot datorn eller vänner." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Home,

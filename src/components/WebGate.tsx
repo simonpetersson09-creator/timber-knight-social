@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { useLocation } from "@tanstack/react-router";
+import { useLocation, useRouter } from "@tanstack/react-router";
 import { BrandIcon } from "@/components/BrandIcon";
 import { useI18n } from "@/lib/i18n";
 import { isNative, isPreviewHost } from "@/lib/native";
@@ -9,10 +9,15 @@ import { StoreButtons } from "@/components/StoreButtons";
 /** On the public website only a download page is shown; /join, /legal and /admin stay open. */
 export function WebGate({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
-  const [gate, setGate] = useState(false);
-  useEffect(() => setGate(!isNative() && !isPreviewHost() && !webPathAllowed(pathname)), [pathname]);
-  if (!gate) return <>{children}</>;
-  return <DownloadPage />;
+  const router = useRouter();
+  const [runtime, setRuntime] = useState<"pending" | "app" | "download">("pending");
+  useEffect(() => setRuntime(isNative() || isPreviewHost() ? "app" : "download"), []);
+  const publicPath = webPathAllowed(pathname);
+  const knownPath = publicPath || Object.prototype.hasOwnProperty.call(router.routesByPath, pathname);
+  if (!knownPath) return <>{children}</>;
+  if (runtime === "pending") return publicPath ? <>{children}</> : null;
+  if (runtime === "download" && !publicPath) return <DownloadPage />;
+  return <>{children}</>;
 }
 
 export function DownloadPage() {

@@ -249,7 +249,7 @@ function MatchSession() {
     return (
       <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center gap-5 px-5 pt-[calc(20px+env(safe-area-inset-top))] pb-8 text-center">
         <header className="flex w-full items-center gap-3">
-          <Link to="/" className="action-ghost flex size-10 items-center justify-center rounded-full" aria-label={t("back")}><ArrowLeft className="size-5" /></Link>
+          <Link to="/" className="action-ghost flex size-11 items-center justify-center rounded-full" aria-label={t("back")}><ArrowLeft className="size-5" /></Link>
           <h1 className="brand-wordmark text-3xl">{g.kind === "lobby" ? t("lobby") : g.kind === "quick" ? t("quickMatch") : t("inviteFriend")}</h1>
         </header>
         {g.status === "expired" ? <p className="panel w-full p-5">{t("expired")}</p> : (
@@ -358,9 +358,9 @@ function MatchSession() {
   return (
     <main className="play-layout">
       <header className="flex w-full max-w-[560px] items-center justify-between">
-        <button className="action-ghost flex size-10 items-center justify-center rounded-full" aria-label={t("home")} disabled={leavingHome} onClick={() => void goHome()}><ArrowLeft className="size-5" /></button>
+        <button className="action-ghost flex size-11 items-center justify-center rounded-full" aria-label={t("home")} disabled={leavingHome} onClick={() => void goHome()}><ArrowLeft className="size-5" /></button>
         <span className="brand-wordmark text-2xl">Mr B Chess</span>
-        <button className="action-ghost flex size-10 items-center justify-center rounded-full" aria-label={t("quickChat")} disabled={g.status !== "active"} onClick={() => setAsk("chat")}><MessageCircle className="size-5" /></button>
+        <button className="action-ghost flex size-11 items-center justify-center rounded-full" aria-label={t("quickChat")} disabled={g.status !== "active"} onClick={() => setAsk("chat")}><MessageCircle className="size-5" /></button>
       </header>
       <div className="play-col relative">
         <div className="player-top"><div className="player-profile-line">{card(oppId, myColor === "w" ? "b" : "w")}{clock(myColor === "w" ? "b" : "w")}</div><CapturedPieces game={boardGame} mine={myColor === "w" ? "b" : "w"} /></div>
@@ -403,14 +403,14 @@ function MatchSession() {
           setPromo(null);
         }}
       />
-      <Modal open={ask === "offerDraw"} onClose={() => setAsk(null)}>
+      <Modal open={ask === "offerDraw"} title={t("offerDraw")} onClose={() => setAsk(null)}>
         <p className="mb-4 text-center font-semibold">{t("offerDraw")}</p>
         <div className="flex gap-2">
           <button className="action-btn action-ghost" onClick={() => setAsk(null)}>{t("cancel")}</button>
           <button className="action-btn action-gold" onClick={() => void act("offerDraw")}>{t("offerDraw")}</button>
         </div>
       </Modal>
-      <Modal open={ask === "resign"} onClose={() => setAsk(null)}>
+      <Modal open={ask === "resign"} title={t("resign")} onClose={() => setAsk(null)}>
         <p className="mb-2 text-center font-semibold">{t("confirmResign")}</p>
         <p className="mb-4 text-center text-xs text-muted-foreground">{t("resignNoStats")}</p>
         <div className="flex gap-2">
@@ -418,13 +418,13 @@ function MatchSession() {
           <button className="action-btn action-gold" onClick={() => act("resign")}>{t("resign")}</button>
         </div>
       </Modal>
-      <Modal open={ask === "chat"} onClose={() => setAsk(null)}>
+      <Modal open={ask === "chat"} title={t("quickChat")} onClose={() => setAsk(null)}>
         <p className="mb-3 text-center font-semibold">{t("quickChat")}</p>
         <div className="grid grid-cols-2 gap-2">
           {CHAT.map((k, i) => <button key={k} className="action-btn action-ghost !h-11 text-sm" onClick={() => say(i)}>{t(k)}</button>)}
         </div>
       </Modal>
-      <Modal open={showResult} onClose={() => setShowResult(false)}>
+      <Modal open={showResult} title={title} onClose={() => setShowResult(false)}>
         <div className="space-y-4 text-center">
           <Piece color={g.result === "d" ? "w" : (g.result as "w" | "b")} type="k" className="mx-auto size-20" />
           <h2 className="brand-wordmark text-3xl">{title}</h2>

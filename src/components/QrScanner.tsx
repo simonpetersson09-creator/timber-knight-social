@@ -4,8 +4,10 @@ import { useI18n } from "@/lib/i18n";
 
 export function QrScanner({ onCode, onClose }: { onCode: (code: string) => void; onClose: () => void }) {
   const video = useRef<HTMLVideoElement>(null);
+  const onCodeRef = useRef(onCode);
   const [failed, setFailed] = useState(false);
   const { t } = useI18n();
+  useEffect(() => { onCodeRef.current = onCode; }, [onCode]);
   useEffect(() => {
     let alive = true;
     let controls: { stop: () => void } | undefined;
@@ -19,12 +21,12 @@ export function QrScanner({ onCode, onClose }: { onCode: (code: string) => void;
           let code = text;
           try { const url = new URL(text); if (url.origin !== window.location.origin) return; code = url.searchParams.get("code") ?? ""; } catch { /* a plain code is also accepted */ }
           if (!/^[A-Z0-9]{6}$/i.test(code)) return;
-          alive = false; controls?.stop(); onCode(code.toUpperCase());
+          alive = false; controls?.stop(); onCodeRef.current(code.toUpperCase());
         });
         if (!alive) controls.stop();
       } catch { if (alive) setFailed(true); }
     })();
     return () => { alive = false; controls?.stop(); };
-  }, [onCode]);
-  return <Modal open onClose={onClose}><h2 className="mb-4 text-center text-lg font-semibold">{t("scanQr")}</h2>{failed ? <p className="text-center text-destructive">{t("error")}</p> : <video ref={video} className="aspect-square w-full rounded-lg object-cover" playsInline muted />}</Modal>;
+  }, []);
+  return <Modal open onClose={onClose} title={t("scanQr")}><h2 className="mb-4 text-center text-lg font-semibold">{t("scanQr")}</h2>{failed ? <p className="text-center text-destructive">{t("error")}</p> : <video ref={video} className="aspect-square w-full rounded-lg object-cover" playsInline muted />}</Modal>;
 }

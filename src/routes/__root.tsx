@@ -1,4 +1,3 @@
-import { PIECE_URLS } from "@/components/Piece";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -52,8 +51,8 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   const router = useRouter();
   const lang = useBoundaryLanguage();
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-    report("error", "app_render_error", error instanceof Error ? error.stack ?? error.message : String(error));
+    try { reportLovableError(error, { boundary: "tanstack_root_error_component" }); } catch { /* the fallback must stay renderable */ }
+    try { report("error", "app_render_error", error instanceof Error ? error.stack ?? error.message : String(error)); } catch { /* logging is isolated from recovery UI */ }
   }, [error]);
 
   return (
@@ -97,11 +96,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "Mr B Chess" },
       { property: "og:description", content: "Schack på ett handgjort träbräde – spela mot datorn eller vänner." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:card", content: "summary" },
     ],
     links: [
-      ...PIECE_URLS.map((href) => ({ rel: "preload", as: "image", href, fetchPriority: "high" as const })),
       {
         rel: "stylesheet",
         href: appCss,

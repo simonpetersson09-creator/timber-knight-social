@@ -1,5 +1,10 @@
 export const PIECE_ASSET_VERSION = "20261119-7";
 
+export const PIECE_SYMBOLS = {
+  w: { k: "♔", q: "♕", r: "♖", b: "♗", n: "♘", p: "♙" },
+  b: { k: "♚", q: "♛", r: "♜", b: "♝", n: "♞", p: "♟" },
+} as const;
+
 export function Piece({ color, type, className = "" }: { color: "w" | "b"; type: string; className?: string }) {
   return <img src={`/pieces/${color}${type}.webp?v=${PIECE_ASSET_VERSION}`} alt="" draggable={false} decoding="sync" className={`piece-img ${className}`} />;
 }

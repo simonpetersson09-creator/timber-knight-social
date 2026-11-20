@@ -3,7 +3,8 @@ import { motion, useReducedMotion } from "framer-motion";
 import type { Chess, Square } from "chess.js";
 import { assignPieceIds, CAPTURE_DURATION_MS, type BoardPiece, type PieceIds } from "@/lib/play-motion";
 import { squareAtPoint } from "@/lib/board-interaction";
-import { Piece } from "./Piece";
+import { Piece, PIECE_SYMBOLS } from "./Piece";
+import { useI18n } from "@/lib/i18n";
 
 const FILES = "abcdefgh";
 
@@ -17,8 +18,10 @@ type Props = {
 };
 
 export function ChessBoard({ game, orientation, disabled, lastMove, showHints = false, onMove }: Props) {
+  const { t } = useI18n();
   const reduceMotion = useReducedMotion();
   const [selected, setSelected] = useState<Square | null>(null);
+  const [focused, setFocused] = useState<Square>(orientation === "w" ? "a1" : "h8");
   const [dragging, setDragging] = useState<Square | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const suppressClick = useRef(false);
@@ -108,10 +111,20 @@ export function ChessBoard({ game, orientation, disabled, lastMove, showHints = 
     if (legal) onMove(from, to);
   }
 
+  function moveFocus(sq: Square, key: string) {
+    const row = rows.indexOf(8 - Number(sq.charAt(1)));
+    const col = cols.indexOf(FILES.indexOf(sq.charAt(0)));
+    const delta = key === "ArrowUp" ? [-1, 0] : key === "ArrowDown" ? [1, 0] : key === "ArrowLeft" ? [0, -1] : [0, 1];
+    const nextRow = Math.max(0, Math.min(7, row + (delta[0] ?? 0)));
+    const nextCol = Math.max(0, Math.min(7, col + (delta[1] ?? 0)));
+    const next = `${FILES[cols[nextCol] ?? 0]}${8 - (rows[nextRow] ?? 0)}` as Square;
+    gridRef.current?.querySelector<HTMLButtonElement>(`[data-square="${next}"]`)?.focus();
+  }
+
   return (
     <div className="board-scene">
       <div className="board-frame">
-        <div ref={gridRef} className="board-grid">
+        <div ref={gridRef} className="board-grid" role="group" aria-label="Mr B Chess">
           {rows.map((r) =>
             cols.map((c) => {
               const sq = `${FILES[c]}${8 - r}` as Square;
@@ -127,7 +140,18 @@ export function ChessBoard({ game, orientation, disabled, lastMove, showHints = 
                 <button
                   key={sq}
                   onClick={() => tap(sq)}
-                  aria-label={sq}
+                  onFocus={() => setFocused(sq)}
+                  onKeyDown={(event) => {
+                    if (event.key.startsWith("Arrow")) {
+                      event.preventDefault();
+                      moveFocus(sq, event.key);
+                    }
+                  }}
+                  tabIndex={focused === sq ? 0 : -1}
+                  disabled={disabled}
+                  data-square={sq}
+                  aria-label={p ? `${sq}: ${t(p.color === "w" ? "ivory" : "black")} ${PIECE_SYMBOLS[p.color][p.type]}` : sq}
+                  aria-pressed={p && p.color === game.turn() ? selected === sq : undefined}
                   style={grainStyle}
                   className={[
                     "board-square",
@@ -159,6 +183,7 @@ export function ChessBoard({ game, orientation, disabled, lastMove, showHints = 
                       data-piece-type={p.type}
                       data-draggable={!disabled && p.color === game.turn()}
                       data-dragging={dragging === sq}
+                      aria-hidden="true"
                     >
                       <Piece color={p.color} type={p.type} />
                     </motion.span>

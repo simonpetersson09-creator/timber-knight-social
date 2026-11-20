@@ -93,7 +93,7 @@ function FriendsPage() {
           <Button variant="ghost" size="icon" className="icon-btn" aria-label={t("remove")} onClick={() => { if (confirm(`${t("remove")} ${displayName(r.player)}?`)) void act(r.id, "remove"); }}><X className="size-4" /></Button>
         </PlayerRow>)}
       </Section>
-      <Modal open={adding} onClose={() => setAdding(false)}>
+      <Modal open={adding} title={t("addFriend")} onClose={() => setAdding(false)}>
       <div className="flex flex-col items-center gap-3">
         <p className="field-label">{t("yourCode")}</p>
         <div className="friend-code">{me?.friend_code ?? "······"}</div>
