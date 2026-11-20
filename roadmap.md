@@ -1,5 +1,11 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Statistik och spelvy 20 nov
+- [x] Kontrollera att endast färdigspelade partier räknas och samma siffror visas på startsidan och i statistiken; ofärdigt parti räknar 0, matt räknar 1, befintligt undantag för uppgivna partier kvar
+- [x] Svep från vänster till höger för att gå tillbaka utan att störa schackdrag; från vänsterkanten, stänger rutor först och sparar pågående parti
+- [x] Ta bort mahognyramen och utöka bräde och pjäser med säkra kantmarginaler; verifierat 320/393/430/1280 px
+- [x] Rekommendera standardtid 10+0 utan att ändra tidsvalet
+
 ## Android och språk – full genomgång 19 nov
 - [ ] Skapa och granska Android-projektet, behörigheter, säkerhetsmarginaler och publicerad adress
 - [ ] Kontrollera native-delning, haptik, säker identitet, kamera, annonser, notiser och offlinebygge

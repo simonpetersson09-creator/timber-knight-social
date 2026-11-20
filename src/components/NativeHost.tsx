@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useLocation, useRouter } from "@tanstack/react-router";
-import { isNative, platform } from "@/lib/native";
+import { isNative } from "@/lib/native";
+import { isBackSwipe, type SwipePoint } from "@/lib/swipe-back";
 import { runTopBackHandler } from "@/lib/back-handler";
 import { maybeShowAppOpen, initAds } from "@/lib/ads";
 import { resumePush } from "@/lib/push";
@@ -44,24 +45,26 @@ export function NativeHost() {
     return () => remove?.();
   }, [router]);
 
-  // iPhone: swipe from the left edge to go back (not on start page or in a game).
+  // All touch devices: edge swipe goes back, including saved/online games.
   useEffect(() => {
-    if (platform() !== "ios") return;
-    let start: { x: number; y: number } | null = null;
+    let start: SwipePoint | null = null;
     const s = (e: TouchEvent) => { const t = e.touches[0]; start = t && e.touches.length === 1 && t.clientX <= 28 ? { x: t.clientX, y: t.clientY } : null; };
     const end = (e: TouchEvent) => {
       const t = e.changedTouches[0];
       if (!start || !t) return;
-      const dx = t.clientX - start.x, dy = Math.abs(t.clientY - start.y);
+      const valid = isBackSwipe(start, { x: t.clientX, y: t.clientY });
       start = null;
-      if (dx < 70 || dy > dx / 2) return;
+      if (!valid) return;
       if (runTopBackHandler()) return;
-      if (["/", "/play", "/match"].includes(path.current)) return;
-      router.history.back();
+      if (path.current === "/") return;
+      if (path.current === "/play" || path.current === "/match" || !router.history.canGoBack()) void router.navigate({ to: "/" });
+      else router.history.back();
     };
+    const cancel = () => { start = null; };
     window.addEventListener("touchstart", s, { passive: true });
     window.addEventListener("touchend", end, { passive: true });
-    return () => { window.removeEventListener("touchstart", s); window.removeEventListener("touchend", end); };
+    window.addEventListener("touchcancel", cancel, { passive: true });
+    return () => { window.removeEventListener("touchstart", s); window.removeEventListener("touchend", end); window.removeEventListener("touchcancel", cancel); };
   }, [router]);
 
   return null;

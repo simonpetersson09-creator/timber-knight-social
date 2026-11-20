@@ -27,11 +27,12 @@ export const MAX_SAVED = 3;
 const G = "mrbchess.games.v1", S = "mrbchess.stats.v1", P = "mrbchess.settings.v1";
 const EMPTY_RESULT: ResultStats = { played: 0, wins: 0, losses: 0, draws: 0 };
 const EMPTY_STATS: Stats = { played: 0, wins: 0, losses: 0, draws: 0, streak: 0, bestStreak: 0, levelWins: {}, byLevel: {}, byMode: {}, recorded: [] };
+export const STATS_CHANGED = "mrbchess:stats-changed";
 
 function read<T>(key: string, fallback: T): T {
   try { const v = localStorage.getItem(key); return v ? (JSON.parse(v) as T) : fallback; } catch { return fallback; }
 }
-const write = (key: string, v: unknown) => { try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* full */ } };
+const write = (key: string, v: unknown) => { try { localStorage.setItem(key, JSON.stringify(v)); if (key === S) window.dispatchEvent(new Event(STATS_CHANGED)); } catch { /* full */ } };
 
 export const listGames = () => read<SavedGame[]>(G, []).sort((a, b) => b.updatedAt - a.updatedAt);
 export const getGame = (id: string) => listGames().find((g) => g.id === id) ?? null;

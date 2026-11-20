@@ -177,14 +177,9 @@ h1, h2, h3, h4 { font-family: "Space Grotesk", system-ui, sans-serif; }
 .action-btn:disabled { opacity: .55; filter: saturate(.6); }
 
 .board-scene { width: min(90vw, 560px, calc(100dvh - 260px)); min-width: 0; aspect-ratio: 1; isolation: isolate; }
-.board-frame { position: relative; display: grid; grid-template-columns: 7.5% minmax(0, 1fr) 7.5%; grid-template-rows: 7.5% minmax(0, 1fr) 7.5%; width: 100%; height: 100%; border-radius: 10px;
-  background: linear-gradient(125deg, var(--board-frame-glint), transparent 38%, var(--board-frame-shade)),
-    linear-gradient(var(--board-frame-tint), var(--board-frame-tint)), url("./assets/wood-dark.jpg") center/cover, var(--wood-frame);
-  box-shadow: inset 0 1px 0 var(--board-frame-glint), inset 0 3px 3px var(--board-bevel), inset 0 -4px 4px var(--board-frame-shade),
-    0 2px 0 var(--board-frame-tint), 0 5px 0 var(--board-frame-deep), 0 9px 0 var(--board-frame-deep), 0 12px 12px var(--board-frame-shade), var(--shadow-board); }
-.board-frame::after { content: ""; position: absolute; inset: 1.4%; z-index: 5; border: 1px solid var(--board-bevel); border-bottom-color: var(--board-frame-shade); border-radius: 7px; pointer-events: none; }
-.board-grid { position: relative; z-index: 1; grid-area: 2 / 2; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(8, minmax(0, 1fr)); width: 100%; height: 100%; border-radius: 2px; overflow: hidden;
-  box-shadow: 0 0 0 1px var(--board-frame-deep), 0 0 0 3px var(--board-bevel), 0 2px 0 4px var(--board-frame-shade), inset 0 2px 5px var(--board-frame-shade); }
+.board-frame { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); width: 100%; height: 100%; border-radius: 2px; }
+.board-grid { position: relative; z-index: 1; grid-area: 1 / 1; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(8, minmax(0, 1fr)); width: 100%; height: 100%; border-radius: 2px; overflow: hidden;
+  box-shadow: var(--shadow-board); }
 .board-grid::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(135deg, var(--board-frame-glint), transparent 42%, transparent 72%, var(--board-frame-shade)); opacity: .24; box-shadow: inset 0 2px 5px var(--board-frame-shade); pointer-events: none; z-index: 4; }
 .board-square { position: relative; display: flex; align-items: center; justify-content: center; container-type: size; padding: 0; min-width: 0; min-height: 0; touch-action: manipulation; background-position: var(--grain-x) var(--grain-y); background-size: 800% 800%; }
 .board-square:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
@@ -300,7 +295,7 @@ h1, h2, h3, h4 { font-family: "Space Grotesk", system-ui, sans-serif; }
 /* Play screen */
 .play-layout { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 100vw; min-height: 560px; height: 100dvh; padding: calc(16px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left)); position: relative; overflow-x: clip; }
 .play-layout > header { min-width: 0; }
-.play-col { position: absolute; top: calc(50% - 24px); left: 50%; transform: translate(-50%, -50%); width: min(calc(100% - 24px), 560px, calc(100dvh - 390px)); max-width: calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right)); min-width: 0; }
+.play-col { position: absolute; top: calc(50% - 24px); left: 50%; transform: translate(-50%, -50%); width: min(calc(100% - 20px - env(safe-area-inset-left) - env(safe-area-inset-right)), 560px, calc(100dvh - 390px)); max-width: calc(100vw - 20px - env(safe-area-inset-left) - env(safe-area-inset-right)); min-width: 0; }
 .play-col .board-scene { width: 100%; }
 .play-col .board-frame { width: 100%; min-width: 0; }
 .player-top, .player-bottom { position: absolute; left: 0; width: 100%; display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
@@ -335,7 +330,7 @@ h1, h2, h3, h4 { font-family: "Space Grotesk", system-ui, sans-serif; }
 .captured-tray[data-owner="b"] { background: radial-gradient(ellipse at 50% 30%, var(--board-frame-shade), transparent 75%), linear-gradient(color-mix(in oklab, var(--ebony) 55%, transparent), color-mix(in oklab, var(--ebony) 55%, transparent)), url("./assets/wood-dark.jpg") center/cover; }
 .captured-new { animation: captured-arrive 0s 1.4s both; }
 @keyframes captured-arrive { from { visibility: hidden; } }
-.capture-layer { position: relative; z-index: 4; grid-area: 2 / 2; pointer-events: none; }
+.capture-layer { position: relative; z-index: 4; grid-area: 1 / 1; pointer-events: none; }
 .capture-ghost { position: absolute; width: 12.5%; height: 12.5%; display: grid; place-items: center; }
 .capture-ghost .piece-img { width: 100%; height: 100%; }
 .play-side { margin-top: auto; display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 420px; min-width: 0; }

@@ -125,6 +125,13 @@ function Play() {
     }
   }, [t]);
 
+  // Recover a game closed between saving the final move and recording its result.
+  useEffect(() => {
+    if (!saved || result || finishedGame.current === saved.id) return;
+    if (game.isCheckmate()) finish({ winner: other(game.turn()), reason: "checkmate" });
+    else if (game.isDraw()) finish({ winner: null, reason: "draw" });
+  }, [saved, result, game, finish]);
+
   const persist = useCallback((times: SavedGame["times"]) => {
     const s = savedRef.current;
     if (!s) return;

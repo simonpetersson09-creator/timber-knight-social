@@ -31,6 +31,8 @@ use the editor.
 - Chess rules via chess.js; computer opponent is local minimax in src/lib/engine.ts (no server needed for offline play).
 - UI text lives in src/lib/i18n as ordered string arrays per language matching KEYS; add a key to KEYS and every locale array together (i18n.test.ts checks lengths).
 - Saved games, stats and settings are device-local (src/lib/storage.ts, localStorage).
+- Completed results use the same deduplicated device-local totals for home and expanded statistics, with change events keeping mounted views current; saving or deleting a game never records a result.
+- Touch back navigation uses a left-edge gesture shared across platforms, with popups handled first and match exits returning home without resigning; this avoids interpreting ordinary board touches as navigation.
 - Players have no login: an anonymous device id+secret (src/lib/identity.ts) is verified by server functions in src/lib/players.functions.ts, which alone touch the players/friendships/matches tables (RLS on, no client policies) — keeps identity tamper-proof without accounts.
 - Online games are server-authoritative: src/lib/online.functions.ts validates every move with chess.js; pure timing/ad/rating rules live in src/lib/online-rules.ts (tested). An hourly managed schedule calls /api/public/jobs/hourly for timeouts and reminders.
 - Native features (AdMob, push, in-app review, haptics, sharing, back button) load Capacitor plugins lazily and no-op on web; anonymous credentials use Keychain/Keystore on devices. The normal Capacitor shell loads the published site for online play; native:offline bundles the client for local computer games. Public web shows only a download page except /join, /legal, /rules and /admin.

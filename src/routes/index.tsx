@@ -17,7 +17,7 @@ import { LanguageSheet } from "@/components/LanguageSheet";
 import { type Level } from "@/lib/engine";
 import { useI18n } from "@/lib/i18n";
 import {
-  CLOCKS, MAX_SAVED, clockLabel, createGame, deleteGame, getStats, listGames, turnOf,
+  CLOCKS, MAX_SAVED, STATS_CHANGED, clockLabel, createGame, deleteGame, getStats, listGames, turnOf,
   type SavedGame, type Stats,
 } from "@/lib/storage";
 
@@ -53,9 +53,16 @@ function Home() {
   const [more, setMore] = useState(false);
 
   useEffect(() => {
-    setGames(listGames());
-    const s = getStats();
-    setStats(s);
+    const refresh = () => { setGames(listGames()); setStats(getStats()); };
+    refresh();
+    window.addEventListener(STATS_CHANGED, refresh);
+    window.addEventListener("storage", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.removeEventListener(STATS_CHANGED, refresh);
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener("focus", refresh);
+    };
   }, []);
 
   useEffect(() => {

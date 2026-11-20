@@ -1,7 +1,15 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { getStats, recordResult, resetStats } from "./storage";
+import { createGame, deleteGame, getStats, recordResult, resetStats, saveGame } from "./storage";
 describe("local statistics", () => {
   beforeEach(() => localStorage.clear());
+  it("starting, moving, resuming or deleting unfinished games counts zero matches", () => {
+    const game = createGame({ mode: "ai", level: "beginner", human: "w", clock: null });
+    if (!game) throw new Error("Expected a new game");
+    saveGame({ ...game, pgn: "1. e4 e5" });
+    expect(getStats().played).toBe(0);
+    deleteGame(game.id);
+    expect(getStats()).toMatchObject({ played: 0, wins: 0, losses: 0, draws: 0 });
+  });
   it("resigned computer games do not change any statistics", () => {
     recordResult("1", "win", "beginner");
     recordResult("2", "loss", "beginner", false);
