@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { Bot, Globe, Settings, Users, UserPlus, X, Cpu, Infinity as InfinityIcon, Trophy, ChevronDown, Gamepad2, Percent, Handshake, Flame, Play, Send, Clock } from "lucide-react";
 import { toast } from "sonner";
@@ -41,6 +41,7 @@ const item = { hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0 } };
 
 function Home() {
   const { t } = useI18n();
+  const reducedMotion = useReducedMotion();
   const navigate = useNavigate();
   const [games, setGames] = useState<SavedGame[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -105,11 +106,11 @@ function Home() {
 
   return (
     <main className="relative flex min-h-dvh flex-col items-center overflow-x-hidden px-6 pt-[calc(28px+env(safe-area-inset-top))] pb-[calc(28px+env(safe-area-inset-bottom))]">
-      <motion.div ref={homeStack} className="home-stack" style={{ marginTop: quickTop ?? "auto" }} initial={false} animate="show"
+      <motion.div ref={homeStack} className="home-stack" style={{ marginTop: quickTop ?? "auto" }} initial={reducedMotion ? false : "hidden"} animate="show"
         variants={{ show: { transition: { staggerChildren: 0.08, delayChildren: 0.15 } } }}>
         <motion.div variants={item} transition={{ duration: 0.45, ease: "easeOut" }} className="mb-8 space-y-1 text-center sm:mb-10">
           <motion.div className="mx-auto mb-2 size-28 drop-shadow-[0_6px_16px_rgba(0,0,0,0.45)] sm:size-32"
-            animate={{ rotate: [0, 0, 4, -3, 0], scale: [1, 1, 1.05, 1.02, 1] }}
+            animate={reducedMotion ? false : { rotate: [0, 0, 4, -3, 0], scale: [1, 1, 1.05, 1.02, 1] }}
             transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}>
             <BrandIcon className="size-full" />
           </motion.div>
@@ -145,7 +146,6 @@ function Home() {
                   ))}
                 </div>
                 <ClockPicker value={clock} onChange={setClock} />
-                <p className="quick-piece-note">{t("youGetMahogany")}</p>
                 <StartButton full={full} onClick={start} />
               </Expand>
             )}
@@ -190,9 +190,9 @@ function Home() {
                   })}</div>
                   <div className="mt-2 grid grid-cols-[1fr_repeat(3,3rem)] gap-1 text-[9px] text-muted-foreground"><span /><span className="text-right">{t("played")}</span><span className="text-right">{t("wins")}</span><span className="text-right" title={t("winRate")} aria-label={t("winRate")}>%</span></div>
                 </div>
-                <div className="grid grid-cols-3 gap-2">{(["ai", "local", "online"] as const).map((mode) => {
+                <div className="grid grid-cols-2 gap-2">{(["ai", "online"] as const).map((mode) => {
                   const row = stats.byMode?.[mode];
-                  return <div key={mode} className="home-tile"><span className="home-tile-label">{mode === "ai" ? t("computer") : mode === "local" ? t("twoPlayers") : t("playOnline")}</span><span className="home-tile-num">{row?.played ?? 0}</span><span className="text-[10px] text-muted-foreground">{row?.wins ?? 0} {t("wins").toLowerCase()} · {row?.draws ?? 0} {t("draws").toLowerCase()}</span></div>;
+                  return <div key={mode} className="home-tile"><span className="home-tile-label">{mode === "ai" ? t("computer") : t("playOnline")}</span><span className="home-tile-num">{row?.played ?? 0}</span><span className="text-[10px] text-muted-foreground">{row?.wins ?? 0} {t("wins").toLowerCase()} · {row?.draws ?? 0} {t("draws").toLowerCase()}</span></div>;
                 })}</div>
               </div>
             )}

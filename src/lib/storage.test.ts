@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { createGame, deleteGame, getStats, recordResult, resetStats, saveGame } from "./storage";
+import { STATS_CHANGED, createGame, deleteGame, getStats, recordResult, resetStats, saveGame } from "./storage";
 describe("local statistics", () => {
   beforeEach(() => localStorage.clear());
   it("starting, moving, resuming or deleting unfinished games counts zero matches", () => {
@@ -19,6 +19,23 @@ describe("local statistics", () => {
     recordResult("1", "loss", "beginner"); recordResult("2", "draw", "medium");
     recordResult("3", "win", "hard"); recordResult("4", "win", "hard"); recordResult("4", "win", "hard");
     expect(getStats()).toMatchObject({ played: 4, wins: 2, losses: 1, draws: 1, streak: 2, bestStreak: 2 });
+  });
+  it("a completed draw updates mounted home statistics once and matches detailed totals", () => {
+    let notifications = 0;
+    let homeStats = getStats();
+    const refresh = () => { notifications++; homeStats = getStats(); };
+    window.addEventListener(STATS_CHANGED, refresh);
+    try {
+      recordResult("completed-draw", "draw", "medium", true, "ai");
+      recordResult("completed-draw", "draw", "medium", true, "ai");
+      expect(notifications).toBe(1);
+      expect(homeStats).toMatchObject({ played: 1, wins: 0, losses: 0, draws: 1 });
+      expect(homeStats.byMode.ai).toEqual({ played: 1, wins: 0, losses: 0, draws: 1 });
+      expect(homeStats.byLevel.medium).toEqual(homeStats.byMode.ai);
+      expect(homeStats).toEqual(getStats());
+    } finally {
+      window.removeEventListener(STATS_CHANGED, refresh);
+    }
   });
   it("reset clears statistics without allowing the same game to count again", () => {
     recordResult("1", "win", "hard"); resetStats(); recordResult("1", "win", "hard");

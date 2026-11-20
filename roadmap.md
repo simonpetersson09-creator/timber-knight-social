@@ -1,5 +1,10 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Startsida och statistik 20 nov
+- [x] Ta bort texten om elfenbenspjäser och återställ mjuk uppåtentré utan omcentrering vid snabbspel
+- [x] Byt svenska statistiktexten till Oavgjort och ta bort statistikrutan för två spelare/en enhet
+- [x] 50 riktade tester godkända; ofärdigt parti räknar 0, schack matt 1, startsidans totalsiffror/vinstprocent stämmer även efter omladdning; 320/394/430/1280 px utan överflöd
+
 ## Google AdMob Android 20 nov
 - [x] Android App-ID, App Open, Interstitial och Googles testenheter i utveckling
 - [x] AndroidManifest med AdMob App-ID och AD_ID, idempotent vid Capacitor-synk
