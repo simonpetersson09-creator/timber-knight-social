@@ -1,5 +1,11 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Google AdMob Android 20 nov
+- [x] Android App-ID, App Open, Interstitial och Googles testenheter i utveckling
+- [x] AndroidManifest med AdMob App-ID och AD_ID, idempotent vid Capacitor-synk
+- [x] Delad UMP/livscykel/logik verifierad; 111 tester samt komplett debug-APK byggd med Mobile Ads 25.4.0 och UMP 4.0.0
+- [ ] Fysisk Android-enhet: verifiera UMP, testannonser, bakgrundsåterkomst, no-fill och avbrutna försök
+
 ## Google AdMob iOS 20 nov
 - [ ] Fysisk iPhone/TestFlight: verifiera UMP/ATT, testannonser, bakgrundsåterkomst, no-fill och avbrutna försök; kräver macOS/Xcode och enhet.
 

@@ -4,6 +4,7 @@ import {
   canPresentAppOpen, canShowAppOpen, canShowPostMatchInterstitial, fullScreenIntervalElapsed, isNoFillError, noFillRetryAt,
   type AppOpenGate, type InterstitialGate,
 } from "./ad-rules";
+import { ADMOB_IDS, ADMOB_TEST_IDS } from "./ads";
 
 const now = 1_000_000_000;
 const appOpen: AppOpenGate = {
@@ -76,5 +77,21 @@ describe("full-screen ad policy", () => {
     expect(canShowPostMatchInterstitial({ ...interstitial, foreground: false })).toBe(false);
     expect(canShowPostMatchInterstitial({ ...interstitial, native: false })).toBe(false);
     expect(canShowPostMatchInterstitial({ ...interstitial, otherAdShowing: true })).toBe(false);
+  });
+});
+
+describe("Android ad units", () => {
+  it("uses the supplied Chess Android IDs in release", () => {
+    expect(ADMOB_IDS.android).toEqual({
+      appId: "ca-app-pub-7448540924654868~3769729660",
+      appOpen: "ca-app-pub-7448540924654868/2997246035",
+      interstitial: "ca-app-pub-7448540924654868/6064273400",
+    });
+  });
+  it("uses Google's Android test units during development", () => {
+    expect(ADMOB_TEST_IDS.android).toEqual({
+      appOpen: "ca-app-pub-3940256099942544/9257395921",
+      interstitial: "ca-app-pub-3940256099942544/1033173712",
+    });
   });
 });

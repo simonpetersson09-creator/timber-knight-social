@@ -7,6 +7,7 @@ it("QR scanner gets iOS camera permission automatically and idempotently", async
   expect(output).toContain('<key>NSCameraUsageDescription</key>');
   expect(configureCamera(output)).toBe(output);
   const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
-  expect(pkg.scripts['capacitor:sync:after']).toBe('node scripts/ios-permissions.mjs && node scripts/ios-ads.mjs');
-  expect(pkg.scripts['capacitor:copy:after']).toBe('node scripts/ios-permissions.mjs && node scripts/ios-ads.mjs');
+  expect(pkg.scripts['capacitor:sync:after']).toBe('node scripts/ios-permissions.mjs && node scripts/ios-ads.mjs && node scripts/android-ads.mjs');
+  expect(pkg.scripts['capacitor:copy:after']).toBe('node scripts/ios-permissions.mjs && node scripts/ios-ads.mjs && node scripts/android-ads.mjs');
+  expect(pkg.scripts['native:android']).toBe('bunx cap sync android');
 });

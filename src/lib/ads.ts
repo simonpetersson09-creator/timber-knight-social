@@ -1,5 +1,5 @@
 /**
- * Native AdMob for iOS. UMP consent is gathered before ATT and SDK initialization.
+ * Native AdMob for iOS and Android. UMP consent is gathered before ATT/SDK initialization.
  * App Open is restricted to the home screen; post-match Interstitials are shown only
  * by an explicit new-match action. No web ads, banners or rewarded ads.
  */
@@ -22,9 +22,13 @@ export const ADMOB_IDS: Record<"ios" | "android", Ids> = {
     appOpen: "ca-app-pub-7448540924654868/5190622544",
     interstitial: "ca-app-pub-7448540924654868/3006865222",
   },
-  android: { appId: null, appOpen: null, interstitial: null },
+  android: {
+    appId: "ca-app-pub-7448540924654868~3769729660",
+    appOpen: "ca-app-pub-7448540924654868/2997246035",
+    interstitial: "ca-app-pub-7448540924654868/6064273400",
+  },
 };
-const TEST: Record<"ios" | "android", Omit<Ids, "appId">> = {
+export const ADMOB_TEST_IDS: Record<"ios" | "android", Omit<Ids, "appId">> = {
   ios: { appOpen: "ca-app-pub-3940256099942544/5575463023", interstitial: "ca-app-pub-3940256099942544/4411468910" },
   android: { appOpen: "ca-app-pub-3940256099942544/9257395921", interstitial: "ca-app-pub-3940256099942544/1033173712" },
 };
@@ -32,7 +36,7 @@ const TEST: Record<"ios" | "android", Omit<Ids, "appId">> = {
 function unit(kind: AdKind): string | null {
   const p = platform();
   if (p === "web") return null;
-  if (import.meta.env.DEV) return TEST[p][kind];
+  if (import.meta.env.DEV) return ADMOB_TEST_IDS[p][kind];
   return ADMOB_IDS[p][kind];
 }
 function adAvailable(): boolean {
@@ -227,7 +231,7 @@ export async function maybeShowAppOpen(path: string): Promise<boolean> {
     if (!canPresentAppOpen({ ...gate(), loadedAt, attemptValid: attempt === appOpenAttempt })) return false;
     appOpenShown = true;
     appOpenShowing = true;
-    await AdMob.showAppOpen({ adId: id }); // iOS resolves after the ad closes.
+    await AdMob.showAppOpen({ adId: id }); // Both native plugins resolve after the ad closes.
     return true;
   } catch (error) { report("ad", "app_open_failed", reason(error)); return false; }
   finally {

@@ -43,6 +43,6 @@ use the editor.
 - Telemetry uses device-verified delivery, persistent bounded queues and unique event IDs; server rate limits and deduplication prevent retries inflating statistics.
 - Daily native installation counts use Stockholm dates and foreground heartbeats; paginated statistics include the full eligible history and exclude web/test activity in admin.
 - Shared GamePlayerCard/CapturedPieces components keep local and online game layouts consistent, with the board centred and actions at the bottom.
-- Capacitor copy/sync hooks configure iOS QR camera and AdMob/ATT permissions automatically; full-screen ad policy lives in pure ad-rules.ts, with native SDK orchestration in ads.ts so consent/timing remain testable without affecting chess rules.
+- Capacitor copy/sync hooks configure iOS QR camera and AdMob/ATT permissions plus Android AdMob application metadata and AD_ID automatically; shared full-screen ad policy lives in pure ad-rules.ts, with native SDK orchestration in ads.ts so consent/timing remain testable without affecting chess rules.
 - The chess board uses a flat CSS grid surface with native square hit targets and pre-shaded SVG pieces, not a continuous WebGL loop, to keep mobile rendering lightweight without changing game logic.
 - Computer levels above beginner use Stockfish 18 lite (WASM in a Web Worker: public/engine/stockfish.js, wasm via lovable-assets, src/lib/stockfish.ts); local minimax stays for beginner and as offline fallback — gives real strength without a server.
