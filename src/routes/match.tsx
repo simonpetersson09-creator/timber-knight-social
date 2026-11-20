@@ -30,6 +30,7 @@ import { onGameFinished } from "@/lib/rate";
 import { CLOCKS, createGame, recordResult } from "@/lib/storage";
 import { ResultShareButton } from "@/components/ResultShareButton";
 import { report, reportOnce } from "@/lib/report";
+import { shareLink } from "@/lib/share";
 
 export const Route = createFileRoute("/match")({
   validateSearch: z.object({ id: z.string(), level: z.enum(["beginner", "medium", "hard", "master"]).optional(), clock: z.coerce.number().int().min(0).max(4).optional() }),
@@ -65,6 +66,8 @@ function MatchSession() {
   const [ask, setAsk] = useState<"resign" | "offerDraw" | "chat" | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [leavingHome, setLeavingHome] = useState(false);
+  const [sharingLink, setSharingLink] = useState(false);
+  const [actionPending, setActionPending] = useState(false);
   const [reviewPly, setReviewPly] = useState<number | null>(null);
   const [notice, setNotice] = useState<BoardNoticeData | null>(null);
   const [qr, setQr] = useState("");
@@ -238,18 +241,49 @@ function MatchSession() {
     }
   }
 
+  async function shareLobby() {
+    if (!link || sharingLink) return;
+    setSharingLink(true);
+    try {
+      const result = await shareLink("Mr B Chess", t("joinMe"), link);
+      if (result === "copied") toast.success(t("shareCopied"));
+    } catch { toast.error(t("shareError")); }
+    finally { setSharingLink(false); }
+  }
+
+  async function cancelWaiting() {
+    if (!g || leavingRef.current) return;
+    leavingRef.current = true;
+    setLeavingHome(true);
+    try {
+      const result = await cancelGame({ data: { ...getCred(), gameId: g.id } });
+      if (!result.ok) { toast.error(t("error")); return; }
+      await navigate({ to: "/" });
+    } catch { toast.error(t("error")); }
+    finally {
+      leavingRef.current = false;
+      setLeavingHome(false);
+    }
+  }
+
   if (g.kind === "quick" && g.status === "waiting") {
     return <QuickSearchScreen key={g.id} onCancel={async () => {
       if (quickCancelStarted.current) return;
       quickCancelStarted.current = true;
       leavingRef.current = true;
-      const result = await abandonQuickMatch({ data: { ...getCred(), gameId: g.id } }).catch(() => null);
-      if (result?.status === "expired") {
-        await navigate({ to: "/" });
-        return;
+      try {
+        const result = await abandonQuickMatch({ data: { ...getCred(), gameId: g.id } });
+        if (result.status === "expired") {
+          await navigate({ to: "/" });
+          return;
+        }
+        if (result.status === "active") await load();
+        else toast.error(t("error"));
+      } catch { toast.error(t("error")); }
+      finally {
+        leavingRef.current = false;
+        quickCancelStarted.current = false;
       }
-      leavingRef.current = false;
-      quickCancelStarted.current = false;
     }} />;
   }
 
@@ -271,15 +305,12 @@ function MatchSession() {
                 <p className="field-label">{t("lobbyCode")}</p>
                 <div className="friend-code">{g.code}</div>
                 {qr && <img src={qr} alt={t("lobbyCode")} className="size-40 rounded-xl" />}
-                <button className="action-btn action-gold" onClick={async () => {
-                  if (navigator.share) { try { await navigator.share({ title: "Mr B Chess", text: t("joinMe"), url: link }); } catch { /* cancelled */ } }
-                  else { await navigator.clipboard.writeText(link); toast.success(link); }
-                }}><Share2 className="size-5" /> {t("shareLink")}</button>
+                <button className="action-btn action-gold" disabled={sharingLink} onClick={() => void shareLobby()}><Share2 className="size-5" /> {t("shareLink")}</button>
                 <p className="text-xs text-muted-foreground">{t("lobbyValid")}</p>
               </>
             )}
             {g.kind === "invite" && <p className="text-xs text-muted-foreground">{t("inviteValid")}</p>}
-            {g.host === me && <button className="text-sm text-muted-foreground underline" onClick={async () => { await cancelGame({ data: { ...getCred(), gameId: g.id } }); void navigate({ to: "/" }); }}>{t("cancel")}</button>}
+            {g.host === me && <button className="text-sm text-muted-foreground underline" disabled={leavingHome} onClick={() => void cancelWaiting()}>{t("cancel")}</button>}
           </div>
         )}
       </main>
@@ -322,18 +353,23 @@ function MatchSession() {
     else void move(from, to);
   }
   async function act(action: "resign" | "offerDraw" | "acceptDraw" | "declineDraw") {
+    if (actionPending) return;
+    setActionPending(true);
     setAsk(null);
     try {
       const result = await gameAction({ data: { ...getCred(), gameId: id, action } });
       if (!readGuard.active) return;
-      if (action === "offerDraw" && result.ok) showNotice(t("drawOffered"));
-      else if (action === "declineDraw" && result.ok) showNotice(t("drawDeclined"));
+      if (!result.ok) { toast.error(t("error")); return; }
+      if (action === "offerDraw") showNotice(t("drawOffered"));
+      else if (action === "declineDraw") showNotice(t("drawDeclined"));
       void load();
     } catch {
       if (readGuard.active) toast.error(t("error"));
-    }
+    } finally { setActionPending(false); }
   }
   async function say(i: number) {
+    if (actionPending) return;
+    setActionPending(true);
     setAsk(null);
     try {
       const result = await sendChat({ data: { ...getCred(), gameId: id, phrase: i } });
@@ -342,7 +378,7 @@ function MatchSession() {
       setBubble({ mine: true, text: t(CHAT[i] ?? "chat0") });
     } catch {
       if (readGuard.active) toast.error(t("error"));
-    }
+    } finally { setActionPending(false); }
   }
 
   const card = (pid: string | null | undefined, c: "w" | "b") => {
@@ -369,7 +405,7 @@ function MatchSession() {
       <header className="flex w-full max-w-[560px] items-center justify-between">
         <button className="action-ghost flex size-11 items-center justify-center rounded-full" aria-label={t("home")} disabled={leavingHome} onClick={() => void goHome()}><ArrowLeft className="size-5" /></button>
         <span className="brand-wordmark text-2xl">Mr B Chess</span>
-        <button className="action-ghost flex size-11 items-center justify-center rounded-full" aria-label={t("quickChat")} disabled={g.status !== "active"} onClick={() => setAsk("chat")}><MessageCircle className="size-5" /></button>
+        <button className="action-ghost flex size-11 items-center justify-center rounded-full" aria-label={t("quickChat")} disabled={g.status !== "active" || actionPending} onClick={() => setAsk("chat")}><MessageCircle className="size-5" /></button>
       </header>
       <div className="play-col relative">
         <div className="player-top"><div className="player-profile-line">{card(oppId, myColor === "w" ? "b" : "w")}{clock(myColor === "w" ? "b" : "w")}</div><CapturedPieces game={boardGame} mine={myColor === "w" ? "b" : "w"} /></div>
@@ -385,14 +421,14 @@ function MatchSession() {
           <div className="panel flex flex-col gap-2 p-3 text-center">
             <p className="font-semibold">{t("drawOffer", { side: opp ? displayName(opp) : "" })}</p>
             <div className="flex gap-2">
-              <button className="action-btn action-ghost !h-11" onClick={() => act("declineDraw")}>{t("decline")}</button>
-              <button className="action-btn action-gold !h-11" onClick={() => act("acceptDraw")}>{t("accept")}</button>
+              <button className="action-btn action-ghost !h-11" disabled={actionPending} onClick={() => void act("declineDraw")}>{t("decline")}</button>
+              <button className="action-btn action-gold !h-11" disabled={actionPending} onClick={() => void act("acceptDraw")}>{t("accept")}</button>
             </div>
           </div>
         )}
         <div className="game-actions">
-          <Button variant="ghost" onClick={() => setAsk("offerDraw")} disabled={g.status !== "active" || game.history().length < 2 || !!g.draw_offer || myDrawOffers >= MAX_DRAW_OFFERS} className="game-action-button game-action-draw"><Handshake className="size-4" /> {t("offerDraw")}</Button>
-          <Button variant="ghost" onClick={() => setAsk("resign")} disabled={g.status !== "active"} className="game-action-button game-action-resign"><Flag className="size-4" /> {t("resign")}</Button>
+          <Button variant="ghost" onClick={() => setAsk("offerDraw")} disabled={g.status !== "active" || actionPending || game.history().length < 2 || !!g.draw_offer || myDrawOffers >= MAX_DRAW_OFFERS} className="game-action-button game-action-draw"><Handshake className="size-4" /> {t("offerDraw")}</Button>
+          <Button variant="ghost" onClick={() => setAsk("resign")} disabled={g.status !== "active" || actionPending} className="game-action-button game-action-resign"><Flag className="size-4" /> {t("resign")}</Button>
         </div>
         {g.status === "finished" && !showResult && <button className="action-btn action-gold" disabled={leavingHome} onClick={() => void goHome()}>{t("home")}</button>}
         {chat.length > 0 && (
@@ -416,7 +452,7 @@ function MatchSession() {
         <p className="mb-4 text-center font-semibold">{t("offerDraw")}</p>
         <div className="flex gap-2">
           <button className="action-btn action-ghost" onClick={() => setAsk(null)}>{t("cancel")}</button>
-          <button className="action-btn action-gold" onClick={() => void act("offerDraw")}>{t("offerDraw")}</button>
+          <button className="action-btn action-gold" disabled={actionPending} onClick={() => void act("offerDraw")}>{t("offerDraw")}</button>
         </div>
       </Modal>
       <Modal open={ask === "resign"} title={t("resign")} onClose={() => setAsk(null)}>
@@ -424,13 +460,13 @@ function MatchSession() {
         <p className="mb-4 text-center text-xs text-muted-foreground">{t("resignNoStats")}</p>
         <div className="flex gap-2">
           <button className="action-btn action-ghost" onClick={() => setAsk(null)}>{t("cancel")}</button>
-          <button className="action-btn action-gold" onClick={() => act("resign")}>{t("resign")}</button>
+          <button className="action-btn action-gold" disabled={actionPending} onClick={() => void act("resign")}>{t("resign")}</button>
         </div>
       </Modal>
       <Modal open={ask === "chat"} title={t("quickChat")} onClose={() => setAsk(null)}>
         <p className="mb-3 text-center font-semibold">{t("quickChat")}</p>
         <div className="grid grid-cols-2 gap-2">
-          {CHAT.map((k, i) => <button key={k} className="action-btn action-ghost !h-11 text-sm" onClick={() => say(i)}>{t(k)}</button>)}
+          {CHAT.map((k, i) => <button key={k} className="action-btn action-ghost !h-11 text-sm" disabled={actionPending} onClick={() => void say(i)}>{t(k)}</button>)}
         </div>
       </Modal>
       <Modal open={showResult} title={title} onClose={() => setShowResult(false)}>

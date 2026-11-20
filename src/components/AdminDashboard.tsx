@@ -104,6 +104,28 @@ export default function AdminDashboard({ diagram = false }: { diagram?: boolean 
     try { await adminLogout(); } catch { /* local logout still clears sensitive data */ }
     setAdminKey(""); setStats(null); setError(null); setLoading(false);
   };
+  const setTestPlayer = async (isTest: boolean) => {
+    if (loading || !num) return;
+    setLoading(true); setError(null); setPushMessage("");
+    try {
+      await adminSetTest({ data: { playerNumber: Number(num), isTest } });
+      setNum("");
+      await load(period, true);
+    } catch {
+      setError("Ändringen kunde inte sparas. Försök igen.");
+      setLoading(false);
+    }
+  };
+  const sendTestPush = async () => {
+    if (loading || !num) return;
+    setLoading(true); setError(null); setPushMessage("");
+    try {
+      const response = await adminPushTest({ data: { playerNumber: Number(num) } });
+      setPushMessage({ sent: "Testnotisen skickades.", missing_token: "Enheten har ingen registrerad notismottagare.", not_configured: "Notisleveransen är inte konfigurerad ännu.", not_found: "Spelarnumret hittades inte.", failed: "Testnotisen kunde inte skickas." }[response.result]);
+    } catch {
+      setError("Testnotisen kunde inte skickas. Försök igen.");
+    } finally { setLoading(false); }
+  };
   useEffect(() => {
     try { localStorage.removeItem("lovable.admin.key"); } catch { /* storage unavailable */ }
     void load(30, true);
@@ -156,7 +178,7 @@ export default function AdminDashboard({ diagram = false }: { diagram?: boolean 
       <p className="mt-3 text-xs text-muted-foreground">Appålder bygger på första registrerade appaktivitet, inte verifierad nedladdningsdag. Nya appenheter är nya enhets-ID:n, inte verifierade nya personer. Partiannonser är bekräftade visningar / registrerade tillfällen. Avhoppsandel är avhopp / (färdiga onlinematcher + avhopp).</p>
       <p className="mt-3 text-xs text-muted-foreground">★ = högsta värdet i kolumnen under perioden. För avhopp och problem är röd stjärna den sämsta dagen. Enhetssummor visas inte eftersom samma enhet kan spela flera dagar.</p>
       <details className="mt-6 border-t border-border pt-4"><summary className="cursor-pointer font-semibold">Testenheter och loggdetaljer</summary>
-        <div className="mt-4 grid gap-5 lg:grid-cols-2"><section><h2 className="mb-2 font-semibold">Testtelefoner</h2><p className="text-sm text-muted-foreground">Spelarnummer syns i appens inställningar. Nu: {stats.testPlayers.join(", ") || "inga"}</p><div className="mt-2 flex flex-wrap gap-2"><input className="text-field max-w-40" inputMode="numeric" aria-label="Spelarnummer" value={num} onChange={(e) => setNum(e.target.value.replace(/\D/g, ""))} placeholder="Spelarnummer" /><Button size="sm" disabled={!num} onClick={async () => { await adminSetTest({ data: { playerNumber: Number(num), isTest: true } }); setNum(""); await load(); }}>Lägg till</Button><Button size="sm" variant="outline" disabled={!num} onClick={async () => { await adminSetTest({ data: { playerNumber: Number(num), isTest: false } }); setNum(""); await load(); }}>Ta bort</Button><Button size="sm" variant="outline" disabled={!num} onClick={async () => { const response = await adminPushTest({ data: { playerNumber: Number(num) } }); setPushMessage({ sent: "Testnotisen skickades.", missing_token: "Enheten har ingen registrerad notismottagare.", not_configured: "Notisleveransen är inte konfigurerad ännu.", not_found: "Spelarnumret hittades inte.", failed: "Testnotisen kunde inte skickas." }[response.result]); }}><BellRing />Skicka testnotis</Button></div>{pushMessage && <p className="mt-2 text-sm" role="status">{pushMessage}</p>}</section>
+        <div className="mt-4 grid gap-5 lg:grid-cols-2"><section><h2 className="mb-2 font-semibold">Testtelefoner</h2><p className="text-sm text-muted-foreground">Spelarnummer syns i appens inställningar. Nu: {stats.testPlayers.join(", ") || "inga"}</p><div className="mt-2 flex flex-wrap gap-2"><input className="text-field max-w-40" inputMode="numeric" aria-label="Spelarnummer" value={num} onChange={(e) => setNum(e.target.value.replace(/\D/g, ""))} placeholder="Spelarnummer" /><Button size="sm" disabled={!num || loading} onClick={() => void setTestPlayer(true)}>Lägg till</Button><Button size="sm" variant="outline" disabled={!num || loading} onClick={() => void setTestPlayer(false)}>Ta bort</Button><Button size="sm" variant="outline" disabled={!num || loading} onClick={() => void sendTestPush()}><BellRing />Skicka testnotis</Button></div>{pushMessage && <p className="mt-2 text-sm" role="status">{pushMessage}</p>}</section>
         <section><h2 className="mb-2 font-semibold">Händelser under perioden</h2>{[["Annonser", stats.ads], ["Fel", stats.errors], ["Spel", stats.play]].map(([label, values]) => <div key={label as string} className="mb-2"><p className="text-sm font-medium">{label as string}</p>{(values as [string, number][]).length ? (values as [string, number][]).map(([name, count]) => <p key={name} className="truncate text-xs text-muted-foreground">{name}: <b>{count}</b></p>) : <p className="text-xs text-muted-foreground">Inga rapporter ännu.</p>}</div>)}</section></div>
         <section className="mt-5"><h2 className="mb-2 font-semibold">Senaste feldetaljer</h2>{stats.recentErrors.length ? <div className="space-y-2">{stats.recentErrors.map((event, index) => <details key={`${event.created_at}-${index}`} className="rounded-md border border-border p-2 text-xs"><summary className="cursor-pointer">{event.created_at.slice(0, 16).replace("T", " ")} · {event.platform} · {event.name}</summary><pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words text-muted-foreground">{event.detail || "Ingen detalj"}</pre></details>)}</div> : <p className="text-xs text-muted-foreground">Inga feldetaljer under perioden.</p>}</section>
       </details>

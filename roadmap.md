@@ -1,5 +1,10 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Kontroll av samtliga knappar 20 nov
+- [x] Inventerat och provat huvudknappar, länkar, dialoger, inställningar, QR, vänkod, onlinelobby och spelkontroller i mobil förhandsvisning
+- [x] Gemensam native-/webbdelning och kopieringsreserv, tydliga felmeddelanden samt dubbeltrycksskydd för online-, vän- och adminkontroller; sex nya delningstester
+- [x] 267 tester, typkontroll och mobila centrala flöden passerar utan konsol-/HTTP-fel; fysisk iPhone/Android krävs fortfarande för native kamera, delningsruta och notiser
+
 ## Spel på publicerad webb 20 nov
 - [x] Publicerad webb visar nedladdningssida och spärrar spelmontering/registrering; Lovable-förhandsvisningen får provspela enligt användarens val
 - [x] Identitetsladdningen har egen fail-closed-spärr mot alla dolda webbanrop; två regressionstester och förhandsvisning provad

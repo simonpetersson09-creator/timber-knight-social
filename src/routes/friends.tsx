@@ -16,6 +16,7 @@ import { getFriends, respondFriend, sendFriendRequest } from "@/lib/players.func
 import { inviteFriend } from "@/lib/online.functions";
 import { displayName, flagOf, isOnline } from "@/lib/profile";
 import { report } from "@/lib/report";
+import { copyText, shareLink } from "@/lib/share";
 
 export const Route = createFileRoute("/friends")({
   validateSearch: z.object({ code: z.string().optional() }),
@@ -44,12 +45,17 @@ function FriendsPage() {
   const [adding, setAdding] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [sending, setSending] = useState(false);
+  const [actionBusy, setActionBusy] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
   const scanned = useCallback((value: string) => { setCode(value); setScanning(false); }, []);
   const sentLink = useRef(false);
   const navigate = useNavigate();
   async function invite(friend: string) {
+    if (actionBusy) return;
+    setActionBusy(`invite:${friend}`);
     try { const r = await inviteFriend({ data: { ...getCred(), friend } }); report("play", "online_room_created", r.id); await navigate({ to: "/match", search: { id: r.id } }); }
     catch { toast.error(t("error")); }
+    finally { setActionBusy(null); }
   }
 
   const refresh = useCallback(() => { getFriends({ data: getCred() }).then(setRows).catch(() => {}); }, []);
@@ -71,11 +77,25 @@ function FriendsPage() {
   useEffect(() => { if (me && linkCode && !sentLink.current) { sentLink.current = true; void send(linkCode); } }, [me, linkCode, send]);
 
   async function act(fid: string, action: "accept" | "remove") {
-    try { await respondFriend({ data: { ...getCred(), fid, action } }); refresh(); } catch { toast.error(t("error")); }
+    if (actionBusy) return;
+    setActionBusy(`${action}:${fid}`);
+    try { await respondFriend({ data: { ...getCred(), fid, action } }); refresh(); }
+    catch { toast.error(t("error")); }
+    finally { setActionBusy(null); }
   }
   async function share() {
-    if (navigator.share) { try { await navigator.share({ title: "Mr B Chess", text: `${t("yourCode")}: ${me?.friend_code}`, url: link }); } catch { /* cancelled */ } }
-    else { await navigator.clipboard.writeText(link); toast.success(t("saved")); }
+    if (sharing || !me) return;
+    setSharing(true);
+    try {
+      const result = await shareLink("Mr B Chess", `${t("yourCode")}: ${me.friend_code}`, link);
+      if (result === "copied") toast.success(t("shareCopied"));
+    } catch { toast.error(t("shareError")); }
+    finally { setSharing(false); }
+  }
+  async function copyCode() {
+    if (!me) return;
+    try { await copyText(me.friend_code); toast.success(me.friend_code); }
+    catch { toast.error(t("error")); }
   }
 
   const friends = rows.filter((r) => r.kind === "friend").sort((a, b) => Number(isOnline(b.player.last_seen)) - Number(isOnline(a.player.last_seen)));
@@ -85,12 +105,12 @@ function FriendsPage() {
   return (
     <main className="page-screen flex flex-col gap-4">
       <PageHeader title={t("friends")} />
-      <Button className="action-btn action-gold" onClick={() => setAdding(true)}><UserPlus />{t("addFriend")}</Button>
+      <Button className="action-btn action-gold" disabled={!me} onClick={() => setAdding(true)}><UserPlus />{t("addFriend")}</Button>
       <Section title={t("friends")}>
         {friends.length === 0 && <p className="py-2 text-center text-sm text-muted-foreground">{t("noFriends")}</p>}
         {friends.map((r) => <PlayerRow key={r.id} r={r} showStats>
-          <Button variant="ghost" size="icon" className="icon-btn icon-ok" aria-label={t("inviteFriend")} onClick={() => void invite(r.player.id)}><Send className="size-4" /></Button>
-          <Button variant="ghost" size="icon" className="icon-btn" aria-label={t("remove")} onClick={() => { if (confirm(`${t("remove")} ${displayName(r.player)}?`)) void act(r.id, "remove"); }}><X className="size-4" /></Button>
+          <Button variant="ghost" size="icon" className="icon-btn icon-ok" disabled={actionBusy !== null} aria-label={t("inviteFriend")} onClick={() => void invite(r.player.id)}><Send className="size-4" /></Button>
+          <Button variant="ghost" size="icon" className="icon-btn" disabled={actionBusy !== null} aria-label={t("remove")} onClick={() => { if (confirm(`${t("remove")} ${displayName(r.player)}?`)) void act(r.id, "remove"); }}><X className="size-4" /></Button>
         </PlayerRow>)}
       </Section>
       <Modal open={adding} title={t("addFriend")} onClose={() => setAdding(false)}>
@@ -100,8 +120,8 @@ function FriendsPage() {
         {qr && <img src={qr} alt={t("scanToAdd")} className="size-40 rounded-xl" />}
         <p className="text-xs text-muted-foreground">{t("scanToAdd")}</p>
         <div className="flex gap-2">
-          <Button variant="ghost" size="icon" className="round-btn" aria-label={t("yourCode")} onClick={() => { void navigator.clipboard.writeText(me?.friend_code ?? ""); toast.success(me?.friend_code ?? ""); }}><Copy className="size-5" /></Button>
-          <Button variant="ghost" size="icon" className="round-btn" aria-label={t("shareLink")} onClick={share}><Share2 className="size-5" /></Button>
+          <Button variant="ghost" size="icon" className="round-btn" disabled={!me} aria-label={t("yourCode")} onClick={() => void copyCode()}><Copy className="size-5" /></Button>
+          <Button variant="ghost" size="icon" className="round-btn" disabled={!me || sharing} aria-label={t("shareLink")} onClick={() => void share()}><Share2 className="size-5" /></Button>
         </div>
       </div>
 
@@ -121,8 +141,8 @@ function FriendsPage() {
         <Section title={t("requests")}>
           {incoming.map((r) => (
             <PlayerRow key={r.id} r={r}>
-              <button className="icon-btn icon-ok" aria-label={t("accept")} onClick={() => act(r.id, "accept")}><Check className="size-4" /></button>
-              <button className="icon-btn" aria-label={t("decline")} onClick={() => act(r.id, "remove")}><X className="size-4" /></button>
+              <button className="icon-btn icon-ok" disabled={actionBusy !== null} aria-label={t("accept")} onClick={() => void act(r.id, "accept")}><Check className="size-4" /></button>
+              <button className="icon-btn" disabled={actionBusy !== null} aria-label={t("decline")} onClick={() => void act(r.id, "remove")}><X className="size-4" /></button>
             </PlayerRow>
           ))}
         </Section>
@@ -132,7 +152,7 @@ function FriendsPage() {
         <Section title={t("sentRequests")}>
           {outgoing.map((r) => (
             <PlayerRow key={r.id} r={r}>
-              <button className="text-xs font-semibold text-muted-foreground underline" onClick={() => act(r.id, "remove")}>{t("withdraw")}</button>
+              <button className="text-xs font-semibold text-muted-foreground underline" disabled={actionBusy !== null} onClick={() => void act(r.id, "remove")}>{t("withdraw")}</button>
             </PlayerRow>
           ))}
         </Section>

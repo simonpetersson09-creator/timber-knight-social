@@ -42,6 +42,8 @@ function SettingsPage() {
   const [avatar, setAvatar] = useState("♞");
   const [country, setCountry] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [adBusy, setAdBusy] = useState(false);
+  const [notifyBusy, setNotifyBusy] = useState<keyof typeof prefs | null>(null);
   const [stats, setStats] = useState<ReturnType<typeof getStats> | null>(null);
   const [prefs, setPrefs] = useState({ notify: true, notify_turn: true, notify_reminders: true, notify_play: true });
   useEffect(() => { setS(getSettings()); setStats(getStats()); report("play", "settings_opened"); }, []);
@@ -68,10 +70,20 @@ function SettingsPage() {
     } catch { toast.error(t("error")); } finally { setBusy(false); }
   }
   async function toggleNotify(key: keyof typeof prefs, value: boolean) {
+    if (notifyBusy) return;
     const before = prefs;
+    setNotifyBusy(key);
     setPrefs({ ...prefs, [key]: value });
     try { if (value) await askPushOnFirstOnline(); await setPush({ data: { ...getCred(), [key]: value } }); }
     catch { setPrefs(before); toast.error(t("error")); }
+    finally { setNotifyBusy(null); }
+  }
+  async function adChoices() {
+    if (adBusy) return;
+    setAdBusy(true);
+    try { if (!isNative() || !(await openAdChoices())) toast(t("adChoicesApp")); }
+    catch { toast.error(t("error")); }
+    finally { setAdBusy(false); }
   }
   async function eraseAll() {
     if (busy) return;
@@ -109,11 +121,11 @@ function SettingsPage() {
       <Button variant="ghost" className="settings-row" onClick={() => setLangOpen(true)}><Globe /><span>{t("language")}</span><span className="row-value">{langName}</span><ChevronRight /></Button>
       <label className="settings-row"><Vibrate className="size-4" /><span className="flex-1">{t("haptics")}</span><Switch aria-label={t("haptics")} checked={s?.haptics ?? true} onCheckedChange={(v) => update({ haptics: v })} /></label>
     </div></Section>
-    <Section title={t("notifications")}><div className="settings-rows">{notificationRows.map(([key, Icon, label]) => <label key={key} className="settings-row"><Icon className="size-4" /><span className="flex-1">{t(label)}</span><Switch aria-label={t(label)} disabled={!me || (key !== "notify" && !prefs.notify)} checked={prefs[key]} onCheckedChange={(v) => void toggleNotify(key, v)} /></label>)}</div></Section>
+    <Section title={t("notifications")}><div className="settings-rows">{notificationRows.map(([key, Icon, label]) => <label key={key} className="settings-row"><Icon className="size-4" /><span className="flex-1">{t(label)}</span><Switch aria-label={t(label)} disabled={!me || notifyBusy !== null || (key !== "notify" && !prefs.notify)} checked={prefs[key]} onCheckedChange={(v) => void toggleNotify(key, v)} /></label>)}</div></Section>
     <Section title={t("stats")}><div className="settings-rows">
       <Button variant="ghost" className="settings-row text-destructive" onClick={() => setConfirm(true)}><Trash2 />{t("resetStats")}</Button>
     </div></Section>
-    <Section title={t("adChoices")}><div className="settings-rows"><Button variant="ghost" className="settings-row" onClick={async () => { if (!isNative() || !(await openAdChoices())) toast(t("adChoicesApp")); }}><ShieldCheck /><span className="flex-1">{t("adChoices")}</span><ChevronRight /></Button></div></Section>
+    <Section title={t("adChoices")}><div className="settings-rows"><Button variant="ghost" className="settings-row" disabled={adBusy} onClick={() => void adChoices()}><ShieldCheck /><span className="flex-1">{t("adChoices")}</span><ChevronRight /></Button></div></Section>
     <div className="settings-rows"><Button variant="ghost" className="settings-row text-destructive" disabled={!me || busy} onClick={() => setWipe(true)}><Trash2 />{t("deleteMyData")}</Button></div>
     <div className="settings-rows"><Button asChild variant="ghost" className="settings-row"><a href={PRIVACY_POLICY_URL} target="_blank" rel="noreferrer"><ShieldCheck /><span className="flex-1">{t("privacy")}</span><ChevronRight /></a></Button></div>
     <Button asChild variant="link" className="h-auto min-h-11 w-full whitespace-normal text-xs text-muted-foreground"><Link to="/legal">{t("legal")}</Link></Button>

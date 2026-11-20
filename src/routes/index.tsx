@@ -79,8 +79,21 @@ function Home() {
     return () => clearInterval(i);
   }, [me]);
   async function acceptInvite(id: string) {
-    const r = await joinGame({ data: { ...getCred(), gameId: id } });
-    if (r.result === "ok") { report("play", "online_room_joined", id); void navigate({ to: "/match", search: { id: r.id } }); } else toast.error(t("expired"));
+    if (closingRef.current) return;
+    closingRef.current = true;
+    setClosingOnline(id);
+    try {
+      const r = await joinGame({ data: { ...getCred(), gameId: id } });
+      if (r.result === "ok") {
+        report("play", "online_room_joined", id);
+        await navigate({ to: "/match", search: { id: r.id } });
+      } else toast.error(t("expired"));
+    } catch {
+      toast.error(t("error"));
+    } finally {
+      closingRef.current = false;
+      setClosingOnline(null);
+    }
   }
   async function closeOnline(id: string) {
     if (closingRef.current) return;
