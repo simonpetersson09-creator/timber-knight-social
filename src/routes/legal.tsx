@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
+import { PRIVACY_POLICY_LABEL, PRIVACY_POLICY_URL } from "@/lib/legal-links";
 
 export const Route = createFileRoute("/legal")({
   head: () => ({
@@ -29,6 +30,7 @@ function Legal() {
         <p>{t("legalPrivacy1")}</p>
         <p>{t("legalPrivacy2")}</p>
         <p>{t("legalPrivacy3")}</p>
+        <p><a className="underline break-all" href={PRIVACY_POLICY_URL} target="_blank" rel="noreferrer">{PRIVACY_POLICY_LABEL}</a></p>
       </section>
       <section className="panel space-y-2 p-5">
         <h2 className="text-xl font-bold">{t("legalTerms")}</h2>
