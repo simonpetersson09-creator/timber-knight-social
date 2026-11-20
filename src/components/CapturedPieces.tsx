@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import type { Chess } from "chess.js";
 import { capturedPieces } from "@/lib/game-presentation";
+import { CAPTURE_DURATION_MS } from "@/lib/play-motion";
 import { Piece } from "./Piece";
 
 export function CapturedPieces({ game, mine }: { game: Chess; mine: "w" | "b" }) {
@@ -11,7 +12,8 @@ export function CapturedPieces({ game, mine }: { game: Chess; mine: "w" | "b" })
   return <div className="captured-tray" data-owner={mine}>
     <div className="captured-row">{Array.from({ length: 15 }, (_, i) => {
       const type = captured[mine][i];
-      return <span key={i} data-type={type} data-empty={type ? undefined : true} className={type && i >= initial.current ? "captured-new" : undefined}>
+      return <span key={i} data-type={type} data-empty={type ? undefined : true} className={type && i >= initial.current ? "captured-new" : undefined}
+        style={type && i >= initial.current ? { animationDelay: `${CAPTURE_DURATION_MS}ms` } : undefined}>
         {type && <Piece color={other} type={type} />}
       </span>;
     })}</div>

@@ -1,6 +1,8 @@
 import type { Color, PieceSymbol, Square } from "chess.js";
 
 export const AI_MOVE_DELAY_MS = 1800;
+/** The flying piece and its tray slot become visible at exactly the same time. */
+export const CAPTURE_DURATION_MS = 1400;
 /** A draw may be proposed at most this many times per game. */
 export const MAX_DRAW_OFFERS = 2;
 

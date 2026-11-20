@@ -1,5 +1,12 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Spelvyn 20 nov
+- [x] Noa, Alva, Kim och Sam med nivå i spelkortet och nivåanpassade ikoner (namnval bekräftat av användaren)
+- [x] Rund, centrerad klocka ovanför Föreslå oavgjort/Ge upp med samma 8 px-mellanrum
+- [x] Utslagen pjäs synlig utan blink från brädet till sin exakta skålplats; 111 mätta bildrutor utan dold pjäs eller tom överlämning
+- [x] Centrerade schack- och schackmattnotiser samt stängbart resultat med slutställningen kvar
+- [x] Provspelat 320×568, 394×852 och 1280×1800, inklusive schack/matt och resultatgranskning; 119 tester och typkontroll passerade
+
 ## Startsida och statistik 20 nov
 - [x] Ta bort texten om elfenbenspjäser och återställ mjuk uppåtentré utan omcentrering vid snabbspel
 - [x] Byt svenska statistiktexten till Oavgjort och ta bort statistikrutan för två spelare/en enhet

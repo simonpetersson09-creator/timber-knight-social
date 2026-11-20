@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Chess } from "chess.js";
-import { AI_MOVE_DELAY_MS, MAX_DRAW_OFFERS, assignPieceIds, type BoardPiece, type PieceIds } from "./play-motion";
+import { AI_MOVE_DELAY_MS, CAPTURE_DURATION_MS, MAX_DRAW_OFFERS, assignPieceIds, type BoardPiece, type PieceIds } from "./play-motion";
 
 function pieces(game: Chess): BoardPiece[] {
   return game.board().flat().filter((piece): piece is BoardPiece => piece !== null);
@@ -15,6 +15,9 @@ describe("play motion", () => {
   it("allows proposing a draw at most twice", () => { expect(MAX_DRAW_OFFERS).toBe(2); });
   it("gives the computer an 1800 ms pause before calculating", () => {
     expect(AI_MOVE_DELAY_MS).toBe(1800);
+  });
+  it("keeps the flying piece and tray handoff at the same 1400 ms boundary", () => {
+    expect(CAPTURE_DURATION_MS).toBe(1400);
   });
 
   it("keeps the moved pawn identity and all untouched identities", () => {

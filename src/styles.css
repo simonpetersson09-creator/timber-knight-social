@@ -321,7 +321,7 @@ h1, h2, h3, h4 { font-family: "Space Grotesk", system-ui, sans-serif; }
 .game-player-card[data-active="you"], .game-player-card[data-active="opp"] { border-color: color-mix(in oklab, var(--player-accent) 68%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--player-accent) 24%, transparent), 0 4px 12px color-mix(in oklab, var(--player-accent) 13%, transparent); }
 .game-player-photo { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 9999px; overflow: hidden; background: var(--player-accent); color: var(--player-on-accent); font-size: 14px; }
 .game-player-photo > svg { width: 13px; height: 13px; }
-.game-player-name { min-width: 0; font-size: 10px; font-weight: 700; line-height: 1.1; overflow-wrap: anywhere; }
+.game-player-name { min-width: 0; font-size: 10px; font-weight: 700; line-height: 1.1; overflow-wrap: normal; word-break: normal; }
 .game-clock { --player-accent: var(--ivory); --player-on-accent: var(--ivory-ink); flex: 0 0 auto; display: grid; place-items: center; min-width: 58px; min-height: 46px; padding: 6px 9px; border: 1px solid color-mix(in oklab, var(--player-accent) 18%, transparent); border-radius: 12px; background: color-mix(in oklab, var(--player-accent) 10%, var(--secondary)); color: var(--foreground); font-weight: 700; font-size: 14px; line-height: 1; font-variant-numeric: tabular-nums; }
 .game-clock[data-piece="b"] { --player-accent: var(--ebony-shine); --player-on-accent: var(--foreground); }
 .game-clock[data-active="you"], .game-clock[data-active="opp"] { border-color: color-mix(in oklab, var(--player-accent) 68%, transparent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--player-accent) 24%, transparent), 0 6px 18px color-mix(in oklab, var(--player-accent) 13%, transparent); }
@@ -340,24 +340,31 @@ h1, h2, h3, h4 { font-family: "Space Grotesk", system-ui, sans-serif; }
   background: radial-gradient(ellipse at 50% 30%, transparent, color-mix(in oklab, var(--wood-frame-deep) 30%, transparent) 90%), linear-gradient(var(--board-light-tint), var(--board-light-tint)), url("./assets/wood-light.jpg") center/cover;
   box-shadow: inset 0 5px 9px color-mix(in oklab, var(--wood-frame-deep) 40%, transparent), 0 2px 6px var(--board-frame-shade); }
 .captured-tray[data-owner="b"] { background: radial-gradient(ellipse at 50% 30%, var(--board-frame-shade), transparent 75%), linear-gradient(color-mix(in oklab, var(--ebony) 55%, transparent), color-mix(in oklab, var(--ebony) 55%, transparent)), url("./assets/wood-dark.jpg") center/cover; }
-.captured-new { animation: captured-arrive 0s 1.4s both; }
+.captured-new { animation: captured-arrive 0s both; }
 @keyframes captured-arrive { from { visibility: hidden; } }
 .capture-layer { position: relative; z-index: 4; grid-area: 1 / 1; pointer-events: none; }
 .capture-ghost { position: absolute; width: 12.5%; height: 12.5%; display: grid; place-items: center; }
 .capture-ghost .piece-img { width: 100%; height: 100%; }
 .play-side { margin-top: auto; display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 420px; min-width: 0; }
-.game-clock-card { display: grid; grid-template-columns: 1fr; gap: 4px; height: 42px; }
-.game-clock-card .game-clock { min-height: 0; min-width: 0; height: 42px; }
-.board-notice { position: absolute; top: 50%; left: 50%; z-index: 20; display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-radius: 16px; white-space: nowrap; font-weight: 700; font-size: 15px; color: var(--foreground);
+.game-clock-card { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; height: 64px; }
+.game-clock-card .game-clock { min-height: 0; min-width: 0; width: 64px; height: 64px; padding: 0; border-radius: 9999px; }
+.board-notice { position: absolute; top: 50%; left: 50%; z-index: 20; display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-radius: 16px; white-space: nowrap; font-weight: 700; font-size: 15px; color: var(--foreground); transform: translate(-50%, -50%);
   border: 1px solid color-mix(in oklab, var(--primary) 55%, transparent); background: color-mix(in oklab, var(--card) 92%, transparent); backdrop-filter: blur(6px);
   box-shadow: 0 14px 40px color-mix(in oklab, var(--background) 80%, transparent), 0 0 0 1px color-mix(in oklab, var(--primary) 18%, transparent); }
 .board-notice svg { color: var(--primary); }
+.board-notice[data-tone="check"] { border-color: color-mix(in oklab, var(--accent) 65%, transparent); }
+.board-notice[data-tone="check"] svg { color: var(--accent); }
+.board-notice[data-tone="checkmate"] { border-color: color-mix(in oklab, var(--primary) 80%, transparent); box-shadow: 0 14px 40px color-mix(in oklab, var(--background) 80%, transparent), 0 0 24px color-mix(in oklab, var(--primary) 22%, transparent); }
 .play-wordmark { filter: none; font-variation-settings: 'opsz' 28; text-shadow: none; -webkit-font-smoothing: antialiased; }
 .play-back { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 9999px; color: var(--primary); border: 1px solid color-mix(in oklab, var(--primary) 45%, transparent);
   background: radial-gradient(circle at 35% 30%, color-mix(in oklab, var(--primary) 16%, var(--secondary)), var(--secondary)); box-shadow: 0 4px 14px color-mix(in oklab, var(--background) 70%, transparent), inset 0 1px 0 color-mix(in oklab, var(--primary) 25%, transparent); transition: transform .15s; }
 .play-back:active { transform: scale(.94); }
 .game-status { text-align: center; font-size: 12px; font-weight: 600; color: var(--muted-foreground); }
 .game-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 100%; }
+.finished-review { display: grid; gap: 8px; width: 100%; text-align: center; }
+.finished-review-result { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 32px; padding: 4px 10px; border-radius: 10px; background: color-mix(in oklab, var(--secondary) 72%, transparent); color: var(--foreground); font-size: 12px; font-weight: 700; }
+.finished-review-result svg { flex: none; color: var(--primary); }
+.finished-review-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .game-action-button { min-width: 0; height: 42px; padding-inline: 10px; gap: 7px; overflow: hidden; white-space: nowrap; border-radius: 12px !important; font-size: 12px; font-weight: 700; transition: transform .15s, border-color .2s, background .2s; }
 .game-action-button:active { transform: scale(.97); }
 .game-action-draw { border: 1px solid color-mix(in oklab, var(--primary) 24%, transparent); background: color-mix(in oklab, var(--primary) 7%, var(--secondary)); color: var(--foreground); }
@@ -460,7 +467,7 @@ body { overscroll-behavior-y: contain; }
 .game-actions :is(.game-clock-card .game-clock, .game-action-button) { border: 1.5px solid color-mix(in oklab, var(--primary) 60%, transparent) !important; color: oklch(0.88 0.08 84) !important;
   background: radial-gradient(ellipse at 50% 0%, var(--board-frame-glint), transparent 70%), linear-gradient(var(--board-frame-tint), var(--board-frame-tint)), url("./assets/wood-dark.jpg") center/cover, var(--wood-frame) !important;
   box-shadow: inset 0 1px 2px var(--board-frame-glint), inset 0 -3px 6px var(--board-frame-shade), 0 4px 12px var(--board-frame-shade); text-shadow: 0 1px 1px oklch(0 0 0 / 60%); }
-.game-actions .game-clock-card .game-clock { background: var(--clock-surface) !important; color: var(--foreground) !important; border: 1px solid var(--clock-border) !important; border-radius: 12px; box-shadow: var(--clock-shadow); text-shadow: none; gap: 8px; grid-auto-flow: column; justify-content: center; }
+.game-actions .game-clock-card .game-clock { background: var(--clock-surface) !important; color: var(--foreground) !important; border: 1px solid var(--clock-border) !important; border-radius: 9999px; box-shadow: var(--clock-shadow); text-shadow: none; gap: 5px; grid-auto-flow: column; justify-content: center; font-size: 12px; }
 .game-actions .game-clock[data-running="true"] { border-color: var(--muted-foreground) !important; }
 .game-actions .game-clock[data-low="true"] { background: var(--destructive) !important; color: var(--destructive-foreground) !important; }
 .game-actions .game-action-resign { border-color: color-mix(in oklab, var(--destructive) 55%, var(--primary)) !important; }

@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import type { Chess, Square } from "chess.js";
-import { assignPieceIds, type BoardPiece, type PieceIds } from "@/lib/play-motion";
+import { assignPieceIds, CAPTURE_DURATION_MS, type BoardPiece, type PieceIds } from "@/lib/play-motion";
 import { Piece } from "./Piece";
 
 const FILES = "abcdefgh";
@@ -43,7 +43,8 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
   const prevRef = useRef<{ fen: string; pieces: BoardPiece[] }>({ fen: game.fen(), pieces: currentPieces });
   const [ghosts, setGhosts] = useState<{ key: string; piece: BoardPiece; dx: number; dy: number; scale: number }[]>([]);
   const layerRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
+  // Insert the flying copy before the browser paints the removed board piece.
+  useLayoutEffect(() => {
     const prev = prevRef.current;
     if (prev.fen === game.fen()) return;
     const now = currentPieces;
@@ -75,8 +76,6 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
       scale = Math.min(1, (slot?.height ?? 38) / sq);
     }
     setGhosts((g) => [...g, { key, piece: victim, dx, dy, scale }]);
-    const tm = setTimeout(() => setGhosts((g) => g.filter((x) => x.key !== key)), 1450);
-    return () => clearTimeout(tm);
   }, [game.fen()]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function tap(sq: Square) {
@@ -152,7 +151,8 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
                   rotate: [0, -12, 10, -6, 0, 720],
                   scale: [1, 1.1, 0.92, 1.04, 1, scale],
                 }}
-                transition={{ duration: 1.4, times: [0, 0.14, 0.3, 0.42, 0.52, 1], ease: "easeInOut" }}>
+                transition={{ duration: CAPTURE_DURATION_MS / 1000, times: [0, 0.14, 0.3, 0.42, 0.52, 1], ease: "easeInOut" }}
+                onAnimationComplete={() => setGhosts((g) => g.filter((x) => x.key !== key))}>
                 <Piece color={piece.color} type={piece.type} />
               </motion.span>
             );

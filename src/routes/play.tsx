@@ -1,13 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Chess, type Square } from "chess.js";
-import { ArrowLeft, Flag, Handshake } from "lucide-react";
+import { ArrowLeft, Crown, Eye, Flag, Handshake, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GamePlayerCard } from "@/components/GamePlayerCard";
 import { GameClock } from "@/components/GameClock";
 import { CapturedPieces } from "@/components/CapturedPieces";
 import { useMe } from "@/hooks/use-me";
 import { displayName } from "@/lib/profile";
+import { computerDisplayName } from "@/lib/computer-opponent";
 import { report } from "@/lib/report";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
@@ -63,10 +64,11 @@ function Play() {
   const [ask, setAsk] = useState<"resign" | "draw" | null>(null);
   // Each player may propose a draw at most twice per game.
   const [drawOffers, setDrawOffers] = useState(0);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ text: string; kind: "draw" | "check" | "checkmate" } | null>(null);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const showNotice = (msg: string) => {
-    setNotice(msg);
+  const endTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showNotice = (msg: string, kind: "draw" | "check" | "checkmate" = "draw") => {
+    setNotice({ text: msg, kind });
     if (noticeTimer.current) clearTimeout(noticeTimer.current);
     noticeTimer.current = setTimeout(() => setNotice(null), 2400);
   };
@@ -80,6 +82,11 @@ function Play() {
   savedRef.current = saved;
   const refresh = () => setTick((x) => x + 1);
 
+  useEffect(() => () => {
+    if (noticeTimer.current) clearTimeout(noticeTimer.current);
+    if (endTimer.current) clearTimeout(endTimer.current);
+  }, []);
+
   useEffect(() => {
     const g = getGame(id);
     if (!g) { void navigate({ to: "/" }); return; }
@@ -89,6 +96,8 @@ function Play() {
     const l = h[h.length - 1];
     setLastMove(l ? { from: l.from, to: l.to } : null);
     setResult(null);
+    setShowEnd(false);
+    if (endTimer.current) clearTimeout(endTimer.current);
     finishedGame.current = null;
     turnStart.current = Date.now();
     setSaved(g);
@@ -114,8 +123,10 @@ function Play() {
     if (!s || finishedGame.current === s.id) return;
     finishedGame.current = s.id;
     setResult(res);
+    setShowEnd(false);
     deleteGame(s.id);
-    setShowEnd(true);
+    if (res.reason === "checkmate") showNotice(t("checkmate"), "checkmate");
+    endTimer.current = setTimeout(() => setShowEnd(true), res.reason === "checkmate" ? 1600 : 0);
     noteGameFinished(s.id);
     void onGameFinished();
     report("play", "local_game_finished", JSON.stringify({ game: s.id, reason: res.reason, winner: res.winner, level: s.level }));
@@ -165,8 +176,9 @@ function Play() {
     refresh();
     if (game.isCheckmate()) { feedback("check"); finish({ winner: mover, reason: "checkmate" }); }
     else if (game.isDraw() || game.isStalemate()) finish({ winner: null, reason: "draw" });
-    else feedback(game.inCheck() ? "check" : m.captured ? "capture" : "move");
-  }, [game, persist, finish]);
+    else if (game.inCheck()) { feedback("check"); showNotice(t("check"), "check"); }
+    else feedback(m.captured ? "capture" : "move");
+  }, [game, persist, finish, t]);
 
   useEffect(() => { if (saved?.mode === "ai" && saved.level !== "beginner") preloadStockfish(); }, [saved?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -268,7 +280,7 @@ function Play() {
   const side = (c: Color) => (c === "w" ? t("ivory") : t("black"));
   const top: Color = vsAi ? other(human) : "b";
   const bottom: Color = other(top);
-  const nameOf = (c: Color) => (vsAi ? (c === human ? me ? displayName(me) : t("you") : `${t("computer")} · ${t(saved.level)}`) : side(c));
+  const nameOf = (c: Color) => (vsAi ? (c === human ? me ? displayName(me) : t("you") : computerDisplayName(saved.level, t(saved.level))) : side(c));
   const activeKind = (c: Color): "you" | "opp" | undefined => {
     if (result || game.turn() !== c) return undefined;
     return !vsAi || c === human ? "you" : "opp";
@@ -289,7 +301,7 @@ function Play() {
     : result.winner === null ? t("draw") : t("sideWins", { side: side(result.winner) });
 
   const card = (c: Color) => (
-    <GamePlayerCard name={nameOf(c)} avatar={c === human ? me?.avatar : undefined} computer={vsAi && c !== human} color={c}
+    <GamePlayerCard name={nameOf(c)} avatar={c === human ? me?.avatar : undefined} computer={vsAi && c !== human} level={saved.level} color={c}
       active={activeKind(c)} />
   );
   const clock = (c: Color) => (
@@ -314,26 +326,35 @@ function Play() {
         <div className="player-bottom"><CapturedPieces game={game} mine={bottom} /><div className="player-profile-line">{card(bottom)}</div></div>
         <AnimatePresence>
           {notice && (
-            <motion.div key={notice} className="board-notice" role="status"
+            <motion.div key={notice.text} className="board-notice" data-tone={notice.kind} role="status"
               initial={{ opacity: 0, scale: 0.85, x: "-50%", y: "-40%" }} animate={{ opacity: 1, scale: 1, x: "-50%", y: "-50%" }}
               exit={{ opacity: 0, scale: 0.92, x: "-50%", y: "-50%" }} transition={{ type: "spring", stiffness: 320, damping: 24 }}>
-              <Handshake className="size-5" />{notice}
+              {notice.kind === "checkmate" ? <Crown className="size-5" /> : notice.kind === "check" ? <ShieldAlert className="size-5" /> : <Handshake className="size-5" />}{notice.text}
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
       <div className="play-side">
-        <div className="game-actions">
-          <div className="game-clock-card" aria-label="clock">{clock(result ? bottom : game.turn())}</div>
-          <span aria-hidden="true" />
-          <Button variant="ghost" onClick={offerDraw} disabled={busy || game.history().length < 2 || drawOffers >= MAX_DRAW_OFFERS} className="game-action-button game-action-draw">
-            <Handshake className="size-4" /> {t("offerDraw")}
-          </Button>
-          <Button variant="ghost" onClick={() => setAsk("resign")} disabled={busy} className="game-action-button game-action-resign">
-            <Flag className="size-4" /> {t("resign")}
-          </Button>
-        </div>
+        {result && !showEnd ? (
+          <div className="finished-review">
+            <button className="finished-review-result" onClick={() => setShowEnd(true)}><Eye className="size-4" />{resultText()}</button>
+            <div className="finished-review-actions">
+              <button onClick={() => void playAgain()} disabled={startingNewGame} className="action-btn action-gold">{t("playAgain")}</button>
+              <Link to="/" className="action-btn action-ghost">{t("home")}</Link>
+            </div>
+          </div>
+        ) : (
+          <div className="game-actions">
+            <div className="game-clock-card" aria-label="clock">{clock(result ? bottom : game.turn())}</div>
+            <Button variant="ghost" onClick={offerDraw} disabled={busy || game.history().length < 2 || drawOffers >= MAX_DRAW_OFFERS} className="game-action-button game-action-draw">
+              <Handshake className="size-4" /> {t("offerDraw")}
+            </Button>
+            <Button variant="ghost" onClick={() => setAsk("resign")} disabled={busy} className="game-action-button game-action-resign">
+              <Flag className="size-4" /> {t("resign")}
+            </Button>
+          </div>
+        )}
       </div>
 
       <Modal open={!!promo}>
@@ -363,12 +384,13 @@ function Play() {
         </div>
       </Modal>
 
-      <Modal open={!!result && showEnd}>
+      <Modal open={!!result && showEnd} onClose={() => setShowEnd(false)}>
         <div className="space-y-4 text-center">
           <Piece color={result?.winner ?? "w"} type="k" className="mx-auto size-20" />
           <h2 className="brand-wordmark text-3xl">{title}</h2>
           <p className="text-muted-foreground">{resultText()}</p>
           <ResultShareButton title="Mr B Chess" text={`${title} – ${resultText()}${vsAi ? ` · ${t(saved.level)}` : ""}`} />
+          <button onClick={() => setShowEnd(false)} className="action-btn action-ghost"><Eye className="size-4" />{t("close")}</button>
           <button onClick={() => void playAgain()} disabled={startingNewGame} className="action-btn action-gold">{t("playAgain")}</button>
           <Link to="/" className="action-btn action-ghost">{t("home")}</Link>
         </div>

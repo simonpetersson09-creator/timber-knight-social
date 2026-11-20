@@ -6,7 +6,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Chess, type Square } from "chess.js";
 import QRCode from "qrcode";
-import { ArrowLeft, Flag, Handshake, MessageCircle, Share2 } from "lucide-react";
+import { ArrowLeft, Crown, Eye, Flag, Handshake, MessageCircle, Share2, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { ChessBoard } from "@/components/ChessBoard";
@@ -51,13 +51,23 @@ function Match() {
   const [promo, setPromo] = useState<{ from: Square; to: Square } | null>(null);
   const [ask, setAsk] = useState<"resign" | "chat" | null>(null);
   const [showResult, setShowResult] = useState(false);
+  const [notice, setNotice] = useState<"check" | "checkmate" | null>(null);
   const [qr, setQr] = useState("");
   const [started] = useState(() => Date.now());
   const [now, setNow] = useState(Date.now());
   const lastChat = useRef(0);
   const prevPgn = useRef<string | null>(null);
   const endHandled = useRef(false);
+  const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resultTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const game = useRef(new Chess()).current;
+
+  const notifyCheck = useCallback(() => {
+    if (!game.inCheck()) return;
+    setNotice(game.isCheckmate() ? "checkmate" : "check");
+    if (noticeTimer.current) clearTimeout(noticeTimer.current);
+    noticeTimer.current = setTimeout(() => setNotice(null), 2400);
+  }, [game]);
 
   const load = useCallback(async () => {
     try {
@@ -72,14 +82,18 @@ function Match() {
       if (r.game.pgn !== prevPgn.current) {
         game.reset();
         if (r.game.pgn) game.loadPgn(r.game.pgn);
-        if (prevPgn.current !== null) feedback(game.inCheck() ? "check" : "move");
+        if (prevPgn.current !== null) { feedback(game.inCheck() ? "check" : "move"); notifyCheck(); }
         prevPgn.current = r.game.pgn;
       }
       setD(r);
     } catch { toast.error(t("error")); void navigate({ to: "/" }); }
-  }, [id, game, t, navigate]);
+  }, [id, game, t, navigate, notifyCheck]);
 
   useEffect(() => { void load(); const i = setInterval(() => void load(), 2000); return () => clearInterval(i); }, [load]);
+  useEffect(() => () => {
+    if (noticeTimer.current) clearTimeout(noticeTimer.current);
+    if (resultTimer.current) clearTimeout(resultTimer.current);
+  }, []);
   useEffect(() => { const i = setInterval(() => setNow(Date.now()), 500); return () => clearInterval(i); }, []);
   useEffect(() => { if (!bubble) return; const x = setTimeout(() => setBubble(null), 3500); return () => clearTimeout(x); }, [bubble]);
 
@@ -111,7 +125,8 @@ function Match() {
     const won = g.result !== "d" && g.result === myColor;
     recordResult(g.id, g.result === "d" ? "draw" : won ? "win" : "loss", null, g.end_reason !== "resign", "online");
     noteGameFinished(g.id);
-    setShowResult(true);
+    setShowResult(false);
+    resultTimer.current = setTimeout(() => setShowResult(true), g.end_reason === "checkmate" ? 1600 : 0);
     feedback(won ? "win" : g.result === "d" ? "draw" : "lose");
     if (won) void celebrate();
     void onGameFinished();
@@ -170,7 +185,8 @@ function Match() {
     try { game.move({ from, to, ...(promotion ? { promotion } : {}) }); } catch { return; }
     prevPgn.current = game.pgn();
     setD((x) => (x ? { ...x } : x));
-    feedback("move");
+    feedback(game.inCheck() ? "check" : "move");
+    notifyCheck();
     const r = await makeMove({ data: { ...getCred(), gameId: id, from, to, ...(promotion ? { promotion } : {}) } }).catch(() => ({ ok: false }));
     if (!r.ok) { game.reset(); if (backup) game.loadPgn(backup); prevPgn.current = backup; }
     void load();
@@ -218,6 +234,7 @@ function Match() {
         <div className="player-top"><div className="player-profile-line">{card(oppId, myColor === "w" ? "b" : "w")}{clock(myColor === "w" ? "b" : "w")}</div><CapturedPieces game={game} mine={myColor === "w" ? "b" : "w"} /></div>
         <ChessBoard game={game} orientation={myColor} disabled={!myTurn} lastMove={(() => { const h = game.history({ verbose: true }); const l = h[h.length - 1]; return l ? { from: l.from, to: l.to } : null; })()} onMove={onBoardMove} />
         <div className="player-bottom"><CapturedPieces game={game} mine={myColor} /><div className="player-profile-line">{clock(myColor)}{card(me, myColor)}</div></div>
+        {notice && <div className="board-notice" data-tone={notice} role="status">{notice === "checkmate" ? <Crown className="size-5" /> : <ShieldAlert className="size-5" />}{t(notice)}</div>}
         {bubble && <div className="chat-bubble" data-mine={bubble.mine}>{bubble.text}</div>}
       </div>
       <div className="play-side">
@@ -235,6 +252,7 @@ function Match() {
           <Button variant="ghost" onClick={() => act("offerDraw")} disabled={g.status !== "active" || game.history().length < 2 || !!g.draw_offer} className="game-action-button game-action-draw"><Handshake className="size-4" /> {t("offerDraw")}</Button>
           <Button variant="ghost" onClick={() => setAsk("resign")} disabled={g.status !== "active"} className="game-action-button game-action-resign"><Flag className="size-4" /> {t("resign")}</Button>
         </div>
+        {g.status === "finished" && !showResult && <button className="action-btn action-gold" onClick={() => navigate({ to: "/" })}>{t("home")}</button>}
         {chat.length > 0 && (
           <div className="game-chat-history max-h-16 overflow-y-auto text-xs">
             {chat.slice(-6).map((c) => <p key={c.id}><b>{c.player === me ? t("you") : opp ? displayName(opp) : ""}:</b> {t(CHAT[c.phrase] ?? "chat0")}</p>)}
@@ -264,12 +282,13 @@ function Match() {
           {CHAT.map((k, i) => <button key={k} className="action-btn action-ghost !h-11 text-sm" onClick={() => say(i)}>{t(k)}</button>)}
         </div>
       </Modal>
-      <Modal open={showResult}>
+      <Modal open={showResult} onClose={() => setShowResult(false)}>
         <div className="space-y-4 text-center">
           <Piece color={g.result === "d" ? "w" : (g.result as "w" | "b")} type="k" className="mx-auto size-20" />
           <h2 className="brand-wordmark text-3xl">{title}</h2>
           <p className="text-muted-foreground">{reasonText}</p>
           <ResultShareButton title="Mr B Chess" text={`${title} – ${reasonText} · ${opp ? displayName(opp) : t("playOnline")}`} />
+          <button className="action-btn action-ghost" onClick={() => setShowResult(false)}><Eye className="size-4" />{t("close")}</button>
           <button className="action-btn action-gold" onClick={() => navigate({ to: "/" })}>{t("home")}</button>
         </div>
       </Modal>
