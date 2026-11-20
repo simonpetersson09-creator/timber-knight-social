@@ -20,7 +20,7 @@ export const KEYS = [
   "notFoundTitle", "notFoundText", "goHome", "loadErrorTitle", "loadErrorText", "tryAgain",
   "legalSupport", "legalSupportText", "legalPrivacy1", "legalPrivacy2", "legalPrivacy3",
   "legalTerms", "legalTermsText", "legalAppAdsText",
-  "moveHistory", "finalPosition",
+  "moveHistory", "finalPosition", "searchHint",
 ] as const;
 export type Key = (typeof KEYS)[number];
 

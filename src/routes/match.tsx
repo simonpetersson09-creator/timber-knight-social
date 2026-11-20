@@ -24,7 +24,7 @@ import { displayName, flagOf } from "@/lib/profile";
 import { QUICK_WAIT_MS } from "@/lib/online-rules";
 import { CHECKMATE_RESULT_DELAY_MS, MATCH_NOTICE_MS } from "@/lib/play-motion";
 import { celebrate, feedback } from "@/lib/feedback";
-import { noteGameFinished, setGameplayActive, showPostMatchAd } from "@/lib/ads";
+import { hideSearchBanner, noteGameFinished, setGameplayActive, showPostMatchAd, showSearchBanner } from "@/lib/ads";
 import { onGameFinished } from "@/lib/rate";
 import { CLOCKS, createGame, recordResult } from "@/lib/storage";
 import { ResultShareButton } from "@/components/ResultShareButton";
@@ -201,6 +201,10 @@ function Match() {
     }
   }
 
+  if (g.kind === "quick" && g.status === "waiting") {
+    return <QuickSearchScreen key={g.id} onCancel={async () => { await cancelGame({ data: { ...getCred(), gameId: g.id } }).catch(() => {}); void navigate({ to: "/" }); }} />;
+  }
+
   if (g.status === "waiting" || g.status === "expired") {
     const remainS = Math.max(0, Math.ceil((QUICK_WAIT_MS - (now - started)) / 1000));
     return (
@@ -370,6 +374,31 @@ function Match() {
           <button className="action-btn action-gold" disabled={leavingHome} onClick={() => void goHome()}>{t("home")}</button>
         </div>
       </Modal>
+    </main>
+  );
+}
+
+/** Yatzy-style quick search: centred status, progress bar, cancel and a 300×250 ad slot below. */
+function QuickSearchScreen({ onCancel }: { onCancel: () => void }) {
+  const { t } = useI18n();
+  useEffect(() => {
+    const show = () => { void showSearchBanner(); };
+    const first = window.setTimeout(show, 350);
+    window.addEventListener("resize", show);
+    return () => { window.clearTimeout(first); window.removeEventListener("resize", show); void hideSearchBanner(); };
+  }, []);
+  return (
+    <main className="quick-search-screen">
+      <div className="quick-search-layout">
+        <div className="quick-search-status">
+          <div className="quick-search-icon"><Piece color="w" type="n" className="size-9" /></div>
+          <h2 className="font-display text-xl font-bold text-foreground">{t("searching")}</h2>
+          <p className="text-sm text-muted-foreground">{t("searchHint")}</p>
+          <div className="quick-search-progress"><div style={{ animationDuration: `${QUICK_WAIT_MS}ms` }} /></div>
+          <Button variant="secondary" className="h-11 w-full font-semibold" onClick={onCancel}>{t("cancel")}</Button>
+        </div>
+        <div className="quick-search-ad-area"><div data-search-ad-slot className="quick-search-ad-slot" aria-hidden="true" /></div>
+      </div>
     </main>
   );
 }

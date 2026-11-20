@@ -1,7 +1,7 @@
 /**
  * Native AdMob for iOS and Android. UMP consent is gathered before ATT/SDK initialization.
  * App Open is restricted to the home screen; post-match Interstitials are shown only
- * by an explicit replay or exit action. No web ads, banners or rewarded ads.
+ * by an explicit replay or exit action. A 300×250 banner shows only on the quick-search screen. No web ads or rewarded ads.
  */
 import { Capacitor } from "@capacitor/core";
 import { isNative, platform } from "./native";
@@ -315,3 +315,57 @@ export async function showPendingPostMatchAd(currentMatchId: string): Promise<bo
 
 // Kept for diagnostics: no-fill policy is shared only by App Open, not gameplay navigation.
 export { APP_OPEN_NO_FILL_RETRY_MS };
+
+/* Search-screen banner (300×250) – same placement as Mr B Yatzy. */
+/** Release banner IDs for the search screen; null = no banner until the units are created. */
+export const SEARCH_BANNER_IDS: Record<"ios" | "android", string | null> = { ios: null, android: null };
+const TEST_BANNER: Record<"ios" | "android", string> = {
+  ios: "ca-app-pub-3940256099942544/2934735716",
+  android: "ca-app-pub-3940256099942544/6300978111",
+};
+let searchBannerWanted = false;
+let searchBannerShown = false;
+let searchBannerMargin = -1;
+
+function searchSlotMargin(): number | null {
+  const slot = document.querySelector("[data-search-ad-slot]")?.getBoundingClientRect();
+  if (!slot || slot.width < 300 || slot.top < 0) return null;
+  const probe = document.createElement("div");
+  probe.style.cssText = "position:fixed;visibility:hidden;height:env(safe-area-inset-bottom,0px)";
+  document.body.appendChild(probe);
+  const safe = probe.getBoundingClientRect().height;
+  probe.remove();
+  if (slot.bottom > window.innerHeight - safe + 1) return null;
+  return Math.max(0, Math.round(window.innerHeight - safe - slot.bottom));
+}
+
+export async function showSearchBanner(): Promise<void> {
+  searchBannerWanted = true;
+  const p = platform();
+  if (p === "web" || !adAvailable() || !online()) return;
+  const adId = import.meta.env.DEV ? TEST_BANNER[p] : SEARCH_BANNER_IDS[p];
+  if (!adId) return;
+  const margin = searchSlotMargin();
+  if (margin === null) return;
+  if (searchBannerShown && margin === searchBannerMargin) return;
+  try {
+    if (!(await initAds()) || !searchBannerWanted) return;
+    const m = await mod();
+    if (searchBannerShown) await m.AdMob.removeBanner();
+    await m.AdMob.showBanner({ adId, adSize: m.BannerAdSize.MEDIUM_RECTANGLE, position: m.BannerAdPosition.BOTTOM_CENTER, margin, isTesting: import.meta.env.DEV });
+    searchBannerShown = true;
+    searchBannerMargin = margin;
+    report("ad", "search_banner_shown");
+    if (!searchBannerWanted) await hideSearchBanner();
+  } catch (error) {
+    report("ad", "search_banner_failed", reason(error));
+  }
+}
+
+export async function hideSearchBanner(): Promise<void> {
+  searchBannerWanted = false;
+  if (!searchBannerShown) return;
+  searchBannerShown = false;
+  searchBannerMargin = -1;
+  try { await (await mod()).AdMob.removeBanner(); } catch { /* banner already gone */ }
+}
