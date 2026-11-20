@@ -8,6 +8,8 @@ const ONCE_KEY = "mrbchess.report-once.v1";
 const MAX_QUEUED = 100;
 const MAX_PER_FLUSH = 100;
 let flushing = false;
+let reportingPaused = false;
+let reportGeneration = 0;
 
 function isEvent(value: unknown): value is Event {
   if (!value || typeof value !== "object") return false;
@@ -52,8 +54,14 @@ function enqueue(kind: Event["kind"], name: string, detail?: string) {
 
 /** Durable, bounded delivery queue. IDs stay the same during retries so reports count once. */
 export function report(kind: Event["kind"], name: string, detail?: string) {
-  if (!allowsGameplayRuntime()) return;
+  if (reportingPaused || !allowsGameplayRuntime()) return;
   if (enqueue(kind, name, detail)) void flushReports();
+}
+
+/** Stops in-memory retries from recreating deleted telemetry during local cleanup. */
+export function setReportingPaused(paused: boolean) {
+  if (reportingPaused !== paused) reportGeneration++;
+  reportingPaused = paused;
 }
 
 function onceMarkers() {
@@ -74,23 +82,25 @@ export function reportOnce(kind: Event["kind"], name: string, detail: string | u
 }
 
 export async function flushReports() {
-  if (!allowsGameplayRuntime() || flushing || !queue().length || !navigator.onLine) return;
+  if (reportingPaused || !allowsGameplayRuntime() || flushing || !queue().length || !navigator.onLine) return;
   flushing = true;
+  const generation = reportGeneration;
   let drained = 0;
   try {
     await loadMe();
-    while (drained < MAX_PER_FLUSH && navigator.onLine) {
+    while (!reportingPaused && generation === reportGeneration && drained < MAX_PER_FLUSH && navigator.onLine) {
       const event = queue().map((item, index) => ({ item, index }))
         .sort((a, b) => Number(important(b.item)) - Number(important(a.item)) || a.index - b.index)[0]?.item;
       if (!event) break;
       const result = await reportEvent({ data: { ...getCred(), ...event } });
+      if (reportingPaused || generation !== reportGeneration) break;
       if (!result.ok) break;
       save(queue().filter((item) => item.eventId !== event.eventId));
       drained++;
     }
   } catch { /* retry when online/foreground/heartbeat fires */ }
   finally { flushing = false; }
-  if (drained >= MAX_PER_FLUSH && queue().length && navigator.onLine) {
+  if (!reportingPaused && drained >= MAX_PER_FLUSH && queue().length && navigator.onLine) {
     setTimeout(() => { void flushReports(); }, 0);
   }
 }

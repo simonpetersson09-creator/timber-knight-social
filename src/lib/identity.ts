@@ -6,6 +6,7 @@ const K = "mrbchess.identity.v1";
 export type Cred = { id: string; secret: string };
 let current: Cred | null = null;
 let prepared: Promise<void> | null = null;
+let identityGeneration = 0;
 
 function validCred(value: unknown): Cred | null {
   if (!value || typeof value !== "object") return null;
@@ -16,17 +17,24 @@ function validCred(value: unknown): Cred | null {
 /** Restores the anonymous identity from iOS Keychain / Android Keystore and migrates older installs once. */
 export function prepareIdentity(): Promise<void> {
   if (!isNative()) return Promise.resolve();
-  if (!prepared) prepared = (async () => {
-    const { SecureStorage } = await import("@aparajita/capacitor-secure-storage");
-    await SecureStorage.setKeyPrefix("mrbchess.");
-    const stored = validCred(await SecureStorage.get(K).catch(() => null));
-    let legacy: Cred | null = null;
-    try { legacy = validCred(JSON.parse(localStorage.getItem(K) ?? "null")); } catch { /* invalid legacy value */ }
-    current = stored ?? legacy;
-    if (!current) current = getCred();
-    if (!stored) await SecureStorage.set(K, current);
-    try { localStorage.removeItem(K); } catch { /* storage unavailable */ }
-  })().catch((error) => { prepared = null; throw error; });
+  if (!prepared) {
+    const generation = identityGeneration;
+    const attempt = (async () => {
+      const { SecureStorage } = await import("@aparajita/capacitor-secure-storage");
+      await SecureStorage.setKeyPrefix("mrbchess.");
+      const stored = validCred(await SecureStorage.get(K).catch(() => null));
+      if (generation !== identityGeneration) return;
+      let legacy: Cred | null = null;
+      try { legacy = validCred(JSON.parse(localStorage.getItem(K) ?? "null")); } catch { /* invalid legacy value */ }
+      current = stored ?? legacy;
+      if (!current) current = getCred();
+      if (!stored) await SecureStorage.set(K, current);
+      if (generation !== identityGeneration) return;
+      try { localStorage.removeItem(K); } catch { /* storage unavailable */ }
+    })();
+    const tracked = attempt.catch((error) => { if (prepared === tracked) prepared = null; throw error; });
+    prepared = tracked;
+  }
   return prepared;
 }
 
@@ -55,12 +63,15 @@ export function loadMe(fresh = false): Promise<Me> {
   return cached;
 }
 
-export function clearIdentity() {
+export async function clearIdentity(): Promise<void> {
+  identityGeneration++;
   current = null;
-  try { localStorage.removeItem(K); } catch { /* ignore */ }
-  if (isNative()) void import("@aparajita/capacitor-secure-storage").then(async ({ SecureStorage }) => {
+  cached = null;
+  prepared = null;
+  try { localStorage.removeItem(K); } catch { /* storage unavailable */ }
+  if (isNative()) {
+    const { SecureStorage } = await import("@aparajita/capacitor-secure-storage");
     await SecureStorage.setKeyPrefix("mrbchess.");
     await SecureStorage.remove(K);
-  }).catch(() => {});
-  cached = null;
+  }
 }

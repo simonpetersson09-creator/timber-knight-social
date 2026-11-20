@@ -1,5 +1,10 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Radera data och annonsval 20 nov
+- [x] Servergodkänd radering, beständig återupptagsmarkör för avbruten rensning, säker native-identitet och rensning av lokal/session-cache utan att röra samtycke eller unrelated lagring
+- [x] Yatzy-likt Annonsval: visas när UMP kräver det, utfällbar sektion, direkt Google-formulär utan extra UMP/ATT-ruta samt förklaring i webbförhandsvisningen
+- [x] 274 tester och typkontroll passerar; mobilprov verifierade avbryt, verklig radering, hemnavigering, ny identitet och bevarat samtycke. Native Google-formulär och Keychain/Keystore återstår på fysisk telefon
+
 ## Kontroll av samtliga knappar 20 nov
 - [x] Inventerat och provat huvudknappar, länkar, dialoger, inställningar, QR, vänkod, onlinelobby och spelkontroller i mobil förhandsvisning
 - [x] Gemensam native-/webbdelning och kopieringsreserv, tydliga felmeddelanden samt dubbeltrycksskydd för online-, vän- och adminkontroller; sex nya delningstester

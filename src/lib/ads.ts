@@ -188,6 +188,19 @@ export function initAds(): Promise<boolean> {
   return attempt;
 }
 
+/** Reads UMP's requirement without initializing AdMob or triggering an ATT prompt. */
+export async function isAdPrivacyOptionsRequired(): Promise<boolean> {
+  if (!adAvailable()) return false;
+  try {
+    const { AdMob } = await mod();
+    const consent = await withTimeout(AdMob.requestConsentInfo(), 15_000, "consent_info");
+    return consent.privacyOptionsRequirementStatus === "REQUIRED";
+  } catch (error) {
+    report("ad", "privacy_requirement_failed", reason(error));
+    return false;
+  }
+}
+
 /** Privacy choices remain accessible even when consent does not currently permit ads. */
 export async function openAdChoices(): Promise<boolean> {
   if (!adAvailable()) return false;
@@ -196,7 +209,7 @@ export async function openAdChoices(): Promise<boolean> {
   try {
     // Block every presentation path before opening the form, including banners and late loads.
     await hideSearchBanner();
-    await initAds();
+    // Match Yatzy: one tap opens Google's existing choices directly, without a consent/ATT prompt first.
     const { AdMob } = await mod();
     await withTimeout(AdMob.showPrivacyOptionsForm(), 120_000, "privacy_form");
     invalidateAdState();

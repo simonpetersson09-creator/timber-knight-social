@@ -65,7 +65,7 @@ beforeEach(() => {
   m.addListener.mockImplementation(async () => ({ remove: vi.fn(async () => {}) }));
   m.requestConsentInfo.mockImplementation(async () => { m.calls.push("ump"); return consent(); });
   m.showConsentForm.mockImplementation(async () => { m.calls.push("umpForm"); return consent(); });
-  m.showPrivacyOptionsForm.mockResolvedValue(undefined);
+  m.showPrivacyOptionsForm.mockImplementation(async () => { m.calls.push("privacyForm"); });
   m.trackingAuthorizationStatus.mockImplementation(async () => { m.calls.push("attStatus"); return { status: m.att }; });
   m.requestTrackingAuthorization.mockImplementation(async () => { m.calls.push("attRequest"); m.att = "denied"; });
   m.initialize.mockImplementation(async () => { m.calls.push("initialize"); });
@@ -128,6 +128,27 @@ describe("native ad lifecycle", () => {
 });
 
 describe("UMP and ATT ordering", () => {
+  it("reads the privacy-button requirement without initializing ads or asking ATT", async () => {
+    m.requestConsentInfo.mockResolvedValue({ ...consent(), privacyOptionsRequirementStatus: "REQUIRED" });
+    const ads = await import("./ads");
+    await expect(ads.isAdPrivacyOptionsRequired()).resolves.toBe(true);
+    expect(m.initialize).not.toHaveBeenCalled();
+    expect(m.trackingAuthorizationStatus).not.toHaveBeenCalled();
+  });
+
+  it("opens existing privacy choices before any consent refresh or ATT prompt", async () => {
+    const ads = await import("./ads");
+    await expect(ads.openAdChoices()).resolves.toBe(true);
+    expect(m.calls[0]).toBe("privacyForm");
+  });
+
+  it("reports a failed privacy form to the settings button", async () => {
+    m.showPrivacyOptionsForm.mockRejectedValue(new Error("not required"));
+    const ads = await import("./ads");
+    await expect(ads.openAdChoices()).resolves.toBe(false);
+    expect(m.report).toHaveBeenCalledWith("ad", "privacy_form_failed", "not required");
+  });
+
   it("finishes UMP before ATT and records status-only evidence", async () => {
     m.att = "notDetermined";
     m.requestConsentInfo.mockImplementation(async () => { m.calls.push("ump"); return { ...consent(), status: "REQUIRED", isConsentFormAvailable: true }; });

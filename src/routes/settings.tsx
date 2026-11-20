@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Camera, User, Globe, ChevronRight, Vibrate, Bell, BellRing, Gamepad2, ShieldCheck, Trash2, Check, BookOpen } from "lucide-react";
 import { toast } from "sonner";
@@ -11,9 +11,10 @@ import { Modal } from "@/components/Modal";
 import { LANGUAGES, useI18n } from "@/lib/i18n";
 import { getSettings, getStats, resetStats, saveSettings, type Settings } from "@/lib/storage";
 import { useMe } from "@/hooks/use-me";
-import { clearIdentity, getCred } from "@/lib/identity";
-import { deleteMyData, setPush, updateProfile, saveProfilePhoto } from "@/lib/players.functions";
-import { openAdChoices } from "@/lib/ads";
+import { getCred } from "@/lib/identity";
+import { setPush, updateProfile, saveProfilePhoto } from "@/lib/players.functions";
+import { isAdPrivacyOptionsRequired, openAdChoices } from "@/lib/ads";
+import { deleteAllMyData } from "@/lib/delete-data";
 import { askPushOnFirstOnline } from "@/lib/push";
 import { isNative } from "@/lib/native";
 import { PRIVACY_POLICY_URL } from "@/lib/legal-links";
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/settings")({
 
 function SettingsPage() {
   const { t, choice, lang } = useI18n();
+  const navigate = useNavigate();
   const { me, reload } = useMe();
   const input = useRef<HTMLInputElement>(null);
   const [s, setS] = useState<Settings | null>(null);
@@ -43,10 +45,18 @@ function SettingsPage() {
   const [country, setCountry] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [adBusy, setAdBusy] = useState(false);
+  const [adRequired, setAdRequired] = useState(false);
+  const [adOpen, setAdOpen] = useState(false);
   const [notifyBusy, setNotifyBusy] = useState<keyof typeof prefs | null>(null);
   const [stats, setStats] = useState<ReturnType<typeof getStats> | null>(null);
   const [prefs, setPrefs] = useState({ notify: true, notify_turn: true, notify_reminders: true, notify_play: true });
   useEffect(() => { setS(getSettings()); setStats(getStats()); report("play", "settings_opened"); }, []);
+  useEffect(() => {
+    if (!isNative()) return;
+    let alive = true;
+    void isAdPrivacyOptionsRequired().then((required) => { if (alive) setAdRequired(required); });
+    return () => { alive = false; };
+  }, []);
   useEffect(() => { if (me) { setName(me.name ?? ""); setAvatar(me.avatar); setCountry(me.country); setPrefs({ notify: me.notify, notify_turn: me.notify_turn, notify_reminders: me.notify_reminders, notify_play: me.notify_play }); } }, [me]);
   const region = (cc: string) => { try { return new Intl.DisplayNames([lang], { type: "region" }).of(cc) ?? cc; } catch { return cc; } };
   const langName = choice === "auto" ? t("automatic") : LANGUAGES.find((l) => l.code === choice)?.name;
@@ -79,9 +89,9 @@ function SettingsPage() {
     finally { setNotifyBusy(null); }
   }
   async function adChoices() {
-    if (adBusy) return;
+    if (adBusy || !isNative()) return;
     setAdBusy(true);
-    try { if (!isNative() || !(await openAdChoices())) toast(t("adChoicesApp")); }
+    try { if (!(await openAdChoices())) toast.error(t("error")); }
     catch { toast.error(t("error")); }
     finally { setAdBusy(false); }
   }
@@ -89,12 +99,12 @@ function SettingsPage() {
     if (busy) return;
     setBusy(true);
     try {
-      const result = await deleteMyData({ data: getCred() });
-      if (!result.ok) throw new Error("data_delete_failed");
-      clearIdentity();
-      Object.keys(localStorage).filter((k) => k.startsWith("mrbchess.")).forEach((k) => localStorage.removeItem(k));
-      setWipe(false); reload(true); setS(getSettings()); setStats(getStats()); toast.success(t("dataDeleted"));
-    } catch { toast.error(t("error")); } finally { setBusy(false); }
+      await deleteAllMyData();
+      setWipe(false);
+      toast.success(t("dataDeleted"));
+      await navigate({ to: "/" });
+    } catch { toast.error(t("error")); }
+    finally { setBusy(false); }
   }
   const notificationRows = [["notify", Bell, "notifications"], ["notify_turn", Bell, "yourTurn"], ["notify_reminders", BellRing, "moveReminders"], ["notify_play", Gamepad2, "playReminders"]] as const;
   return <main className="page-screen space-y-5">
@@ -125,13 +135,18 @@ function SettingsPage() {
     <Section title={t("stats")}><div className="settings-rows">
       <Button variant="ghost" className="settings-row text-destructive" onClick={() => setConfirm(true)}><Trash2 />{t("resetStats")}</Button>
     </div></Section>
-    <Section title={t("adChoices")}><div className="settings-rows"><Button variant="ghost" className="settings-row" disabled={adBusy} onClick={() => void adChoices()}><ShieldCheck /><span className="flex-1">{t("adChoices")}</span><ChevronRight /></Button></div></Section>
+    {(adRequired || !isNative()) && <Section title={t("adChoices")}><div className="settings-rows">
+      <Button variant="ghost" className="settings-row" aria-expanded={adOpen} aria-controls="saved-ad-choices" onClick={() => setAdOpen((open) => !open)}><ShieldCheck /><span className="flex-1">{t("adChoices")}</span><ChevronRight className={`transition-transform ${adOpen ? "rotate-90" : ""}`} /></Button>
+      {adOpen && <div id="saved-ad-choices" className="border-t border-border/40">
+        {!isNative() ? <p className="px-3 py-3 text-sm text-muted-foreground">{t("adChoicesApp")}</p> : <Button variant="ghost" className="settings-row" disabled={adBusy} onClick={() => void adChoices()}><ShieldCheck /><span className="flex-1">{t("adChoices")}</span><ChevronRight /></Button>}
+      </div>}
+    </div></Section>}
     <div className="settings-rows"><Button variant="ghost" className="settings-row text-destructive" disabled={!me || busy} onClick={() => setWipe(true)}><Trash2 />{t("deleteMyData")}</Button></div>
     <div className="settings-rows"><Button asChild variant="ghost" className="settings-row"><a href={PRIVACY_POLICY_URL} target="_blank" rel="noreferrer"><ShieldCheck /><span className="flex-1">{t("privacy")}</span><ChevronRight /></a></Button></div>
     <Button asChild variant="link" className="h-auto min-h-11 w-full whitespace-normal text-xs text-muted-foreground"><Link to="/legal">{t("legal")}</Link></Button>
     <LanguageSheet open={langOpen} onClose={() => setLangOpen(false)} />
     <Modal open={confirm} title={t("resetStats")} onClose={() => setConfirm(false)}><p className="mb-4 text-center font-semibold">{t("confirmReset")}</p><div className="flex gap-2"><Button variant="ghost" className="action-btn action-ghost" onClick={() => setConfirm(false)}>{t("cancel")}</Button><Button className="action-btn action-gold" onClick={() => { resetStats(); setStats(getStats()); setConfirm(false); toast.success(t("resetStats")); }}>{t("accept")}</Button></div></Modal>
-    <Modal open={wipe} title={t("deleteMyData")} onClose={() => setWipe(false)}><p className="mb-4 text-center font-semibold">{t("confirmDeleteData")}</p><div className="flex gap-2"><Button variant="ghost" className="action-btn action-ghost" disabled={busy} onClick={() => setWipe(false)}>{t("cancel")}</Button><Button className="action-btn action-gold" disabled={busy} onClick={eraseAll}>{t("delete")}</Button></div></Modal>
+    <Modal open={wipe} title={t("deleteMyData")} onClose={() => { if (!busy) setWipe(false); }}><p className="mb-4 text-center font-semibold">{t("confirmDeleteData")}</p><div className="flex gap-2"><Button variant="ghost" className="action-btn action-ghost" disabled={busy} onClick={() => setWipe(false)}>{t("cancel")}</Button><Button className="action-btn action-gold" disabled={busy} onClick={() => void eraseAll()}>{busy ? "…" : t("delete")}</Button></div></Modal>
   </main>;
 }
 function Section({ title, children }: { title: string; children: React.ReactNode }) { return <section className="settings-section"><h2 className="settings-heading">{title}</h2>{children}</section>; }
