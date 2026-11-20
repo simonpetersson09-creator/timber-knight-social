@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Chess } from "chess.js";
-import { AI_MOVE_DELAY_MS, CAPTURE_DURATION_MS, CHECKMATE_RESULT_DELAY_MS, MATCH_NOTICE_MS, MAX_DRAW_OFFERS, assignPieceIds, shouldSendDrawOffer, type BoardPiece, type PieceIds } from "./play-motion";
+import { AI_MOVE_DELAY_MS, CAPTURE_DURATION_MS, CHECKMATE_RESULT_DELAY_MS, FALLBACK_NOTICE_MS, MATCH_NOTICE_MS, MAX_DRAW_OFFERS, PLAY_FALLBACK_NOTICE, assignPieceIds, playNoticeFromSearch, shouldSendDrawOffer, type BoardPiece, type PieceIds } from "./play-motion";
 
 function pieces(game: Chess): BoardPiece[] {
   return game.board().flat().filter((piece): piece is BoardPiece => piece !== null);
@@ -29,6 +29,17 @@ describe("play motion", () => {
   it("closes the checkmate notice before opening the result dialog", () => {
     expect(MATCH_NOTICE_MS).toBe(2400);
     expect(CHECKMATE_RESULT_DELAY_MS).toBeGreaterThan(MATCH_NOTICE_MS);
+  });
+
+  it("keeps the computer-fallback notice on screen longer than a normal notice", () => {
+    expect(FALLBACK_NOTICE_MS).toBe(3400);
+    expect(FALLBACK_NOTICE_MS).toBeGreaterThan(MATCH_NOTICE_MS);
+  });
+
+  it("lets only the known fallback notice through the URL", () => {
+    expect(playNoticeFromSearch(PLAY_FALLBACK_NOTICE)).toBe("noOpponent");
+    expect(playNoticeFromSearch("checkmate")).toBeUndefined();
+    expect(playNoticeFromSearch(undefined)).toBeUndefined();
   });
 
   it("keeps the moved pawn identity and all untouched identities", () => {

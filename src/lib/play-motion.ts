@@ -5,6 +5,8 @@ export const AI_MOVE_DELAY_MS = 1800;
 export const CAPTURE_DURATION_MS = 1400;
 /** Match notices finish before a checkmate result dialog appears. */
 export const MATCH_NOTICE_MS = 2400;
+/** The computer-fallback notice is longer so its two lines can be read. */
+export const FALLBACK_NOTICE_MS = 3400;
 export const CHECKMATE_RESULT_DELAY_MS = 2500;
 /** A draw may be proposed at most this many times per game. */
 export const MAX_DRAW_OFFERS = 2;
@@ -12,6 +14,14 @@ export const MAX_DRAW_OFFERS = 2;
 /** The first click only opens confirmation; a confirmed click may send within the limit. */
 export function shouldSendDrawOffer(confirmed: boolean, previousOffers: number): boolean {
   return confirmed && previousOffers < MAX_DRAW_OFFERS;
+}
+
+/** The notice key shown when a quick search ended without an online opponent. */
+export const PLAY_FALLBACK_NOTICE = "noOpponent" as const;
+
+/** Only the known fallback notice may reach the game screen through the URL. */
+export function playNoticeFromSearch(value: unknown): typeof PLAY_FALLBACK_NOTICE | undefined {
+  return value === PLAY_FALLBACK_NOTICE ? PLAY_FALLBACK_NOTICE : undefined;
 }
 
 export type BoardPiece = { square: Square; color: Color; type: PieceSymbol };

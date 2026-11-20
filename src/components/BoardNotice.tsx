@@ -1,13 +1,23 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Crown, Handshake, ShieldAlert } from "lucide-react";
+import { Bot, Crown, Handshake, ShieldAlert, type LucideIcon } from "lucide-react";
+
+export type BoardNoticeKind = "draw" | "check" | "checkmate" | "info";
 
 export type BoardNoticeData = {
   text: string;
-  kind: "draw" | "check" | "checkmate";
+  kind: BoardNoticeKind;
+};
+
+const ICONS: Record<BoardNoticeKind, LucideIcon> = {
+  draw: Handshake,
+  check: ShieldAlert,
+  checkmate: Crown,
+  info: Bot,
 };
 
 export function BoardNotice({ notice }: { notice: BoardNoticeData | null }) {
   const reduceMotion = useReducedMotion();
+  const Icon = notice ? ICONS[notice.kind] : Handshake;
   return (
     <AnimatePresence>
       {notice && (
@@ -21,7 +31,7 @@ export function BoardNotice({ notice }: { notice: BoardNoticeData | null }) {
           exit={reduceMotion ? { opacity: 0, x: "-50%", y: "-50%" } : { opacity: 0, scale: 0.92, x: "-50%", y: "-50%" }}
           transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 320, damping: 24 }}
         >
-          {notice.kind === "checkmate" ? <Crown className="size-5" /> : notice.kind === "check" ? <ShieldAlert className="size-5" /> : <Handshake className="size-5" />}
+          <span className="board-notice-icon"><Icon className="size-4" /></span>
           {notice.text}
         </motion.div>
       )}

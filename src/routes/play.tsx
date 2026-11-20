@@ -14,8 +14,8 @@ import { displayName } from "@/lib/profile";
 import { computerDisplayName } from "@/lib/computer-opponent";
 import { report } from "@/lib/report";
 import { toast } from "sonner";
-import { BoardNotice } from "@/components/BoardNotice";
-import { CHECKMATE_RESULT_DELAY_MS, MATCH_NOTICE_MS, MAX_DRAW_OFFERS, shouldSendDrawOffer } from "@/lib/play-motion";
+import { BoardNotice, type BoardNoticeData } from "@/components/BoardNotice";
+import { CHECKMATE_RESULT_DELAY_MS, FALLBACK_NOTICE_MS, MATCH_NOTICE_MS, MAX_DRAW_OFFERS, PLAY_FALLBACK_NOTICE, playNoticeFromSearch, shouldSendDrawOffer } from "@/lib/play-motion";
 import { ChessBoard } from "@/components/ChessBoard";
 import { Piece } from "@/components/Piece";
 import { Modal } from "@/components/Modal";
@@ -31,7 +31,11 @@ import { createGame, deleteGame, getGame, recordResult, rematchConfig, saveGame,
 import { ResultShareButton } from "@/components/ResultShareButton";
 
 export const Route = createFileRoute("/play")({
-  validateSearch: (s: Record<string, unknown>): { id: string } => ({ id: typeof s["id"] === "string" ? s["id"] : "" }),
+  validateSearch: (s: Record<string, unknown>): { id: string; notice?: typeof PLAY_FALLBACK_NOTICE } => {
+    const id = typeof s["id"] === "string" ? s["id"] : "";
+    const notice = playNoticeFromSearch(s["notice"]);
+    return notice ? { id, notice } : { id };
+  },
   head: () => ({
     meta: [
       { title: "Parti – Mr B Chess" },
@@ -54,7 +58,7 @@ function fmt(ms: number) {
 }
 
 function Play() {
-  const { id } = Route.useSearch();
+  const { id, notice: noticeParam } = Route.useSearch();
   const navigate = useNavigate();
   const { t } = useI18n();
   const { me } = useMe();
@@ -68,13 +72,13 @@ function Play() {
   const [ask, setAsk] = useState<"resign" | "offerDraw" | "draw" | null>(null);
   // Each player may propose a draw at most twice per game.
   const [drawOffers, setDrawOffers] = useState(0);
-  const [notice, setNotice] = useState<{ text: string; kind: "draw" | "check" | "checkmate" } | null>(null);
+  const [notice, setNotice] = useState<BoardNoticeData | null>(null);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const endTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const showNotice = (msg: string, kind: "draw" | "check" | "checkmate" = "draw") => {
+  const showNotice = (msg: string, kind: BoardNoticeData["kind"] = "draw", ms = MATCH_NOTICE_MS) => {
     setNotice({ text: msg, kind });
     if (noticeTimer.current) clearTimeout(noticeTimer.current);
-    noticeTimer.current = setTimeout(() => setNotice(null), MATCH_NOTICE_MS);
+    noticeTimer.current = setTimeout(() => setNotice(null), ms);
   };
   const [now, setNow] = useState(() => Date.now());
   const [showEnd, setShowEnd] = useState(false);
@@ -108,6 +112,15 @@ function Play() {
     turnStart.current = Date.now();
     setSaved(g);
   }, [id, game, navigate]);
+
+  // A quick search that ended without an opponent says so once, centred on the board.
+  const fallbackNoticeShown = useRef(false);
+  useEffect(() => {
+    if (!saved || noticeParam !== PLAY_FALLBACK_NOTICE || fallbackNoticeShown.current) return;
+    fallbackNoticeShown.current = true;
+    showNotice(t("noOpponent"), "info", FALLBACK_NOTICE_MS);
+    void navigate({ to: "/play", search: { id: saved.id }, replace: true });
+  }, [saved, noticeParam, navigate, t]);
 
   useEffect(() => {
     setGameplayActive(!!saved && !result);

@@ -22,7 +22,7 @@ import { getCred } from "@/lib/identity";
 import { cancelGame, gameAction, getOnlineGame, makeMove, quickMatch, sendChat } from "@/lib/online.functions";
 import { displayName, flagOf } from "@/lib/profile";
 import { QUICK_WAIT_MS } from "@/lib/online-rules";
-import { CHECKMATE_RESULT_DELAY_MS, MATCH_NOTICE_MS } from "@/lib/play-motion";
+import { CHECKMATE_RESULT_DELAY_MS, MATCH_NOTICE_MS, PLAY_FALLBACK_NOTICE } from "@/lib/play-motion";
 import { celebrate, feedback } from "@/lib/feedback";
 import { hideSearchBanner, noteGameFinished, setGameplayActive, showPostMatchAd, showSearchBanner } from "@/lib/ads";
 import { onGameFinished } from "@/lib/rate";
@@ -143,11 +143,10 @@ function Match() {
         const current = await quickMatch({ data: { ...getCred(), gameId: g.id } });
         if (current.status === "active") return;
         await cancelGame({ data: { ...getCred(), gameId: g.id } });
-        toast(t("noOpponent"));
         const local = createGame({ mode: "ai", level: fallbackLevel, human: "w", clock: CLOCKS[fallbackClock] ?? null });
         if (local) {
           report("play", "local_game_started", JSON.stringify({ game: local.id, level: local.level, mode: local.mode, fallback: true }));
-          await navigate({ to: "/play", search: { id: local.id }, replace: true });
+          await navigate({ to: "/play", search: { id: local.id, notice: PLAY_FALLBACK_NOTICE }, replace: true });
         } else {
           toast.error(t("maxSaved"));
           await navigate({ to: "/" });
