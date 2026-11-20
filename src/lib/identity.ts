@@ -1,5 +1,5 @@
 import { registerPlayer } from "./players.functions";
-import { isNative, platform } from "./native";
+import { allowsGameplayRuntime, isNative, platform } from "./native";
 import { guessCountry } from "./profile";
 
 const K = "mrbchess.identity.v1";
@@ -42,6 +42,7 @@ export function getCred(): Cred {
 export type Me = Awaited<ReturnType<typeof registerPlayer>>;
 let cached: Promise<Me> | null = null;
 export function loadMe(fresh = false): Promise<Me> {
+  if (!allowsGameplayRuntime()) return Promise.reject(new Error("app_required"));
   if (!cached || fresh) {
     cached = (async () => {
       await prepareIdentity();

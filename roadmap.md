@@ -1,5 +1,10 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Spel på publicerad webb 20 nov
+- [x] Publicerad webb visar nedladdningssida och spärrar spelmontering/registrering; Lovable-förhandsvisningen får provspela enligt användarens val
+- [x] Identitetsladdningen har egen fail-closed-spärr mot alla dolda webbanrop; två regressionstester och förhandsvisning provad
+- [ ] Publicera den nya versionen för att ersätta livewebbens äldre registreringsbeteende
+
 ## Skrivskyddad felsökning – nio åtgärder 20 nov
 - [x] 1: Datorn återupptar sitt drag efter bakgrundsväxling även utan klocka; verkligt mobilprov gav svart datorrespons
 - [x] 2: Publik webb spärrar även adressvarianter innan montering; okända adresser behåller säker 404
