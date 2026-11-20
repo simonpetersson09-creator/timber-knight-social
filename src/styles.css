@@ -77,7 +77,8 @@
 
 :root {
   --radius: 0.75rem;
-  --background: oklch(0.279 0.036 222);
+  --background: hsl(195 50% 14%);
+  --scene-top: hsl(195 45% 20%);
   --foreground: oklch(0.931 0.014 82);
   --card: oklch(0.321 0.039 222);
   --card-foreground: oklch(0.93 0.025 80);
@@ -120,7 +121,10 @@
   --check: oklch(0.52 0.12 35 / 60%);
   --gradient-gold: linear-gradient(to bottom right, var(--primary-glow), var(--primary));
   --gradient-blue: linear-gradient(90deg, var(--accent-glow), var(--accent));
-  --gradient-scene: var(--background);
+  --gradient-scene: radial-gradient(ellipse at 50% 0%, var(--scene-top) 0%, var(--background) 70%);
+  --clock-surface: linear-gradient(145deg, var(--card), var(--background));
+  --clock-border: color-mix(in oklab, var(--muted-foreground) 55%, var(--border));
+  --clock-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 7%, transparent), 0 4px 12px color-mix(in oklab, var(--background) 65%, transparent);
   --shadow-gold: 0 4px 14px color-mix(in oklab, var(--primary) 35%, transparent);
   --shadow-blue: 0 4px 16px color-mix(in oklab, var(--accent) 30%, transparent);
   --shadow-board: 0 30px 60px -15px oklch(0.1 0.03 220 / 80%), 0 0 0 1px oklch(0.15 0.03 40);
@@ -242,8 +246,6 @@ h1, h2, h3, h4 { font-family: "Space Grotesk", system-ui, sans-serif; }
 }
 .home-stack { width: 100%; max-width: 384px; margin-block: auto; margin-inline: auto; display: flex; flex-direction: column; gap: 7px; position: relative; z-index: 1; }
 .home-stack .action-btn > svg { width: 16px; height: 16px; }
-.home-glow { position: fixed; left: 50%; top: 25%; width: 500px; height: 500px; transform: translate(-50%, -50%); border-radius: 9999px; pointer-events: none; background: color-mix(in oklab, var(--primary) 6%, transparent); filter: blur(120px); }
-.home-pattern { position: fixed; inset: 0; pointer-events: none; opacity: .03; background-image: conic-gradient(var(--foreground) 25%, transparent 0 50%, var(--foreground) 0 75%, transparent 0); background-size: 60px 60px; }
 .home-side { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
 .home-side .action-btn { padding-inline: 8px; line-height: 1.15; text-align: center; }
 .home-tile { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 6px; border-radius: 1rem; background: color-mix(in oklab, var(--secondary) 60%, transparent); border: 1px solid color-mix(in oklab, var(--border) 50%, transparent); }
@@ -443,6 +445,7 @@ body { overscroll-behavior-y: contain; }
 .game-actions :is(.game-clock-card .game-clock, .game-action-button) { border: 1.5px solid color-mix(in oklab, var(--primary) 60%, transparent) !important; color: oklch(0.88 0.08 84) !important;
   background: radial-gradient(ellipse at 50% 0%, var(--board-frame-glint), transparent 70%), linear-gradient(var(--board-frame-tint), var(--board-frame-tint)), url("./assets/wood-dark.jpg") center/cover, var(--wood-frame) !important;
   box-shadow: inset 0 1px 2px var(--board-frame-glint), inset 0 -3px 6px var(--board-frame-shade), 0 4px 12px var(--board-frame-shade); text-shadow: 0 1px 1px oklch(0 0 0 / 60%); }
-.game-actions .game-clock[data-running="true"] { background: var(--gradient-gold) !important; color: var(--primary-foreground) !important; text-shadow: none; }
+.game-actions .game-clock-card .game-clock { background: var(--clock-surface) !important; color: var(--foreground) !important; border: 1px solid var(--clock-border) !important; border-radius: 12px; box-shadow: var(--clock-shadow); text-shadow: none; gap: 8px; grid-auto-flow: column; justify-content: center; }
+.game-actions .game-clock[data-running="true"] { border-color: var(--muted-foreground) !important; }
 .game-actions .game-clock[data-low="true"] { background: var(--destructive) !important; color: var(--destructive-foreground) !important; }
 .game-actions .game-action-resign { border-color: color-mix(in oklab, var(--destructive) 55%, var(--primary)) !important; }

@@ -93,8 +93,6 @@ function Home() {
 
   return (
     <main className="relative flex min-h-dvh flex-col items-center overflow-x-hidden px-6 pt-[calc(28px+env(safe-area-inset-top))] pb-[calc(28px+env(safe-area-inset-bottom))]">
-      <div className="home-glow" aria-hidden />
-      <div className="home-pattern" aria-hidden />
       <motion.div className="home-stack" initial={false} animate="show"
         variants={{ show: { transition: { staggerChildren: 0.08, delayChildren: 0.15 } } }}>
         <motion.div variants={item} transition={{ duration: 0.45, ease: "easeOut" }} className="mb-8 space-y-1 text-center sm:mb-10">

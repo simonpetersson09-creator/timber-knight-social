@@ -1,5 +1,10 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Bakgrund och ikon 20 nov
+- [x] Matcha bakgrunden mot Yatzy
+- [x] Färgmatcha bondeikonen med spelets svarta pjäser och behåll hatt/monokel/kedja
+- [x] Gör tidsrutan diskret och ta bort gult fyllnadsutseende; provad i pågående mobilparti
+
 ## Statistik och spelvy 20 nov
 - [x] Kontrollera att endast färdigspelade partier räknas och samma siffror visas på startsidan och i statistiken; ofärdigt parti räknar 0, matt räknar 1, befintligt undantag för uppgivna partier kvar
 - [x] Svep från vänster till höger för att gå tillbaka utan att störa schackdrag; från vänsterkanten, stänger rutor först och sparar pågående parti
