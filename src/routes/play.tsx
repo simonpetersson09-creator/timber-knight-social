@@ -321,9 +321,9 @@ function Play() {
       </header>
 
       <div className="play-col">
-        <div className="player-top"><div className="player-profile-line">{card(top)}</div><CapturedPieces game={game} mine={top} /></div>
+        <div className="player-top"><div className="player-profile-line">{card(top)}{clock(top)}</div><CapturedPieces game={game} mine={top} /></div>
         <ChessBoard game={game} orientation={vsAi ? human : "w"} disabled={aiTurn || !!result} lastMove={lastMove} onMove={onBoardMove} />
-        <div className="player-bottom"><CapturedPieces game={game} mine={bottom} /><div className="player-profile-line">{card(bottom)}</div></div>
+        <div className="player-bottom"><CapturedPieces game={game} mine={bottom} /><div className="player-profile-line">{clock(bottom)}{card(bottom)}</div></div>
         <AnimatePresence>
           {notice && (
             <motion.div key={notice.text} className="board-notice" data-tone={notice.kind} role="status"
@@ -346,7 +346,6 @@ function Play() {
           </div>
         ) : (
           <div className="game-actions">
-            <div className="game-clock-card" aria-label="clock">{clock(result ? bottom : game.turn())}</div>
             <Button variant="ghost" onClick={offerDraw} disabled={busy || game.history().length < 2 || drawOffers >= MAX_DRAW_OFFERS} className="game-action-button game-action-draw">
               <Handshake className="size-4" /> {t("offerDraw")}
             </Button>

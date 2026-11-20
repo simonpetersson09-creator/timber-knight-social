@@ -9,7 +9,8 @@ describe("computer opponents", () => {
     expect(new Set(quickLevels.map((level) => COMPUTER_OPPONENTS[level].name)).size).toBe(4);
   });
 
-  it("uses a different icon for each quick-play level", () => {
+  it("uses an increasingly advanced chess symbol for each quick-play level", () => {
+    expect(quickLevels.map((level) => COMPUTER_OPPONENTS[level].icon)).toEqual(["pawn", "knight", "bishop", "crown"]);
     expect(new Set(quickLevels.map((level) => COMPUTER_OPPONENTS[level].icon)).size).toBe(4);
   });
 
