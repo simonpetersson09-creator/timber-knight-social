@@ -23,54 +23,67 @@ export const Route = createFileRoute("/leaderboard")({
   component: Leaderboard,
 });
 
-type Tab = "world" | "country" | "week" | "month";
 type Row = Awaited<ReturnType<typeof getLeaderboard>>[number];
+type Lists = { world: Row[]; country: Row[]; week: Row[]; month: Row[] };
+const CACHE = "mrbchess.leaderboard.v1";
+function cached<T>(k: string): T | null {
+  try { const v = sessionStorage.getItem(`${CACHE}.${k}`); return v ? (JSON.parse(v) as T) : null; } catch { return null; }
+}
+function store(k: string, v: unknown) { try { sessionStorage.setItem(`${CACHE}.${k}`, JSON.stringify(v)); } catch { /* ignore */ } }
 
 function Leaderboard() {
   const { t } = useI18n();
   const { me } = useMe();
-  const [tab, setTab] = useState<Tab>("world");
-  const [rows, setRows] = useState<Row[] | null>(null);
+  const [lists, setLists] = useState<Lists | null>(null);
   const [stats, setStats] = useState<OnlineStats | null>(null);
-  useEffect(() => { if (me) void myOnlineStats({ data: getCred() }).then(setStats).catch(() => {}); }, [me]);
+  useEffect(() => { setLists(cached<Lists>("lists")); setStats(cached<OnlineStats>("stats")); }, []);
+  useEffect(() => { if (me) void myOnlineStats({ data: getCred() }).then((v) => { setStats(v); store("stats", v); }).catch(() => {}); }, [me]);
   useEffect(() => {
-    setRows(null);
-    const kind = tab === "week" ? "week" : tab === "month" ? "month" : "year";
-    const country = tab === "country" ? me?.country ?? null : null;
-    if (tab === "country" && !country) { setRows([]); return; }
-    void getLeaderboard({ data: { kind, country } }).then(setRows).catch(() => setRows([]));
-  }, [tab, me?.country]);
+    const country = me?.country ?? null;
+    const get = (kind: "year" | "week" | "month", c: string | null) => getLeaderboard({ data: { kind, country: c } }).catch(() => [] as Row[]);
+    void Promise.all([get("year", null), country ? get("year", country) : Promise.resolve([] as Row[]), get("week", null), get("month", null)])
+      .then(([world, c, week, month]) => { const v = { world, country: c, week, month }; setLists(v); store("lists", v); });
+  }, [me?.country]);
 
-  const labels: Record<Tab, string> = { world: t("world"), country: me?.country ? flagOf(me.country) : t("country"), week: t("weekTop"), month: t("monthActive") };
+  const statRows: [string, string | number][] = stats
+    ? [[t("played"), stats.played], [t("wins"), stats.wins], [t("draws"), stats.draws], [t("winRate"), `${stats.winRate}%`], [t("streak"), stats.streak]]
+    : [];
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-4 px-5 pt-[calc(20px+env(safe-area-inset-top))] pb-8">
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-5 px-5 pt-[calc(20px+env(safe-area-inset-top))] pb-[calc(32px+env(safe-area-inset-bottom))]">
       <PageHeader title={t("leaderboards")} />
-      {stats && (
-        <div className="panel p-3">
-          <p className="field-label mb-2 text-center">{t("onlineStats")}</p>
-          <div className="stat-grid !grid-cols-5">
-            {[[stats.played, t("played")], [stats.wins, t("wins")], [stats.draws, t("draws")], [`${stats.winRate}%`, t("winRate")], [stats.streak, t("streak")]].map(([n, l]) => (
-              <div key={String(l)} className="stat-cell"><div className="stat-num">{n}</div><div className="stat-label">{l}</div></div>
-            ))}
-          </div>
+      <section className="flex flex-col gap-2">
+        <p className="lb-section-title">{t("onlineStats")}</p>
+        <div className="lb-card">
+          {(statRows.length ? statRows : [[t("played"), "…"]] as [string, string][]).map(([l, n]) => (
+            <div key={l} className="lb-row"><span className="lb-label">{l}</span><span className="lb-value">{n}</span></div>
+          ))}
         </div>
-      )}
-      <div className="seg">
-        {(Object.keys(labels) as Tab[]).map((k) => <button key={k} data-active={tab === k} onClick={() => setTab(k)} className="!px-1 text-xs">{labels[k]}</button>)}
-      </div>
-      <p className="-mt-2 text-center text-xs text-muted-foreground">{tab === "month" ? t("gamesThisMonth") : tab === "week" ? t("winsThisWeek") : t("winsThisYear")}</p>
-      <div className="panel flex flex-col gap-1 p-3">
-        {rows === null && <p className="py-4 text-center text-muted-foreground">…</p>}
-        {rows?.length === 0 && <p className="py-4 text-center text-sm text-muted-foreground">{tab === "country" && !me?.country ? t("pickCountry") : t("noRanking")}</p>}
+      </section>
+      <Board title={t("world")} sub={t("winsThisYear")} rows={lists?.world} me={me?.id} empty={t("noRanking")} />
+      <Board title={me?.country ? `${flagOf(me.country)} ${t("country")}` : t("country")} sub={t("winsThisYear")} rows={me?.country ? lists?.country : []} me={me?.id} empty={me?.country ? t("noRanking") : t("pickCountry")} />
+      <Board title={t("weekTop")} sub={t("winsThisWeek")} rows={lists?.week} me={me?.id} empty={t("noRanking")} />
+      <Board title={t("monthActive")} sub={t("gamesThisMonth")} rows={lists?.month} me={me?.id} empty={t("noRanking")} />
+    </main>
+  );
+}
+
+function Board({ title, sub, rows, me, empty }: { title: string; sub: string; rows: Row[] | undefined; me: string | undefined; empty: string }) {
+  return (
+    <section className="flex flex-col gap-1.5">
+      <p className="lb-section-title">{title}</p>
+      <p className="lb-sub -mt-1">{sub}</p>
+      <div className="lb-card">
+        {rows === undefined && <div className="lb-row"><span className="lb-label">…</span></div>}
+        {rows?.length === 0 && <div className="lb-row"><span className="text-sm text-muted-foreground">{empty}</span></div>}
         {rows?.map((r, i) => (
-          <div key={r.player} className="friend-row" data-me={r.player === me?.id}>
-            <span className="rank-num" data-top={i < 3}>{i + 1}</span>
-            <span className="friend-avatar"><PlayerAvatar avatar={r.avatar} /></span>
-            <span className="min-w-0 flex-1 truncate font-semibold">{displayName({ name: r.name, player_number: Number(r.player_number) })} {r.country && flagOf(r.country)}</span>
-            <span className="stat-num !text-lg">{Number(r.score)}</span>
+          <div key={r.player} className="lb-row" data-me={r.player === me}>
+            <span className="lb-rank" data-top={i < 3}>{i + 1}</span>
+            <span className="lb-avatar friend-avatar"><PlayerAvatar avatar={r.avatar} /></span>
+            <span className="lb-name">{displayName({ name: r.name, player_number: Number(r.player_number) })} {r.country && flagOf(r.country)}</span>
+            <span className="lb-value">{Number(r.score)}</span>
           </div>
         ))}
       </div>
-    </main>
+    </section>
   );
 }
