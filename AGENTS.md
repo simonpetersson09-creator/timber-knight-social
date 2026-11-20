@@ -50,3 +50,5 @@ use the editor.
 - Capacitor selects the existing Android package only for explicit Android CLI commands; its default matches the iOS Xcode bundle identifier so iOS packaging is consistent without migrating Android identity.
 - Short game viewports use normal-flow profiles, trays, board and actions instead of absolute viewport-height budgeting, so scrolling preserves usable board dimensions.
 - Root error and not-found boundaries resolve browser language only after hydration, so SSR and initial client rendering share a safe fallback.
+- Online notifications are enqueued by database triggers into the service-only push_outbox with unique event keys, bounded retries and token-conditional invalidation, so each game commit and its outbox insert stay atomic.
+- Local saved games are validated before use and clock state uses persisted epoch anchors with idempotent lifecycle checkpoints; no progression or unlock state remains.

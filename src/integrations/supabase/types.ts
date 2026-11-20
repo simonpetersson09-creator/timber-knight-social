@@ -402,6 +402,56 @@ export type Database = {
         }
         Relationships: []
       }
+      push_outbox: {
+        Row: {
+          attempts: number
+          available_at: string
+          created_at: string
+          data: Json
+          event_key: string
+          id: string
+          message_key: string
+          params: Json
+          player: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          available_at?: string
+          created_at?: string
+          data?: Json
+          event_key: string
+          id?: string
+          message_key: string
+          params?: Json
+          player: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          available_at?: string
+          created_at?: string
+          data?: Json
+          event_key?: string
+          id?: string
+          message_key?: string
+          params?: Json
+          player?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_outbox_player_fkey"
+            columns: ["player"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -418,6 +468,47 @@ export type Database = {
         }
         Returns: boolean
       }
+      claim_push_deliveries: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempts: number
+          available_at: string
+          created_at: string
+          data: Json
+          event_key: string
+          id: string
+          message_key: string
+          params: Json
+          player: string
+          sent_at: string | null
+          status: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "push_outbox"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      enqueue_push: {
+        Args: {
+          p_data?: Json
+          p_event: string
+          p_key: string
+          p_params?: Json
+          p_player: string
+        }
+        Returns: undefined
+      }
+      finish_push_delivery: {
+        Args: {
+          p_attempts: number
+          p_id: string
+          p_retry_seconds?: number
+          p_success: boolean
+        }
+        Returns: undefined
+      }
       ingest_chess_event: {
         Args: {
           p_detail: string
@@ -427,6 +518,13 @@ export type Database = {
           p_player: string
         }
         Returns: boolean
+      }
+      invite_chess_friend: {
+        Args: { p_friend: string; p_player: string }
+        Returns: {
+          event: string
+          id: string
+        }[]
       }
       leaderboard: {
         Args: { p_country: string; p_kind: string }

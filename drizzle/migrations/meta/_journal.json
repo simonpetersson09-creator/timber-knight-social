@@ -71,6 +71,20 @@
       "when": 1795203087106,
       "tag": "0009_persistent_abuse_limits",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795203991509,
+      "tag": "0010_transactional_push_outbox",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1795204035126,
+      "tag": "0011_atomic_invitations_and_chat_limits",
+      "breakpoints": true
     }
   ]
 }

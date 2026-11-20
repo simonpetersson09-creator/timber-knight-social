@@ -13,7 +13,6 @@ import { useMe } from "@/hooks/use-me";
 import { displayName } from "@/lib/profile";
 import { computerDisplayName } from "@/lib/computer-opponent";
 import { report } from "@/lib/report";
-import { toast } from "sonner";
 import { BoardNotice, type BoardNoticeData } from "@/components/BoardNotice";
 import { CHECKMATE_RESULT_DELAY_MS, FALLBACK_NOTICE_MS, MATCH_NOTICE_MS, MAX_DRAW_OFFERS, PLAY_FALLBACK_NOTICE, normalizedDrawOffers, playNoticeFromSearch, shouldSendDrawOffer } from "@/lib/play-motion";
 import { automaticDrawReason, otherColor, timeoutWinner } from "@/lib/chess-rules";
@@ -28,7 +27,7 @@ import { useI18n } from "@/lib/i18n";
 import { celebrate, feedback } from "@/lib/feedback";
 import { noteGameFinished, setGameplayActive, showPostMatchAd } from "@/lib/ads";
 import { onGameFinished } from "@/lib/rate";
-import { completeSavedGame, createGame, getGame, rematchConfig, saveGame, type Color, type SavedGame } from "@/lib/storage";
+import { checkpointClock, completeSavedGame, createGame, deleteGame, getGame, rematchConfig, saveGame, type Color, type SavedGame } from "@/lib/storage";
 import { ResultShareButton } from "@/components/ResultShareButton";
 
 export const Route = createFileRoute("/play")({
@@ -86,10 +85,9 @@ function Play() {
   const [reviewPly, setReviewPly] = useState<number | null>(null);
   const [startingNewGame, setStartingNewGame] = useState(false);
   const startingNewGameRef = useRef(false);
-  const turnStart = useRef(Date.now());
+  const paused = useRef(false);
   const savedRef = useRef<SavedGame | null>(null);
   const finishedGame = useRef<string | null>(null);
-  savedRef.current = saved;
   const refresh = () => setTick((x) => x + 1);
 
   useEffect(() => () => {
@@ -101,7 +99,7 @@ function Play() {
     const g = getGame(id);
     if (!g) { void navigate({ to: "/" }); return; }
     game.reset();
-    if (g.pgn) game.loadPgn(g.pgn);
+    try { if (g.pgn) game.loadPgn(g.pgn); } catch { deleteGame(id); void navigate({ to: "/" }); return; }
     const h = game.history({ verbose: true });
     const l = h[h.length - 1];
     setLastMove(l ? { from: l.from, to: l.to } : null);
@@ -111,8 +109,11 @@ function Play() {
     setReviewPly(null);
     if (endTimer.current) clearTimeout(endTimer.current);
     finishedGame.current = null;
-    turnStart.current = Date.now();
-    setSaved(g);
+    paused.current = document.visibilityState === "hidden";
+    const resumed = checkpointClock(g, game.turn(), Date.now(), !paused.current);
+    savedRef.current = resumed;
+    saveGame(resumed);
+    setSaved(resumed);
   }, [id, game, navigate]);
 
   // A quick search that ended without an opponent says so once, centred on the board.
@@ -131,12 +132,12 @@ function Play() {
 
   const vsAi = saved?.mode === "ai";
   const human: Color = saved?.human ?? "w";
-  const aiTurn = !!saved && vsAi && game.turn() !== human && !result;
+  const aiTurn = !!saved && vsAi && game.turn() !== human && !result && !paused.current;
 
   const remaining = useCallback((c: Color) => {
     const s = savedRef.current;
     if (!s?.times) return 0;
-    return c === game.turn() && !result ? s.times[c] - (Date.now() - turnStart.current) : s.times[c];
+    return c === game.turn() && !result ? s.times[c] - (s.clockStartedAt == null ? 0 : Math.max(0, Date.now() - s.clockStartedAt)) : s.times[c];
   }, [game, result]);
 
   const finish = useCallback((res: Result) => {
@@ -148,7 +149,7 @@ function Play() {
     setReviewPly(null);
     const outcome = res.winner === null ? "draw" : res.winner === s.human ? "win" : "loss";
     // Never discard the recoverable final position until its result is durably recorded.
-    const { unlocked } = completeSavedGame(s, outcome, res.reason !== "resigned");
+    completeSavedGame(s, outcome, res.reason !== "resigned");
     if (res.reason === "checkmate") showNotice(t("checkmate"), "checkmate");
     endTimer.current = setTimeout(() => setShowEnd(true), res.reason === "checkmate" ? CHECKMATE_RESULT_DELAY_MS : 0);
     noteGameFinished(s.id);
@@ -156,7 +157,6 @@ function Play() {
     report("play", "local_game_finished", JSON.stringify({ game: s.id, reason: res.reason, winner: res.winner, level: s.level }));
     feedback(outcome === "win" ? "win" : outcome === "loss" ? "lose" : "draw");
     if (outcome === "win") void celebrate();
-    if (unlocked) setTimeout(() => toast.success(t("unlocked", { level: t(unlocked) })), 900);
   }, [t]);
 
   // Recover a game closed between saving the final move and recording its result.
@@ -170,15 +170,17 @@ function Play() {
     const s = savedRef.current;
     if (!s) return;
     const n = { ...s, times, pgn: game.pgn() };
+    savedRef.current = n;
     saveGame(n);
     setSaved(n);
   }, [game]);
 
   const applyMove = useCallback((mv: { from: string; to: string; promotion?: string }) => {
     const s = savedRef.current;
-    if (!s) return;
+    if (!s || paused.current || finishedGame.current === s.id) return;
+    const now = Date.now();
     const mover = game.turn();
-    if (s.times && s.times[mover] - (Date.now() - turnStart.current) <= 0) {
+    if (s.times && s.times[mover] - (s.clockStartedAt == null ? 0 : Math.max(0, now - s.clockStartedAt)) <= 0) {
       persist({ ...s.times, [mover]: 0 });
       finish({ winner: timeoutWinner(game, mover), reason: "timeout" });
       return;
@@ -188,10 +190,10 @@ function Play() {
     setReviewPly(null);
     let times = s.times;
     if (times && s.clock) {
-      const used = Date.now() - turnStart.current;
+      const used = s.clockStartedAt == null ? 0 : Math.max(0, now - s.clockStartedAt);
       times = { ...times, [mover]: Math.max(0, times[mover] - used) + s.clock.inc * 1000 };
     }
-    turnStart.current = Date.now();
+    savedRef.current = { ...s, clockStartedAt: s.times ? now : null };
     setLastMove({ from: m.from, to: m.to });
     persist(times);
     refresh();
@@ -209,10 +211,12 @@ function Play() {
     setThinking(true);
     let cancelled = false;
     const fen = game.fen();
+    const position = new Chess();
+    position.loadPgn(game.pgn());
     const started = Date.now();
     const timer = setTimeout(async () => {
       let mv: { from: string; to: string; promotion?: string } | null = null;
-      const uci = await stockfishMove(fen, saved.level);
+      const uci = await stockfishMove(position, saved.level);
       if (uci) mv = { from: uci.slice(0, 2), to: uci.slice(2, 4), ...(uci[4] ? { promotion: uci[4] } : {}) };
       else { const m = bestMove(fen, saved.level === "beginner" ? "beginner" : saved.level === "medium" ? "medium" : "expert"); if (m) mv = { from: m.from, to: m.to, ...(m.promotion ? { promotion: m.promotion } : {}) }; }
       // Keep a natural minimum thinking pause even when the engine answers instantly.
@@ -230,6 +234,7 @@ function Play() {
   useEffect(() => {
     if (!saved?.clock || result) return;
     const iv = setInterval(() => {
+      if (paused.current || finishedGame.current === savedRef.current?.id) return;
       setNow(Date.now());
       const c = game.turn();
       if (remaining(c) <= 0) {
@@ -241,25 +246,45 @@ function Play() {
     return () => clearInterval(iv);
   }, [saved?.clock, saved?.id, result, game, remaining, finish, persist]);
 
-  // Pause the clock while the app is in the background
+  // Persist the debit and anchor synchronously, including same-tick events and route exits.
   useEffect(() => {
-    const onVis = () => {
-      const s = savedRef.current;
-      if (!s?.times || result) return;
-      if (document.visibilityState === "hidden") {
-        const c = game.turn();
-        persist({ ...s.times, [c]: Math.max(0, s.times[c] - (Date.now() - turnStart.current)) });
-        turnStart.current = Date.now();
-      } else turnStart.current = Date.now();
+    const transition = (running: boolean) => {
+      const current = savedRef.current;
+      if (!current || current.id !== id || finishedGame.current === current.id || paused.current === !running) return;
+      paused.current = !running;
+      const next = checkpointClock(current, game.turn(), Date.now(), running);
+      savedRef.current = next;
+      saveGame(next);
+      setSaved(next);
     };
+    const onVis = () => transition(document.visibilityState !== "hidden");
+    const onHide = () => transition(false);
     document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
-  }, [game, persist, result]);
+    window.addEventListener("pagehide", onHide);
+    onVis();
+    let disposed = false;
+    let removeNative: (() => void) | undefined;
+    void import("@capacitor/app").then(async ({ App }) => {
+      const handle = await App.addListener("appStateChange", ({ isActive }) => {
+        if (!disposed) transition(isActive && document.visibilityState !== "hidden");
+      });
+      if (disposed) void handle.remove();
+      else removeNative = () => { void handle.remove(); };
+    }).catch(() => {});
+    return () => {
+      disposed = true;
+      removeNative?.();
+      onHide();
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("pagehide", onHide);
+    };
+  }, [id, game]);
 
   function onBoardMove(from: Square, to: Square) {
     const s = savedRef.current;
+    if (paused.current || !s || finishedGame.current === s.id) return;
     const mover = game.turn();
-    if (s?.times && s.times[mover] - (Date.now() - turnStart.current) <= 0) {
+    if (s.times && s.times[mover] - (s.clockStartedAt == null ? 0 : Math.max(0, Date.now() - s.clockStartedAt)) <= 0) {
       persist({ ...s.times, [mover]: 0 });
       finish({ winner: timeoutWinner(game, mover), reason: "timeout" });
       return;

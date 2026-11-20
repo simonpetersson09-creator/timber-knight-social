@@ -7,6 +7,7 @@ import { timeoutWinner } from "@/lib/chess-rules";
 import { allowsNotification } from "@/lib/notification-preferences";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { ABUSE_QUOTAS, type AbuseAction } from "./abuse-policy";
+import { pushRetrySeconds, shouldInvalidatePushToken, shouldRetryPush } from "@/lib/push-delivery";
 
 export const Cred = z.object({ id: z.string().uuid(), secret: z.string().min(20).max(100) });
 export type CredT = z.infer<typeof Cred>;
@@ -55,19 +56,53 @@ export async function auth(c: CredT) {
 
 export const nameOf = (p: { name: string | null; player_number: number } | null | undefined) => (p ? p.name ?? `#${p.player_number}` : "?");
 
-/** Sends a push notification in the recipient's language. Silently skipped until push is connected. */
-export async function notify(a: DB, playerId: string, key: Key, params: Record<string, string>, data: Record<string, string>) {
-  const { data: p } = await a.from("players").select("push_token, notify, lang, notify_turn, notify_reminders, notify_play").eq("id", playerId).maybeSingle();
-  if (!p?.push_token || !allowsNotification(key, p)) return;
+function pushStrings(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, String(entry)]));
+}
+
+/** Claims durable outbox rows once, delivers them and settles each exact attempt. */
+export async function deliverPushBatch(a: DB): Promise<void> {
   const lovable = process.env["LOVABLE_API_KEY"], fcm = process.env["FIREBASE_MESSAGING_API_KEY"];
   if (!lovable || !fcm) return;
-  const res = await fetch("https://connector-gateway.lovable.dev/firebase_messaging/v1/projects/_/messages:send", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${lovable}`, "X-Connection-Api-Key": fcm, "Content-Type": "application/json" },
-    body: JSON.stringify({ message: { token: p.push_token, notification: { title: "Mr B Chess", body: translate(p.lang, key, params) }, data } }),
-  });
-  if (res.status === 404 || res.status === 400) await a.from("players").update({ push_token: null }).eq("id", playerId);
-  else if (!res.ok) console.error(`FCM send failed [${res.status}]: ${await res.text()}`);
+  const { data: jobs, error: claimError } = await a.rpc("claim_push_deliveries", { p_limit: 25 });
+  if (claimError) { console.error(`Push claim failed: ${claimError.message}`); return; }
+  for (const job of jobs ?? []) {
+    const settle = async (success: boolean, retrySeconds = 60) => {
+      const { error } = await a.rpc("finish_push_delivery", { p_id: job.id, p_attempts: job.attempts, p_success: success, p_retry_seconds: retrySeconds });
+      if (error) console.error(`Push settlement failed: ${error.message}`);
+    };
+    const { data: p } = await a.from("players").select("push_token, notify, lang, notify_turn, notify_reminders, notify_play").eq("id", job.player).maybeSingle();
+    const key = job.message_key as Key;
+    if (!p?.push_token || !allowsNotification(key, p)) { await settle(true); continue; }
+    const attemptedToken = p.push_token;
+    const res = await fetch("https://connector-gateway.lovable.dev/firebase_messaging/v1/projects/_/messages:send", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${lovable}`, "X-Connection-Api-Key": fcm, "Content-Type": "application/json" },
+      body: JSON.stringify({ message: { token: attemptedToken, notification: { title: "Mr B Chess", body: translate(p.lang, key, pushStrings(job.params)) }, data: pushStrings(job.data) } }),
+    }).catch(() => null);
+    if (res?.ok) { await settle(true); continue; }
+    const status = res?.status ?? null;
+    if (status !== null && shouldInvalidatePushToken(status)) {
+      // A late failure for an old token must never clear a newly registered token.
+      const { error } = await a.from("players").update({ push_token: null }).eq("id", job.player).eq("push_token", attemptedToken);
+      if (error) console.error(`Push token cleanup failed: ${error.message}`);
+      await settle(true);
+      continue;
+    }
+    if (shouldRetryPush(status)) {
+      if (res) console.error(`FCM send failed [${res.status}]: ${await res.text()}`);
+      await settle(false, pushRetrySeconds(job.attempts));
+      continue;
+    }
+    if (res) console.error(`FCM terminal failure [${res.status}]: ${await res.text()}`);
+    await settle(true); // Terminal client failures are discarded, never retried.
+  }
+}
+
+/** Game/reminder triggers enqueue atomically; this drains after the surrounding commit. */
+export async function notify(a: DB, _playerId: string, _key: Key, _params: Record<string, string>, _data: Record<string, string>) {
+  await deliverPushBatch(a);
 }
 
 /** Admin-only delivery check. Returns an explicit result instead of silently skipping. */
@@ -82,7 +117,10 @@ export async function notifyTest(a: DB, playerId: string): Promise<"sent" | "mis
     body: JSON.stringify({ message: { token: p.push_token, notification: { title: "Mr B Chess", body: "Testnotis från Mr B Chess" }, data: { test: "admin" } } }),
   }).catch(() => null);
   if (!res) return "failed";
-  if (res.status === 404 || res.status === 400) await a.from("players").update({ push_token: null }).eq("id", playerId);
+  if (shouldInvalidatePushToken(res.status)) {
+    const { error } = await a.from("players").update({ push_token: null }).eq("id", playerId).eq("push_token", p.push_token);
+    if (error) console.error(`Push token cleanup failed: ${error.message}`);
+  }
   return res.ok ? "sent" : "failed";
 }
 

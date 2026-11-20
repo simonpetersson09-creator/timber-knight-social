@@ -13,6 +13,29 @@ export const RATE_AT = [5, 15, 35] as const; // after 5, then +10, then +20 — 
 export type MatchRow = { white: string; black: string; result: "w" | "b" | "d"; counts: boolean; finished_at: string };
 export type OnlineStats = { played: number; wins: number; losses: number; draws: number; winRate: number; streak: number };
 
+/** A finished, decisive/drawn result counts; resignations and closed games never do. */
+export function onlineGameCountsForStats(game: { status: string; result: string | null; end_reason: string | null }): boolean {
+  return game.status === "finished" && ["w", "b", "d"].includes(game.result ?? "") && game.end_reason !== "resign";
+}
+
+/** Invalidates old polling responses across optimistic moves, cleanup and match changes. */
+export function createOnlineReadGuard() {
+  let sequence = 0;
+  let active = true;
+  let blocked = false;
+  return {
+    activate() { active = true; sequence++; },
+    dispose() { active = false; sequence++; },
+    invalidate() { sequence++; },
+    block() { blocked = true; sequence++; },
+    unblock() { blocked = false; sequence++; },
+    get active() { return active; },
+    get blocked() { return blocked; },
+    begin(): number | null { return active && !blocked ? ++sequence : null; },
+    accepts(ticket: number): boolean { return active && !blocked && ticket === sequence; },
+  };
+}
+
 export type ClosableGame = { status: string; host: string; invitee: string | null; white: string | null; black: string | null };
 /** Only participants may remove an unfinished game; completed history is never deleted here. */
 export function canCloseOnlineGame(game: ClosableGame, me: string): boolean {

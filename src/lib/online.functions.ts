@@ -1,9 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { Chess } from "chess.js";
 import { z } from "zod";
-import { canCloseOnlineGame, INVITE_TTL_MS, LOBBY_TTL_MS, MOVE_LIMIT_MS, statsFor, type MatchRow } from "./online-rules";
+import { canCloseOnlineGame, LOBBY_TTL_MS, MOVE_LIMIT_MS, statsFor, type MatchRow } from "./online-rules";
 import { automaticDrawReason } from "./chess-rules";
-import { Cred, PLAYER_COLS, allMatches, auth, enforceAbuseLimit, finishGame, finishTimedOutGame, nameOf, notify, requestSubject, sweepGames, type DB } from "./server/core";
+import { Cred, PLAYER_COLS, allMatches, auth, deliverPushBatch, enforceAbuseLimit, finishGame, finishTimedOutGame, nameOf, notify, requestSubject, sweepGames, type DB } from "./server/core";
 
 const GAME_COLS = "id, kind, status, host, invitee, white, black, code, pgn, fen, result, end_reason, draw_offer, draw_offers_w, draw_offers_b, last_move_at, reminded, expires_at, created_at";
 const later = (ms: number) => new Date(Date.now() + ms).toISOString();
@@ -57,21 +57,11 @@ export const inviteFriend = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { a, me } = await auth(data);
     await enforceAbuseLimit("invites", requestSubject(me));
-    const { data: fr } = await a.from("friendships").select("id").eq("status", "accepted")
-      .or(`and(requester.eq.${me},addressee.eq.${data.friend}),and(requester.eq.${data.friend},addressee.eq.${me})`).maybeSingle();
-    if (!fr) throw new Error("not_friends");
-    // Crossed invitations merge: if the friend already invited me, start that game.
-    const { data: crossed } = await a.from("games").select("id").eq("kind", "invite").eq("status", "waiting").eq("host", data.friend).eq("invitee", me).gt("expires_at", new Date().toISOString()).maybeSingle();
-    if (crossed && (await start(a, crossed.id, data.friend, me))) {
-      await notify(a, data.friend, "pushLobbyJoined", { name: await playerName(a, me) }, { game: crossed.id });
-      return { id: crossed.id, merged: true };
-    }
-    const { data: existing } = await a.from("games").select("id").eq("kind", "invite").eq("status", "waiting").eq("host", me).eq("invitee", data.friend).gt("expires_at", new Date().toISOString()).maybeSingle();
-    if (existing) return { id: existing.id, merged: false };
-    const { data: g, error } = await a.from("games").insert({ kind: "invite", host: me, invitee: data.friend, expires_at: later(INVITE_TTL_MS) }).select("id").single();
-    if (error) throw new Error(error.message);
-    await notify(a, data.friend, "pushInvite", { name: await playerName(a, me) }, { game: g.id });
-    return { id: g.id, merged: false };
+    const { data: invitation, error } = await a.rpc("invite_chess_friend", { p_player: me, p_friend: data.friend }).single();
+    if (error || !invitation) throw new Error(error?.message ?? "invite_failed");
+    // The invitation transaction and its outbox trigger commit together.
+    await deliverPushBatch(a);
+    return { id: invitation.id, merged: invitation.event === "started" };
   });
 
 export const createLobby = createServerFn({ method: "POST" })
@@ -130,6 +120,7 @@ export const quickMatch = createServerFn({ method: "POST" })
     if (error) throw new Error("quick_match_failed");
     const row = rows?.[0];
     if (!row) throw new Error("quick_match_failed");
+    await deliverPushBatch(a);
     return { id: row.id, status: row.status };
   });
 
@@ -237,9 +228,11 @@ export const sendChat = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { a, me } = await auth(data);
     const { g } = await loadActive(a, data.gameId, me);
-    const { count } = await a.from("game_chat").select("id", { count: "exact", head: true }).eq("game_id", g.id).eq("player", me).gt("created_at", new Date(Date.now() - 10_000).toISOString());
-    if ((count ?? 0) >= 3) return { ok: false };
-    await a.from("game_chat").insert({ game_id: g.id, player: me, phrase: data.phrase });
+    const { error } = await a.from("game_chat").insert({ game_id: g.id, player: me, phrase: data.phrase });
+    if (error) {
+      if (error.message.includes("chat_rate_limit")) return { ok: false };
+      throw new Error("chat_insert_failed");
+    }
     return { ok: true };
   });
 

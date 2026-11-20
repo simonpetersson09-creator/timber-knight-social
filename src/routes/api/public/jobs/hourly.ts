@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
 import { shouldSendPlayReminder } from "@/lib/online-rules";
-import { db, notify, sweepGames } from "@/lib/server/core";
+import { db, deliverPushBatch, notify, sweepGames } from "@/lib/server/core";
 
 // Hourly: forfeits idle online games, sends move reminders and the 7-day play reminder (18:00 local).
 export const Route = createFileRoute("/api/public/jobs/hourly")({
@@ -42,6 +42,7 @@ export const Route = createFileRoute("/api/public/jobs/hourly")({
         if (!last || !idle || idle.length < 500) break;
         cursor = last.id;
         }
+        await deliverPushBatch(a);
         return Response.json({ swept, reminders: sent });
       },
     },

@@ -1,5 +1,17 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Releasegranskning – spel och online 20 nov
+- [x] G05: beständiga klockankare och idempotenta avbrotts-/återupptagningspunkter; exakt tid verifierad i spelvyn efter paus och omladdning
+- [x] G06: Stockfish får startställning och samtliga UCI-drag; repetition och bondeförvandling testade
+- [x] G07: sparningar, PGN, klockor och statistik valideras/migreras; skadade poster isoleras utan resultaträkning eller krasch
+- [x] G09: död progression och delade statistikstandardvärden borttagna; nivå-/lägesstatistik och deduplicering bevarade
+- [x] O05: sekvenskydd blockerar gamla lässvar vid polling, egna drag, avmontering och matchbyte; två spelarvyer provade e4/e5
+- [x] O06: atomiska och parunika väninbjudningar; samtidiga korsade anrop gav samma match-ID
+- [x] O07: databaslåst chattgräns och felhantering; fyra samtidiga meddelanden gav exakt tre godkända
+- [x] O08: delad regel exkluderar stängda/uppgivna matcher från samtliga statistikfält
+- [x] O10: transaktionell notiskö med unika händelser, låsta leveransförsök och backoff; inbjudan/anslutning/drag köades exakt en gång
+- [x] O11: ogiltiga tokens raderas bara med villkor på samma token som faktiskt användes; äldre svar kan inte radera en ny token
+
 ## Releasegranskning – nästa tio åtgärder 20 nov
 - [x] S01: beständiga hashade kvoter, 750 kB storleksspärr och adminbackoff; åtta fel registrerades och nionde spärrades i 30 minuter, testdata rensades
 - [x] S08: säkra produktions- och utvecklingsberoenden; 0 produktionssårbarheter och 0 auditvarningar

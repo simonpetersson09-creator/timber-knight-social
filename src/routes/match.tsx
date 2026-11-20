@@ -21,7 +21,7 @@ import { useI18n, type Key } from "@/lib/i18n";
 import { getCred } from "@/lib/identity";
 import { abandonQuickMatch, cancelGame, gameAction, getOnlineGame, makeMove, quickMatch, sendChat } from "@/lib/online.functions";
 import { displayName, flagOf } from "@/lib/profile";
-import { QUICK_WAIT_MS } from "@/lib/online-rules";
+import { createOnlineReadGuard, onlineGameCountsForStats, QUICK_WAIT_MS } from "@/lib/online-rules";
 import { CHECKMATE_RESULT_DELAY_MS, MATCH_NOTICE_MS, MAX_DRAW_OFFERS, PLAY_FALLBACK_NOTICE } from "@/lib/play-motion";
 import { celebrate, feedback } from "@/lib/feedback";
 import { hideSearchBanner, noteGameFinished, setGameplayActive, showPostMatchAd, showSearchBanner } from "@/lib/ads";
@@ -49,6 +49,11 @@ export const CHAT: Key[] = ["chat0", "chat1", "chat2", "chat3", "chat4", "chat5"
 type Data = Awaited<ReturnType<typeof getOnlineGame>>;
 
 function Match() {
+  const { id } = Route.useSearch();
+  return <MatchSession key={id} />;
+}
+
+function MatchSession() {
   const { id, level: fallbackLevel = "medium", clock: fallbackClock = 0 } = Route.useSearch();
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -73,6 +78,11 @@ function Match() {
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resultTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const game = useRef(new Chess()).current;
+  const readGuard = useMemo(() => createOnlineReadGuard(), []);
+  useEffect(() => {
+    readGuard.activate();
+    return () => readGuard.dispose();
+  }, [readGuard]);
 
   const showNotice = useCallback((text: string, kind: BoardNoticeData["kind"] = "draw") => {
     setNotice({ text, kind });
@@ -87,10 +97,14 @@ function Match() {
   }, [game, showNotice, t]);
 
   const load = useCallback(async () => {
+    const ticket = readGuard.begin();
+    if (ticket === null) return;
     try {
       const r = await getOnlineGame({ data: { ...getCred(), gameId: id, after: lastChat.current } });
+      if (!readGuard.accepts(ticket)) return;
       if (r.game.kind === "quick" && r.game.status === "waiting" && r.game.host === r.me) {
         const matched = await quickMatch({ data: { ...getCred(), gameId: id } });
+        if (!readGuard.accepts(ticket)) return;
         if (matched.status === "active" && matched.id !== id) {
           await navigate({ to: "/match", search: { id: matched.id, level: fallbackLevel, clock: fallbackClock }, replace: true });
           return;
@@ -122,10 +136,18 @@ function Match() {
         prevPgn.current = r.game.pgn;
       }
       setD(r);
-    } catch { toast.error(t("error")); void navigate({ to: "/" }); }
-  }, [id, game, t, navigate, notifyCheck, showNotice, fallbackLevel, fallbackClock]);
+    } catch {
+      if (!readGuard.accepts(ticket)) return;
+      toast.error(t("error"));
+      void navigate({ to: "/" });
+    }
+  }, [id, game, t, navigate, notifyCheck, showNotice, fallbackLevel, fallbackClock, readGuard]);
 
-  useEffect(() => { void load(); const i = setInterval(() => void load(), 2000); return () => clearInterval(i); }, [load]);
+  useEffect(() => {
+    void load();
+    const i = setInterval(() => void load(), 2000);
+    return () => { clearInterval(i); readGuard.invalidate(); };
+  }, [load, readGuard]);
   useEffect(() => setReviewPly(null), [id]);
   useEffect(() => () => {
     if (noticeTimer.current) clearTimeout(noticeTimer.current);
@@ -148,11 +170,13 @@ function Match() {
     void (async () => {
       try {
         const current = await quickMatch({ data: { ...getCred(), gameId: g.id } });
+        if (!readGuard.active) return;
         if (current.status === "active") {
           if (current.id !== g.id) await navigate({ to: "/match", search: { id: current.id, level: fallbackLevel, clock: fallbackClock }, replace: true });
           return;
         }
         const abandoned = await abandonQuickMatch({ data: { ...getCred(), gameId: g.id } });
+        if (!readGuard.active) return;
         if (abandoned.status === "active") return;
         if (abandoned.status !== "expired") { fallbackStarted.current = false; return; }
         const local = createGame({ mode: "ai", level: fallbackLevel, human: "w", clock: CLOCKS[fallbackClock] ?? null });
@@ -164,11 +188,12 @@ function Match() {
           await navigate({ to: "/" });
         }
       } catch {
+        if (!readGuard.active) return;
         fallbackStarted.current = false;
         toast.error(t("error"));
       }
     })();
-  }, [g?.kind, g?.status, g?.id, now, started, navigate, t, fallbackLevel, fallbackClock]);
+  }, [g?.kind, g?.status, g?.id, now, started, navigate, t, fallbackLevel, fallbackClock, readGuard]);
 
   useEffect(() => {
     if (g?.status !== "active") return;
@@ -180,7 +205,7 @@ function Match() {
     if (g?.status !== "finished" || endHandled.current) return;
     endHandled.current = true;
     const won = g.result !== "d" && g.result === myColor;
-    recordResult(g.id, g.result === "d" ? "draw" : won ? "win" : "loss", null, g.end_reason !== "resign", "online");
+    recordResult(g.id, g.result === "d" ? "draw" : won ? "win" : "loss", null, onlineGameCountsForStats(g), "online");
     reportOnce("play", "online_game_finished", JSON.stringify({ game: g.id, kind: g.kind, result: g.result, reason: g.end_reason }), `online-finished:${g.id}`);
     noteGameFinished(g.id);
     setShowResult(false);
@@ -260,16 +285,28 @@ function Match() {
   const deadlineH = Math.min(48, Math.max(0, Math.ceil((new Date(g.expires_at).getTime() - now) / 3_600_000)));
 
   async function move(from: Square, to: Square, promotion?: "q" | "r" | "b" | "n") {
+    if (!readGuard.active || readGuard.blocked) return;
     if (g?.status !== "active" || new Date(g.expires_at).getTime() <= Date.now()) { void load(); return; }
     const backup = game.pgn();
-    try { game.move({ from, to, ...(promotion ? { promotion } : {}) }); } catch { return; }
-    prevPgn.current = game.pgn();
-    setD((x) => (x ? { ...x } : x));
-    feedback(game.inCheck() ? "check" : "move");
-    notifyCheck();
-    const r = await makeMove({ data: { ...getCred(), gameId: id, from, to, ...(promotion ? { promotion } : {}) } }).catch(() => ({ ok: false }));
-    if (!r.ok) { game.reset(); if (backup) game.loadPgn(backup); prevPgn.current = backup; }
-    void load();
+    readGuard.block();
+    try {
+      try { game.move({ from, to, ...(promotion ? { promotion } : {}) }); } catch { return; }
+      prevPgn.current = game.pgn();
+      setD((x) => (x ? { ...x } : x));
+      feedback(game.inCheck() ? "check" : "move");
+      notifyCheck();
+      const r = await makeMove({ data: { ...getCred(), gameId: id, from, to, ...(promotion ? { promotion } : {}) } }).catch(() => ({ ok: false }));
+      if (!readGuard.active) return;
+      if (!r.ok) {
+        game.reset();
+        if (backup) game.loadPgn(backup);
+        prevPgn.current = backup;
+        setD((x) => (x ? { ...x } : x));
+      }
+    } finally {
+      readGuard.unblock();
+      if (readGuard.active) void load();
+    }
   }
   function onBoardMove(from: Square, to: Square) {
     if (game.moves({ square: from, verbose: true }).some((m) => m.to === to && m.promotion)) setPromo({ from, to });
@@ -279,17 +316,24 @@ function Match() {
     setAsk(null);
     try {
       const result = await gameAction({ data: { ...getCred(), gameId: id, action } });
+      if (!readGuard.active) return;
       if (action === "offerDraw" && result.ok) showNotice(t("drawOffered"));
       else if (action === "declineDraw" && result.ok) showNotice(t("drawDeclined"));
       void load();
     } catch {
-      toast.error(t("error"));
+      if (readGuard.active) toast.error(t("error"));
     }
   }
   async function say(i: number) {
     setAsk(null);
-    setBubble({ mine: true, text: t(CHAT[i] ?? "chat0") });
-    await sendChat({ data: { ...getCred(), gameId: id, phrase: i } }).catch(() => {});
+    try {
+      const result = await sendChat({ data: { ...getCred(), gameId: id, phrase: i } });
+      if (!readGuard.active) return;
+      if (!result.ok) { toast.error(t("error")); return; }
+      setBubble({ mine: true, text: t(CHAT[i] ?? "chat0") });
+    } catch {
+      if (readGuard.active) toast.error(t("error"));
+    }
   }
 
   const card = (pid: string | null | undefined, c: "w" | "b") => {

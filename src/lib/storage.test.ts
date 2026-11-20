@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { STATS_CHANGED, completeSavedGame, createGame, deleteGame, getGame, getStats, recordResult, rematchConfig, resetStats, saveGame } from "./storage";
+import { STATS_CHANGED, checkpointClock, completeSavedGame, createGame, deleteGame, getGame, getStats, listGames, recordResult, rematchConfig, resetStats, saveGame, turnOf } from "./storage";
 describe("local statistics", () => {
   beforeEach(() => localStorage.clear());
   it("keeps mode, level, color and the exact clock for a direct rematch", () => {
@@ -48,7 +48,8 @@ describe("local statistics", () => {
   });
   it("reset clears statistics without allowing the same game to count again", () => {
     recordResult("1", "win", "hard"); resetStats(); recordResult("1", "win", "hard");
-    expect(getStats()).toMatchObject({ played: 0, wins: 0, losses: 0, draws: 0, streak: 0, bestStreak: 0, levelWins: {} });
+    expect(getStats()).toMatchObject({ played: 0, wins: 0, losses: 0, draws: 0, streak: 0, bestStreak: 0 });
+    expect(getStats()).not.toHaveProperty("levelWins");
   });
   it("tracks each level and game mode without changing total results", () => {
     recordResult("a", "win", "beginner", true, "ai");

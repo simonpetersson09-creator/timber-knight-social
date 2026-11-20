@@ -31,8 +31,10 @@ describe("computer levels", () => {
       onmessage: ((event: { data: string }) => void) | null = null;
       onerror: ((event: unknown) => void) | null = null;
       terminated = false;
+      messages: string[] = [];
       constructor(_url: string) { FakeWorker.instances.push(this); }
       postMessage(message: string) {
+        this.messages.push(message);
         if (message === "isready") queueMicrotask(() => this.onmessage?.({ data: "readyok" }));
         if (message.startsWith("go ") && FakeWorker.answer) queueMicrotask(() => this.onmessage?.({ data: "bestmove e2e4" }));
       }
@@ -48,10 +50,13 @@ describe("computer levels", () => {
       expect(FakeWorker.instances[0]?.terminated).toBe(true);
 
       FakeWorker.answer = true;
-      const second = isolatedMove(new (await import("chess.js")).Chess().fen(), "medium");
+      const position = new (await import("chess.js")).Chess();
+      position.move("Nf3"); position.move("Nf6");
+      const second = isolatedMove(position, "medium");
       await vi.advanceTimersByTimeAsync(0);
       await expect(second).resolves.toBe("e2e4");
       expect(FakeWorker.instances).toHaveLength(2);
+      expect(FakeWorker.instances[1]?.messages).toContain("position startpos moves g1f3 g8f6");
     } finally {
       vi.useRealTimers();
       vi.unstubAllGlobals();

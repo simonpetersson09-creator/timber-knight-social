@@ -1,3 +1,4 @@
+import { Chess } from "chess.js";
 import wasm from "@/assets/stockfish-wasm.asset.json";
 import type { Level } from "./engine";
 
@@ -57,10 +58,19 @@ export function preloadStockfish() { if (typeof Worker !== "undefined") boot().c
 
 let queue: Promise<unknown> = Promise.resolve();
 
+/** Preserve the initial position and every ply, including repeated positions. */
+export function stockfishPosition(game: Chess): string {
+  const moves = game.history({ verbose: true });
+  const initial = moves[0]?.before ?? game.fen();
+  const base = initial === new Chess().fen() ? "startpos" : `fen ${initial}`;
+  return `position ${base}${moves.length ? ` moves ${moves.map((m) => m.from + m.to + (m.promotion ?? "")).join(" ")}` : ""}`;
+}
+
 /** Best move in UCI form, or null after a fully cleaned-up engine failure/timeout. */
-export function stockfishMove(fen: string, level: Level): Promise<string | null> {
+export function stockfishMove(position: string | Chess, level: Level): Promise<string | null> {
   const cfg = SF_CFG[level];
   if (!cfg || typeof Worker === "undefined") return Promise.resolve(null);
+  const command = typeof position === "string" ? `position fen ${position}` : stockfishPosition(position);
   const run = queue.then(async () => {
     const w = await boot();
     return new Promise<string | null>((resolve) => {
@@ -85,7 +95,7 @@ export function stockfishMove(fen: string, level: Level): Promise<string | null>
       try {
         for (const [key, value] of Object.entries(cfg.options)) w.postMessage(`setoption name ${key} value ${value}`);
         w.postMessage("ucinewgame");
-        w.postMessage(`position fen ${fen}`);
+        w.postMessage(command);
         w.postMessage(cfg.depth ? `go depth ${cfg.depth}` : `go movetime ${cfg.movetime}`);
       } catch { fail(); }
     });
