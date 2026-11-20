@@ -306,7 +306,7 @@ function Play() {
 
   const card = (c: Color) => (
     <GamePlayerCard name={nameOf(c)} avatar={c === human ? me?.avatar : undefined} computer={vsAi && c !== human} level={saved.level} color={c}
-      active={activeKind(c)} />
+      active={activeKind(c)} thinking={thinking && vsAi && c !== human} thinkingLabel={t("thinking")} />
   );
   const clock = (c: Color) => (
     <GameClock time={saved.clock ? fmt(remaining(c)) : "∞"} color={c} active={activeKind(c)}

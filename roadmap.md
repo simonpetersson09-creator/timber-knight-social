@@ -1,6 +1,9 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
 ## Spelvyn 20 nov
+- [x] Tre tänkprickar i datorns namnkort medan den tänker; oförändrad kortbredd provspelad
+- [x] Diskreta guldhörn för senaste draget i stället för heltäckande gul yta
+- [x] Mjuk kantpuls vid låg tid utan helt rött klockkort; riktig 15-sekundarstid och 320/394 px verifierade
 - [x] Tidskort och namnkort med exakt samma höjd (30 px), mätt på 320/394 px
 - [x] Centrerad extra bekräftelse innan Föreslå oavgjort skickas eller räknas; avbryt och tvåförslagsspärr provspelade
 - [x] Noa, Alva, Kim och Sam med bonde, springare, löpare och krona som nivåikoner (användarbekräftat)
