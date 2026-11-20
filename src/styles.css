@@ -383,21 +383,12 @@ h1, h2, h3, h4 { font-family: "Space Grotesk", system-ui, sans-serif; }
   background: radial-gradient(circle at 35% 30%, color-mix(in oklab, var(--primary) 16%, var(--secondary)), var(--secondary)); box-shadow: 0 4px 14px color-mix(in oklab, var(--background) 70%, transparent), inset 0 1px 0 color-mix(in oklab, var(--primary) 25%, transparent); transition: transform .15s; }
 .play-back:active { transform: scale(.94); }
 .game-status { text-align: center; font-size: 12px; font-weight: 600; color: var(--muted-foreground); }
-.move-history { position: relative; z-index: 35; width: 100%; }
-.move-history-toggle { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; height: 34px; padding: 0 12px; border: 1px solid color-mix(in oklab, var(--primary) 24%, transparent); border-radius: 10px; background: color-mix(in oklab, var(--secondary) 86%, transparent); color: var(--foreground); font-size: 11px; font-weight: 700; }
-.move-history-toggle > svg { color: var(--primary); }
-.move-history-toggle > svg:last-child { margin-left: 2px; transition: transform .2s; }
-.move-history-toggle > svg:last-child[data-open="true"] { transform: rotate(180deg); }
-.move-history-count { min-width: 22px; padding: 2px 5px; border-radius: 999px; background: color-mix(in oklab, var(--primary) 10%, transparent); color: var(--muted-foreground); font-size: 9px; font-variant-numeric: tabular-nums; }
-.move-history-panel { position: absolute; left: 0; right: 0; bottom: calc(100% + 8px); max-height: min(190px, 35dvh); overflow-y: auto; padding: 8px; border: 1px solid color-mix(in oklab, var(--primary) 35%, transparent); border-radius: 12px; background: color-mix(in oklab, var(--card) 97%, transparent); box-shadow: 0 14px 34px color-mix(in oklab, var(--background) 80%, transparent); backdrop-filter: blur(8px); }
-.move-history-row { display: grid; grid-template-columns: 26px repeat(2, minmax(0, 1fr)); align-items: center; gap: 4px; min-height: 30px; }
-.move-history-row > span:first-child { color: var(--muted-foreground); text-align: right; font-size: 10px; font-variant-numeric: tabular-nums; }
-.move-history-row button { height: 28px; padding: 0 8px; border-radius: 7px; color: var(--foreground); text-align: left; font-size: 11px; font-weight: 600; }
-.move-history-row button:not(:disabled):hover { background: var(--secondary); }
-.move-history-row button[data-active="true"] { background: color-mix(in oklab, var(--primary) 15%, var(--secondary)); color: var(--primary); }
-.move-history-row button:disabled { opacity: 1; cursor: default; }
-.move-history-final { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; height: 30px; margin-bottom: 6px; border-radius: 8px; background: var(--secondary); color: var(--primary); font-size: 11px; font-weight: 700; }
-.move-history-empty { padding: 8px; color: var(--muted-foreground); text-align: center; }
+.move-history { position: relative; z-index: 35; display: grid; grid-template-columns: repeat(2, 48px); justify-content: center; gap: 8px; width: 100%; }
+.move-history-arrow { display: grid; place-items: center; width: 48px; height: 34px; border: 1px solid color-mix(in oklab, var(--primary) 30%, transparent); border-radius: 10px; background: color-mix(in oklab, var(--secondary) 86%, transparent); color: var(--primary); box-shadow: inset 0 1px 0 color-mix(in oklab, var(--primary) 10%, transparent); transition: transform .15s, background .2s, opacity .2s; }
+.move-history-arrow:not(:disabled):hover { background: color-mix(in oklab, var(--primary) 12%, var(--secondary)); }
+.move-history-arrow:not(:disabled):active { transform: scale(.94); }
+.move-history-arrow:disabled { opacity: .35; cursor: default; }
+.move-history-arrow:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .game-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 100%; }
 .finished-review { display: grid; gap: 8px; width: 100%; text-align: center; }
 .finished-review-result { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 32px; padding: 4px 10px; border-radius: 10px; background: color-mix(in oklab, var(--secondary) 72%, transparent); color: var(--foreground); font-size: 12px; font-weight: 700; }

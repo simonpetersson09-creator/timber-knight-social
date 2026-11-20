@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Chess } from "chess.js";
-import { capturedPieces, gameAtPly, lastMoveOf, materialBalance } from "./game-presentation";
+import { capturedPieces, gameAtPly, lastMoveOf, materialBalance, MAX_REVIEW_PLIES, stepReviewPly } from "./game-presentation";
 describe("game rules", () => {
   it("captured pieces belong to the player who captured them", () => {
     const game = new Chess();
@@ -33,5 +33,21 @@ describe("game rules", () => {
     expect(lastMoveOf(review)).toEqual({ from: "e2", to: "e4" });
     expect(game.fen()).toBe(liveFen);
     expect(gameAtPly(game, null)).toBe(game);
+  });
+
+  it("steps backward and forward one move and returns to the live position", () => {
+    expect(stepReviewPly(3, null, "back")).toBe(2);
+    expect(stepReviewPly(3, 2, "back")).toBe(1);
+    expect(stepReviewPly(3, 1, "forward")).toBe(2);
+    expect(stepReviewPly(3, 2, "forward")).toBeNull();
+    expect(stepReviewPly(3, null, "forward")).toBeNull();
+  });
+
+  it("never steps further than ten moves behind the live position", () => {
+    let ply: number | null = null;
+    for (let i = 0; i < 15; i++) ply = stepReviewPly(12, ply, "back");
+    expect(MAX_REVIEW_PLIES).toBe(10);
+    expect(ply).toBe(2);
+    expect(stepReviewPly(12, ply, "back")).toBe(2);
   });
 });

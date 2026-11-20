@@ -29,3 +29,17 @@ export function lastMoveOf(game: Chess) {
   const move = game.history({ verbose: true }).at(-1);
   return move ? { from: move.from, to: move.to } : null;
 }
+
+export const MAX_REVIEW_PLIES = 10;
+
+/** Steps through the latest ten half-moves; null always represents the live position. */
+export function stepReviewPly(historyLength: number, currentPly: number | null, direction: "back" | "forward"): number | null {
+  const latest = Math.max(0, historyLength);
+  if (latest === 0) return null;
+  const current = Math.min(latest, Math.max(0, currentPly ?? latest));
+  const earliest = Math.max(0, latest - MAX_REVIEW_PLIES);
+  if (direction === "back") return Math.max(earliest, current - 1);
+  if (currentPly === null || current >= latest) return null;
+  const next = Math.min(latest, current + 1);
+  return next === latest ? null : next;
+}

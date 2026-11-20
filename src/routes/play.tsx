@@ -129,6 +129,7 @@ function Play() {
     finishedGame.current = s.id;
     setResult(res);
     setShowEnd(false);
+    setReviewPly(null);
     deleteGame(s.id);
     if (res.reason === "checkmate") showNotice(t("checkmate"), "checkmate");
     endTimer.current = setTimeout(() => setShowEnd(true), res.reason === "checkmate" ? CHECKMATE_RESULT_DELAY_MS : 0);
@@ -170,6 +171,7 @@ function Play() {
     const mover = game.turn();
     let m;
     try { m = game.move(mv); } catch { return; }
+    setReviewPly(null);
     let times = s.times;
     if (times && s.clock) {
       const used = Date.now() - turnStart.current;
@@ -286,28 +288,30 @@ function Play() {
 
   if (!saved) return <main className="min-h-dvh" />;
 
-  const side = (c: Color) => (c === "w" ? t("ivory") : t("black"));
   const top: Color = vsAi ? other(human) : "b";
   const bottom: Color = other(top);
-  const nameOf = (c: Color) => (vsAi ? (c === human ? me ? displayName(me) : t("you") : computerDisplayName(saved.level, t(saved.level))) : side(c));
+  const nameOf = (c: Color) => {
+    if (vsAi) return c === human ? me ? displayName(me) : t("you") : computerDisplayName(saved.level, t(saved.level));
+    return c === human ? me ? displayName(me) : t("playerN", { n: 1 }) : t("playerN", { n: 2 });
+  };
   const activeKind = (c: Color): "you" | "opp" | undefined => {
     if (result || game.turn() !== c) return undefined;
     return !vsAi || c === human ? "you" : "opp";
   };
   void now;
 
-  const status = result ? resultText() : game.inCheck() ? t("check") : thinking ? t("thinking") : t("toMove", { side: side(game.turn()) });
+  const status = result ? resultText() : game.inCheck() ? t("check") : thinking ? t("thinking") : t("toMove", { side: nameOf(game.turn()) });
   function resultText() {
     if (!result) return "";
     if (result.winner === null) return t("draw");
-    const w = side(result.winner);
-    if (result.reason === "resigned") return t("resigned", { side: side(other(result.winner)) });
-    if (result.reason === "timeout") return `${t("timeout")} – ${t("sideWins", { side: w })}`;
-    return `${t("checkmate")} – ${t("sideWins", { side: w })}`;
+    const winnerName = nameOf(result.winner);
+    if (result.reason === "resigned") return t("resigned", { side: nameOf(other(result.winner)) });
+    if (result.reason === "timeout") return `${t("timeout")} – ${t("sideWins", { side: winnerName })}`;
+    return `${t("checkmate")} – ${t("sideWins", { side: winnerName })}`;
   }
   const title = !result ? "" : vsAi
     ? result.winner === null ? t("draw") : result.winner === human ? t("youWon") : t("youLost")
-    : result.winner === null ? t("draw") : t("sideWins", { side: side(result.winner) });
+    : result.winner === null ? t("draw") : t("sideWins", { side: nameOf(result.winner) });
 
   const boardGame = gameAtPly(game, reviewPly);
   const reviewing = reviewPly !== null;
@@ -340,7 +344,7 @@ function Play() {
       </div>
 
       <div className="play-side">
-        <MoveHistory key={saved.id} game={game} canReview={!!result} reviewPly={reviewPly} onReview={setReviewPly} />
+        <MoveHistory key={saved.id} game={game} reviewPly={reviewPly} onReview={setReviewPly} />
         {result && !showEnd ? (
           <div className="finished-review">
             <button className="finished-review-result" onClick={() => setShowEnd(true)}><Eye className="size-4" />{resultText()}</button>
@@ -389,7 +393,7 @@ function Play() {
       </Modal>
 
       <Modal open={ask === "draw"} onClose={() => setAsk(null)}>
-        <p className="mb-4 text-center font-semibold">{t("drawOffer", { side: side(game.turn()) })}</p>
+        <p className="mb-4 text-center font-semibold">{t("drawOffer", { side: nameOf(game.turn()) })}</p>
         <div className="flex gap-2">
           <button className="action-btn action-ghost" onClick={() => { setAsk(null); showNotice(t("drawDeclined")); }}>{t("decline")}</button>
           <button className="action-btn action-gold" onClick={() => { setAsk(null); finish({ winner: null, reason: "draw" }); }}>{t("accept")}</button>

@@ -1,6 +1,9 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
 ## Spelvyn 20 nov
+- [x] Ersätt utfällbar draghistorik med två pilar, stega pjäserna ett drag åt gången och begränsa till tio drag bakåt; lokalt och online provspelat
+- [x] Visa spelarnamn i stället för pjäsfärg i lokala status- och resultatnotiser; mottagen onlinenotis provad med två spelare
+- [x] Byt kvarvarande svenska remitexter till oavgjort; 134 tester godkända
 - [x] Genomkörning av spelrutor, bekräftelser och matchnotiser lokalt samt med två separata onlinespelare
 - [x] Samma extra remibekräftelse och centrerade skickat/mottaget/avslaget-notiser online; avbryt skickar inget
 - [x] Resultatet öppnas först efter att schackmattnotisen har stängts, utan överlapp

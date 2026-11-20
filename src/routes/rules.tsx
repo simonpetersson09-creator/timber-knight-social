@@ -5,9 +5,9 @@ import { useI18n, type Key } from "@/lib/i18n";
 export const Route = createFileRoute("/rules")({
   head: () => ({ meta: [
     { title: "Schackregler – Mr B Chess" },
-    { name: "description", content: "Tydlig hjälp om rockad, en passant, bondeförvandling, patt, remi och schackklockor." },
+    { name: "description", content: "Tydlig hjälp om rockad, en passant, bondeförvandling, patt, oavgjort och schackklockor." },
     { property: "og:title", content: "Schackregler – Mr B Chess" },
-    { property: "og:description", content: "Lär dig schackens särskilda drag, remiregler och klockor i Mr B Chess." },
+    { property: "og:description", content: "Lär dig schackens särskilda drag, regler för oavgjort och klockor i Mr B Chess." },
     { property: "og:type", content: "article" }, { name: "twitter:card", content: "summary" },
   ] }),
   component: RulesPage,

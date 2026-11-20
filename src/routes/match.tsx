@@ -103,6 +103,7 @@ function Match() {
         if (last.player !== r.me) { setBubble({ mine: false, text: t(CHAT[last.phrase] ?? "chat0") }); feedback("move"); }
       }
       if (r.game.pgn !== prevPgn.current) {
+        setReviewPly(null);
         game.reset();
         if (r.game.pgn) game.loadPgn(r.game.pgn);
         if (prevPgn.current !== null) { feedback(game.inCheck() ? "check" : "move"); notifyCheck(); }
@@ -150,6 +151,7 @@ function Match() {
     recordResult(g.id, g.result === "d" ? "draw" : won ? "win" : "loss", null, g.end_reason !== "resign", "online");
     noteGameFinished(g.id);
     setShowResult(false);
+    setReviewPly(null);
     resultTimer.current = setTimeout(() => setShowResult(true), g.end_reason === "checkmate" ? CHECKMATE_RESULT_DELAY_MS : 0);
     feedback(won ? "win" : g.result === "d" ? "draw" : "lose");
     if (won) void celebrate();
@@ -269,7 +271,7 @@ function Match() {
         {bubble && <div className="chat-bubble" data-mine={bubble.mine}>{bubble.text}</div>}
       </div>
       <div className="play-side">
-        <MoveHistory game={game} canReview={g.status === "finished"} reviewPly={reviewPly} onReview={setReviewPly} />
+        <MoveHistory game={game} reviewPly={reviewPly} onReview={setReviewPly} />
         <div className="game-status">{status}</div>
         {g.draw_offer && g.draw_offer !== myColor && g.status === "active" && (
           <div className="panel flex flex-col gap-2 p-3 text-center">
