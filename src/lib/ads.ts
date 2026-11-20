@@ -318,7 +318,10 @@ export { APP_OPEN_NO_FILL_RETRY_MS };
 
 /* Search-screen banner (300×250) – same placement as Mr B Yatzy. */
 /** Release banner IDs for the search screen; null = no banner until the units are created. */
-export const SEARCH_BANNER_IDS: Record<"ios" | "android", string | null> = { ios: null, android: null };
+export const SEARCH_BANNER_IDS: Record<"ios" | "android", string | null> = {
+  ios: "ca-app-pub-7448540924654868/2758086238",
+  android: "ca-app-pub-7448540924654868/4921215148",
+};
 const TEST_BANNER: Record<"ios" | "android", string> = {
   ios: "ca-app-pub-3940256099942544/2934735716",
   android: "ca-app-pub-3940256099942544/6300978111",
