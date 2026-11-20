@@ -18,6 +18,7 @@ import { MAX_DRAW_OFFERS, shouldSendDrawOffer } from "@/lib/play-motion";
 import { ChessBoard } from "@/components/ChessBoard";
 import { Piece } from "@/components/Piece";
 import { Modal } from "@/components/Modal";
+import { PromotionPicker } from "@/components/PromotionPicker";
 import { bestMove, evaluateFen } from "@/lib/engine";
 import { stockfishMove, preloadStockfish } from "@/lib/stockfish";
 import { AI_MOVE_DELAY_MS } from "@/lib/play-motion";
@@ -25,7 +26,7 @@ import { useI18n } from "@/lib/i18n";
 import { celebrate, feedback } from "@/lib/feedback";
 import { noteGameFinished, setGameplayActive, showPostMatchAd } from "@/lib/ads";
 import { onGameFinished } from "@/lib/rate";
-import { createGame, deleteGame, getGame, recordResult, saveGame, type Color, type SavedGame } from "@/lib/storage";
+import { createGame, deleteGame, getGame, recordResult, rematchConfig, saveGame, type Color, type SavedGame } from "@/lib/storage";
 import { ResultShareButton } from "@/components/ResultShareButton";
 
 export const Route = createFileRoute("/play")({
@@ -274,7 +275,7 @@ function Play() {
     setStartingNewGame(true);
     try {
       await showPostMatchAd(s.id);
-      const g = createGame({ mode: s.mode, level: s.level, human: s.human, clock: s.clock });
+      const g = createGame(rematchConfig(s));
       if (g) await navigate({ to: "/play", search: { id: g.id }, replace: true });
       else await navigate({ to: "/" });
     } finally {
@@ -333,7 +334,7 @@ function Play() {
 
       <div className="play-col">
         <div className="player-top"><div className="player-profile-line">{card(top)}{clock(top)}</div><CapturedPieces game={boardGame} mine={top} /></div>
-        <ChessBoard key={reviewing ? `review-${reviewPly}` : "live"} game={boardGame} orientation={vsAi ? human : "w"} disabled={reviewing || aiTurn || !!result} lastMove={boardLastMove} onMove={onBoardMove} />
+        <ChessBoard key={reviewing ? `review-${reviewPly}` : "live"} game={boardGame} orientation={vsAi ? human : "w"} disabled={reviewing || aiTurn || !!result || !!promo} lastMove={boardLastMove} onMove={onBoardMove} />
         <div className="player-bottom"><CapturedPieces game={boardGame} mine={bottom} /><div className="player-profile-line">{clock(bottom)}{card(bottom)}</div></div>
         <AnimatePresence>
           {notice && (
@@ -368,16 +369,16 @@ function Play() {
         )}
       </div>
 
-      <Modal open={!!promo}>
-        <p className="mb-3 text-center font-semibold">{t("promote")}</p>
-        <div className="promo-grid">
-          {(["q", "r", "b", "n"] as const).map((p) => (
-            <button key={p} className="promo-btn" onClick={() => { if (promo) applyMove({ ...promo, promotion: p }); setPromo(null); }}>
-              <Piece color={game.turn()} type={p} className="size-full" />
-            </button>
-          ))}
-        </div>
-      </Modal>
+      <PromotionPicker
+        open={!!promo}
+        color={game.turn()}
+        title={t("promote")}
+        onCancel={() => setPromo(null)}
+        onSelect={(piece) => {
+          if (promo) applyMove({ ...promo, promotion: piece });
+          setPromo(null);
+        }}
+      />
 
       <Modal open={ask === "resign"} onClose={() => setAsk(null)}>
         <p className="mb-4 text-center font-semibold">{t("confirmResign")}</p>

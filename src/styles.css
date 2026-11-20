@@ -189,7 +189,7 @@ h1, h2, h3, h4 { font-family: "Space Grotesk", system-ui, sans-serif; }
 .board-square:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
 .sq-light { background-image: linear-gradient(var(--board-light-tint), var(--board-light-tint)), url("./assets/wood-light.jpg"); }
 .sq-dark { background-image: linear-gradient(var(--board-dark-tint), var(--board-dark-tint)), url("./assets/wood-dark.jpg"); }
-.sq-last::before, .sq-selected::before, .sq-check::before { content: ""; position: absolute; inset: 0; }
+.sq-last::before, .sq-selected::before, .sq-check::before, .sq-checkmate::before { content: ""; position: absolute; inset: 0; }
 .sq-last::before { inset: 3px; opacity: .72; background:
   linear-gradient(var(--primary), var(--primary)) left top / 8px 1.5px no-repeat,
   linear-gradient(var(--primary), var(--primary)) left top / 1.5px 8px no-repeat,
@@ -201,6 +201,8 @@ h1, h2, h3, h4 { font-family: "Space Grotesk", system-ui, sans-serif; }
   linear-gradient(var(--primary), var(--primary)) right bottom / 1.5px 8px no-repeat; }
 .sq-selected::before { background: radial-gradient(ellipse at 50% 62%, oklch(0.92 0.09 80 / 55%) 0%, var(--highlight) 70%); }
 .sq-check::before { inset: 7%; border: 2px solid color-mix(in oklab, var(--check) 48%, var(--primary)); border-radius: 50%; background: transparent; box-shadow: 0 0 0 2px color-mix(in oklab, var(--check) 10%, transparent), inset 0 0 10px color-mix(in oklab, var(--primary) 16%, transparent); animation: check-ring-pulse 1.8s ease-in-out infinite; pointer-events: none; }
+.sq-checkmate::before { inset: 6%; z-index: 5; border: 2px solid var(--primary); border-radius: 50%; background: transparent; box-shadow: 0 0 0 2px color-mix(in oklab, var(--primary-glow) 22%, transparent), 0 0 16px color-mix(in oklab, var(--primary) 34%, transparent), inset 0 0 12px color-mix(in oklab, var(--primary) 16%, transparent); pointer-events: none; animation: checkmate-ring-in .45s ease-out both; }
+@keyframes checkmate-ring-in { from { opacity: 0; transform: scale(.88); } to { opacity: 1; transform: scale(1); } }
 @keyframes check-ring-pulse { 50% { border-color: var(--primary); box-shadow: 0 0 0 4px color-mix(in oklab, var(--check) 12%, transparent), inset 0 0 12px color-mix(in oklab, var(--primary) 22%, transparent); } }
 .hint-dot { position: absolute; width: 26%; height: 26%; border-radius: 50%; z-index: 2; pointer-events: none; background: radial-gradient(circle at 40% 35%, oklch(0.9 0.09 85 / 95%), oklch(0.74 0.12 76 / 90%) 55%, oklch(0.5 0.09 60 / 85%)); box-shadow: 0 0 0 2px oklch(0.25 0.04 45 / 35%), 0 0 10px oklch(0.85 0.11 82 / 55%); animation: hint-in .18s ease-out; }
 @keyframes hint-in { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -242,6 +244,10 @@ h1, h2, h3, h4 { font-family: "Space Grotesk", system-ui, sans-serif; }
 .piece-slot .piece-img { position: relative; width: 100%; height: 100%; object-fit: contain; filter: none; transform-origin: 50% 89.84375%; }
 .piece-slot[data-piece-type="p"] .piece-img { transform: scale(1.05); }
 .piece-slot:is([data-piece-type="k"], [data-piece-type="q"]) .piece-img { transform: scale(.95); }
+.piece-slot[data-draggable="true"] { pointer-events: auto; cursor: grab; touch-action: none; }
+.piece-slot[data-dragging="true"] { cursor: grabbing; }
+.piece-slot[data-dragging="true"]::before { opacity: .25; }
+.piece-slot[data-dragging="true"] .piece-img { filter: drop-shadow(0 8px 5px color-mix(in oklab, var(--background) 72%, transparent)); }
 
 /* ---------- Mr B shared UI ---------- */
 :root {
@@ -410,8 +416,13 @@ h1, h2, h3, h4 { font-family: "Space Grotesk", system-ui, sans-serif; }
 .clock[data-running="true"] { background: var(--foreground); color: var(--background); }
 .clock[data-low="true"] { background: var(--destructive); color: var(--destructive-foreground); animation: clock-pulse 1s ease-in-out infinite; }
 @keyframes clock-pulse { 50% { transform: scale(1.06); } }
-.promo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-.promo-btn { aspect-ratio: 1; border-radius: 12px; padding: 8px; background: url("./assets/wood-light.jpg") center/300%; box-shadow: inset 0 0 0 2px var(--wood-frame-deep); }
+.promotion-layer { position: fixed; inset: 0; z-index: 45; background: color-mix(in oklab, var(--background) 38%, transparent); backdrop-filter: blur(2px); }
+.promotion-popover { position: absolute; left: 50%; top: 50%; translate: -50% -50%; width: min(310px, calc(100vw - 32px)); padding: 12px; border: 1px solid color-mix(in oklab, var(--primary) 48%, transparent); border-radius: 16px; background: color-mix(in oklab, var(--card) 96%, transparent); box-shadow: 0 16px 38px color-mix(in oklab, var(--background) 78%, transparent), inset 0 1px 0 color-mix(in oklab, var(--primary) 16%, transparent); }
+.promotion-title { margin-bottom: 9px; color: var(--foreground); text-align: center; font-size: 12px; font-weight: 700; }
+.promo-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+.promo-btn { display: grid; place-items: center; min-width: 0; aspect-ratio: 1; padding: 6px; border: 1px solid color-mix(in oklab, var(--primary) 30%, transparent); border-radius: 11px; background: linear-gradient(var(--board-light-tint), var(--board-light-tint)), url("./assets/wood-light.jpg") center/300%; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--wood-frame-deep) 65%, transparent), 0 3px 8px color-mix(in oklab, var(--background) 45%, transparent); transition: transform .14s, border-color .18s; }
+.promo-btn:active { transform: scale(.94); }
+.promo-btn:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 @media (min-width: 820px) and (orientation: landscape) {
   .play-col { width: min(560px, calc(100dvh - 390px)); }
 }

@@ -1,6 +1,11 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
 ## Spelvyn 20 nov
+- [x] Kompakt promotionsrad med dam, torn, löpare och springare, lokalt och online; springare vald via riktig mobil dragning
+- [x] Statisk diskret guldmarkering runt den schackmatte kungen; e8 visuellt verifierad
+- [x] Direkt lokal revansch med exakt samma läge, nivå, färg och klocka; Proffs/vit/15+10 provspelat
+- [x] Drag och släpp med lyft pjäs och kort mjuk återgång vid ogiltig släppunkt; e2–e5 ogiltigt och e2–e4 giltigt provspelat
+- [x] 130 tester passerade; 394/320 px utan sidfel eller horisontellt överflöd
 - [x] Utfällbar draghistorik med positionsgranskning efter match, lokalt och online; e4/slutställning provspelade på 320/394 px
 - [x] Materialfördel i skålkanten enligt 1/3/3/5/9, endast vid ledning; schackmatt +1 och bondeförvandling testade
 - [x] Mjuk schackmarkering som guld-/mahognyring runt kungen, visuellt kontrollerad vid schackmatt

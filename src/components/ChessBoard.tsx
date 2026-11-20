@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperti
 import { motion, useReducedMotion } from "framer-motion";
 import type { Chess, Square } from "chess.js";
 import { assignPieceIds, CAPTURE_DURATION_MS, type BoardPiece, type PieceIds } from "@/lib/play-motion";
+import { squareAtPoint } from "@/lib/board-interaction";
 import { Piece } from "./Piece";
 
 const FILES = "abcdefgh";
@@ -17,6 +18,9 @@ type Props = {
 export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Props) {
   const reduceMotion = useReducedMotion();
   const [selected, setSelected] = useState<Square | null>(null);
+  const [dragging, setDragging] = useState<Square | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const suppressClick = useRef(false);
   const board = game.board();
   const idsRef = useRef<PieceIds>({});
   const idSequence = useRef(0);
@@ -30,6 +34,7 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
     () => (selected ? new Set(game.moves({ square: selected, verbose: true }).map((m) => m.to)) : new Set<string>()),
     [selected, game, game.fen()],
   );
+  const checkmate = game.isCheckmate();
   const checkSquare = useMemo(() => {
     if (!game.inCheck()) return null;
     for (const row of board) for (const s of row) if (s && s.type === "k" && s.color === game.turn()) return s.square;
@@ -79,7 +84,7 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
   }, [game.fen()]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function tap(sq: Square) {
-    if (disabled) return;
+    if (disabled || suppressClick.current) return;
     const piece = game.get(sq);
     if (selected && targets.has(sq)) {
       onMove(selected, sq);
@@ -89,10 +94,22 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
     } else setSelected(null);
   }
 
+  function finishDrag(from: Square, point: { x: number; y: number }) {
+    suppressClick.current = true;
+    window.setTimeout(() => { suppressClick.current = false; }, 0);
+    setDragging(null);
+    setSelected(null);
+    const rect = gridRef.current?.getBoundingClientRect();
+    const to = rect ? squareAtPoint(point, rect, orientation) : null;
+    if (!to) return;
+    const legal = game.moves({ square: from, verbose: true }).some((move) => move.to === to);
+    if (legal) onMove(from, to);
+  }
+
   return (
     <div className="board-scene">
       <div className="board-frame">
-        <div className="board-grid">
+        <div ref={gridRef} className="board-grid">
           {rows.map((r) =>
             cols.map((c) => {
               const sq = `${FILES[c]}${8 - r}` as Square;
@@ -115,7 +132,7 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
                     light ? "sq-light" : "sq-dark",
                     selected === sq && "sq-selected",
                     lastMove && (lastMove.from === sq || lastMove.to === sq) && "sq-last",
-                    checkSquare === sq && "sq-check",
+                    checkSquare === sq && (checkmate ? "sq-checkmate" : "sq-check"),
                   ].filter(Boolean).join(" ")}
                 >
                   {isTarget && <span className={p ? "hint-capture" : "hint-dot"} />}
@@ -126,9 +143,20 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
                       initial={false}
                       animate={{ scale: selected === sq ? 1.06 : 1 }}
                       transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 90, damping: 20, mass: 1.1 }}
+                      drag={!disabled && p.color === game.turn()}
+                      dragConstraints={gridRef}
+                      dragElastic={0.04}
+                      dragMomentum={false}
+                      dragSnapToOrigin
+                      dragTransition={{ bounceStiffness: 420, bounceDamping: 30 }}
+                      whileDrag={{ scale: 1.1, zIndex: 12 }}
+                      onDragStart={() => { setSelected(sq); setDragging(sq); }}
+                      onDragEnd={(_, info) => finishDrag(sq, info.point)}
                       className="piece-slot"
                       data-piece-id={id}
                       data-piece-type={p.type}
+                      data-draggable={!disabled && p.color === game.turn()}
+                      data-dragging={dragging === sq}
                     >
                       <Piece color={p.color} type={p.type} />
                     </motion.span>

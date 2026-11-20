@@ -8,8 +8,9 @@ export type ClockCfg = { minutes: number; inc: number } | null;
 export const CLOCKS: ClockCfg[] = [null, { minutes: 3, inc: 2 }, { minutes: 5, inc: 0 }, { minutes: 10, inc: 0 }, { minutes: 15, inc: 10 }];
 export const clockLabel = (c: ClockCfg) => (c ? `${c.minutes}+${c.inc}` : "");
 
-export type SavedGame = {
-  id: string; mode: "ai" | "local"; level: Level; human: Color; clock: ClockCfg;
+export type GameConfig = { mode: "ai" | "local"; level: Level; human: Color; clock: ClockCfg };
+export type SavedGame = GameConfig & {
+  id: string;
   times: { w: number; b: number } | null; pgn: string; updatedAt: number;
 };
 export type Outcome = "win" | "loss" | "draw";
@@ -39,7 +40,11 @@ export const getGame = (id: string) => listGames().find((g) => g.id === id) ?? n
 export function saveGame(g: SavedGame) { write(G, [...listGames().filter((x) => x.id !== g.id), { ...g, updatedAt: Date.now() }]); }
 export function deleteGame(id: string) { write(G, listGames().filter((g) => g.id !== id)); }
 
-export function createGame(cfg: { mode: "ai" | "local"; level: Level; human: Color; clock: ClockCfg }): SavedGame | null {
+export function rematchConfig(game: GameConfig): GameConfig {
+  return { mode: game.mode, level: game.level, human: game.human, clock: game.clock ? { ...game.clock } : null };
+}
+
+export function createGame(cfg: GameConfig): SavedGame | null {
   if (listGames().length >= MAX_SAVED) return null;
   const ms = cfg.clock ? cfg.clock.minutes * 60_000 : 0;
   const g: SavedGame = { ...cfg, id: crypto.randomUUID(), times: cfg.clock ? { w: ms, b: ms } : null, pgn: "", updatedAt: Date.now() };

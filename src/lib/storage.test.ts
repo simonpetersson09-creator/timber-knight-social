@@ -1,7 +1,16 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { STATS_CHANGED, createGame, deleteGame, getStats, recordResult, resetStats, saveGame } from "./storage";
+import { STATS_CHANGED, createGame, deleteGame, getStats, recordResult, rematchConfig, resetStats, saveGame } from "./storage";
 describe("local statistics", () => {
   beforeEach(() => localStorage.clear());
+  it("keeps mode, level, color and the exact clock for a direct rematch", () => {
+    const config = { mode: "ai" as const, level: "master" as const, human: "b" as const, clock: { minutes: 15, inc: 10 } };
+    const rematch = rematchConfig(config);
+    expect(rematch).toEqual(config);
+    expect(rematch.clock).not.toBe(config.clock);
+  });
+  it("keeps the no-clock choice for a local two-player rematch", () => {
+    expect(rematchConfig({ mode: "local", level: "beginner", human: "w", clock: null })).toEqual({ mode: "local", level: "beginner", human: "w", clock: null });
+  });
   it("starting, moving, resuming or deleting unfinished games counts zero matches", () => {
     const game = createGame({ mode: "ai", level: "beginner", human: "w", clock: null });
     if (!game) throw new Error("Expected a new game");

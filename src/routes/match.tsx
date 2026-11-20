@@ -14,6 +14,7 @@ import { z } from "zod";
 import { ChessBoard } from "@/components/ChessBoard";
 import { Piece } from "@/components/Piece";
 import { Modal } from "@/components/Modal";
+import { PromotionPicker } from "@/components/PromotionPicker";
 import { useI18n, type Key } from "@/lib/i18n";
 import { getCred } from "@/lib/identity";
 import { cancelGame, gameAction, getOnlineGame, makeMove, quickMatch, sendChat } from "@/lib/online.functions";
@@ -238,7 +239,7 @@ function Match() {
       </header>
       <div className="play-col relative">
         <div className="player-top"><div className="player-profile-line">{card(oppId, myColor === "w" ? "b" : "w")}{clock(myColor === "w" ? "b" : "w")}</div><CapturedPieces game={boardGame} mine={myColor === "w" ? "b" : "w"} /></div>
-        <ChessBoard key={reviewing ? `review-${reviewPly}` : "live"} game={boardGame} orientation={myColor} disabled={reviewing || !myTurn} lastMove={lastMoveOf(boardGame)} onMove={onBoardMove} />
+        <ChessBoard key={reviewing ? `review-${reviewPly}` : "live"} game={boardGame} orientation={myColor} disabled={reviewing || !myTurn || !!promo} lastMove={lastMoveOf(boardGame)} onMove={onBoardMove} />
         <div className="player-bottom"><CapturedPieces game={boardGame} mine={myColor} /><div className="player-profile-line">{clock(myColor)}{card(me, myColor)}</div></div>
         {notice && <div className="board-notice" data-tone={notice} role="status">{notice === "checkmate" ? <Crown className="size-5" /> : <ShieldAlert className="size-5" />}{t(notice)}</div>}
         {bubble && <div className="chat-bubble" data-mine={bubble.mine}>{bubble.text}</div>}
@@ -267,14 +268,16 @@ function Match() {
         )}
       </div>
 
-      <Modal open={!!promo}>
-        <p className="mb-3 text-center font-semibold">{t("promote")}</p>
-        <div className="promo-grid">
-          {(["q", "r", "b", "n"] as const).map((p) => (
-            <button key={p} className="promo-btn" onClick={() => { if (promo) void move(promo.from, promo.to, p); setPromo(null); }}><Piece color={myColor} type={p} className="size-full" /></button>
-          ))}
-        </div>
-      </Modal>
+      <PromotionPicker
+        open={!!promo}
+        color={myColor}
+        title={t("promote")}
+        onCancel={() => setPromo(null)}
+        onSelect={(piece) => {
+          if (promo) void move(promo.from, promo.to, piece);
+          setPromo(null);
+        }}
+      />
       <Modal open={ask === "resign"} onClose={() => setAsk(null)}>
         <p className="mb-2 text-center font-semibold">{t("confirmResign")}</p>
         <p className="mb-4 text-center text-xs text-muted-foreground">{t("resignNoStats")}</p>
