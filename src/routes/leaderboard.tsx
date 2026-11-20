@@ -49,7 +49,7 @@ function Leaderboard() {
     ? [[t("played"), stats.played], [t("wins"), stats.wins], [t("draws"), stats.draws], [t("winRate"), `${stats.winRate}%`], [t("streak"), stats.streak]]
     : [];
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-5 px-5 pt-[calc(20px+env(safe-area-inset-top))] pb-[calc(32px+env(safe-area-inset-bottom))]">
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-4 px-5 pt-[calc(20px+env(safe-area-inset-top))] pb-[calc(32px+env(safe-area-inset-bottom))]">
       <PageHeader title={t("leaderboards")} />
       <section className="flex flex-col gap-2">
         <p className="lb-section-title">{t("onlineStats")}</p>
@@ -69,12 +69,12 @@ function Leaderboard() {
 
 function Board({ title, sub, rows, me, empty }: { title: string; sub: string; rows: Row[] | undefined; me: string | undefined; empty: string }) {
   return (
-    <section className="flex flex-col gap-1.5">
+    <section className="flex flex-col gap-1">
       <p className="lb-section-title">{title}</p>
-      <p className="lb-sub -mt-1">{sub}</p>
+      <p className="lb-sub">{sub}</p>
       <div className="lb-card">
         {rows === undefined && <div className="lb-row"><span className="lb-label">…</span></div>}
-        {rows?.length === 0 && <div className="lb-row"><span className="text-sm text-muted-foreground">{empty}</span></div>}
+        {rows?.length === 0 && <div className="lb-row"><span className="text-xs text-muted-foreground">{empty}</span></div>}
         {rows?.map((r, i) => (
           <div key={r.player} className="lb-row" data-me={r.player === me}>
             <span className="lb-rank" data-top={i < 3}>{i + 1}</span>

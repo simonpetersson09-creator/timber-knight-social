@@ -521,14 +521,14 @@ body { overscroll-behavior-y: contain; }
 
 /* Topplistor – Yatzy-lika listor anpassade för Chess. */
 .lb-section-title { padding: 0 8px; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: color-mix(in oklab, var(--muted-foreground) 80%, transparent); }
-.lb-sub { padding: 0 8px; font-size: 11px; color: var(--muted-foreground); }
+.lb-sub { padding: 0 8px; font-size: 10px; line-height: 1.2; color: var(--muted-foreground); }
 .lb-card { border-radius: 16px; background: color-mix(in oklab, var(--secondary) 50%, transparent); border: 1px solid color-mix(in oklab, var(--border) 40%, transparent); overflow: hidden; }
-.lb-row { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 6px 14px; }
+.lb-row { display: flex; align-items: center; gap: 10px; min-height: 34px; padding: 4px 14px; }
 .lb-row + .lb-row { border-top: 1px solid color-mix(in oklab, var(--border) 30%, transparent); }
 .lb-row[data-me="true"] { background: color-mix(in oklab, var(--primary) 10%, transparent); }
 .lb-label { flex: 1; min-width: 0; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted-foreground); }
-.lb-value { font-family: var(--font-display); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--primary); white-space: nowrap; }
-.lb-rank { width: 22px; flex-shrink: 0; text-align: center; font-weight: 800; font-size: 13px; color: var(--muted-foreground); }
+.lb-value { font-family: var(--font-display); font-weight: 700; font-variant-numeric: tabular-nums; font-size: 16px; color: var(--primary); white-space: nowrap; }
+.lb-rank { width: 20px; flex-shrink: 0; text-align: center; font-weight: 800; font-size: 12px; color: var(--muted-foreground); }
 .lb-rank[data-top="true"] { color: var(--primary); }
-.lb-avatar { width: 28px; height: 28px; flex-shrink: 0; border-radius: 9999px; overflow: hidden; }
-.lb-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 14px; }
+.lb-avatar { width: 24px; height: 24px; font-size: 14px; flex-shrink: 0; border-radius: 9999px; overflow: hidden; }
+.lb-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 13px; }
