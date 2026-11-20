@@ -25,6 +25,18 @@ describe("native cohort retention", () => {
     expect(result.d30).toEqual({ returned: 1, eligible: 2, rate: 50 });
   });
 
+  it("excludes anonymized players from native retention cohorts", () => {
+    const deleted = { id: "deleted", created_at: "2026-10-19T08:00:00Z", platform: "ios", deleted_at: "2026-11-01T08:00:00Z" };
+    const result = buildRetention([...players, deleted], [
+      { player: "returning", day: "2026-10-20", platform: "ios" },
+      { player: "returning", day: "2026-10-26", platform: "ios" },
+      { player: "returning", day: "2026-11-18", platform: "ios" },
+      { player: "missing", day: "2026-10-20", platform: "android" },
+      { player: "deleted", day: "2026-10-20", platform: "ios" },
+    ], new Set(["test"]), now);
+    expect(result.d1).toEqual({ returned: 2, eligible: 2, rate: 100 });
+  });
+
   it("does not count a new device before its retention day is measurable", () => {
     const result = buildRetention([players[2]!], [], new Set(["test"]), now);
     expect(result.d1.eligible).toBe(0);

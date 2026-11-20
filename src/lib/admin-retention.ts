@@ -12,7 +12,7 @@ function addDays(day: string, amount: number): string {
 export function buildRetention(players: AdminPlayer[], appDays: AdminAppDay[], testIds: Set<string>, now = new Date()): RetentionStats {
   const today = adminStockholmDay(now);
   const active = new Set(appDays.filter((row) => row.platform === "ios" || row.platform === "android").map((row) => `${row.player}:${row.day}`));
-  const cohort = players.filter((player) => (player.platform === "ios" || player.platform === "android") && !testIds.has(player.id))
+  const cohort = players.filter((player) => (player.platform === "ios" || player.platform === "android") && !testIds.has(player.id) && !player.deleted_at)
     .map((player) => ({ id: player.id, day: adminStockholmDay(new Date(player.created_at)) }))
     .filter((player) => player.day <= today);
   const value = (offset: number): RetentionValue => {

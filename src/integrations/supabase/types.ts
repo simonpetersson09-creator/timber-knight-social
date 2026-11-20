@@ -281,6 +281,27 @@ export type Database = {
           },
         ]
       }
+      job_leases: {
+        Row: {
+          expires_at: string
+          name: string
+          owner: string
+          updated_at: string
+        }
+        Insert: {
+          expires_at: string
+          name: string
+          owner: string
+          updated_at?: string
+        }
+        Update: {
+          expires_at?: string
+          name?: string
+          owner?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       matches: {
         Row: {
           black: string
@@ -338,6 +359,7 @@ export type Database = {
           avatar: string
           country: string | null
           created_at: string
+          deleted_at: string | null
           friend_code: string
           id: string
           is_test: boolean
@@ -360,6 +382,7 @@ export type Database = {
           avatar?: string
           country?: string | null
           created_at?: string
+          deleted_at?: string | null
           friend_code: string
           id?: string
           is_test?: boolean
@@ -382,6 +405,7 @@ export type Database = {
           avatar?: string
           country?: string | null
           created_at?: string
+          deleted_at?: string | null
           friend_code?: string
           id?: string
           is_test?: boolean
@@ -457,6 +481,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      anonymize_chess_player: { Args: { p_player: string }; Returns: boolean }
       chess_abuse_limit: {
         Args: {
           p_action: string
@@ -466,6 +491,10 @@ export type Database = {
           p_subject: string
           p_window_seconds: number
         }
+        Returns: boolean
+      }
+      claim_chess_job: {
+        Args: { p_job: string; p_lease_seconds: number; p_owner: string }
         Returns: boolean
       }
       claim_push_deliveries: {
@@ -543,6 +572,10 @@ export type Database = {
           id: string
           status: string
         }[]
+      }
+      release_chess_job: {
+        Args: { p_job: string; p_owner: string }
+        Returns: undefined
       }
     }
     Enums: {

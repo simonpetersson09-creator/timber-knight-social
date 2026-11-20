@@ -47,15 +47,20 @@ export const setPush = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** "Radera mina data": removes the player and everything tied to it. */
+/** Removes personal data atomically where possible while preserving opponents' anonymized match history. */
 export const deleteMyData = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Cred.parse(d))
   .handler(async ({ data }) => {
     const { a, me } = await auth(data);
-    const { data: photos } = await a.storage.from("profile-photos").list(me);
-    if (photos?.length) await a.storage.from("profile-photos").remove(photos.map((p) => `${me}/${p.name}`));
-    await a.from("players").delete().eq("id", me);
-    return { ok: true };
+    const { data: photos, error: listError } = await a.storage.from("profile-photos").list(me);
+    if (listError) throw new Error("photo_list_failed");
+    if (photos?.length) {
+      const { error } = await a.storage.from("profile-photos").remove(photos.map((p) => `${me}/${p.name}`));
+      if (error) throw new Error("photo_delete_failed");
+    }
+    const { data: anonymized, error } = await a.rpc("anonymize_chess_player", { p_player: me });
+    if (error || anonymized !== true) throw new Error("data_delete_failed");
+    return { ok: true as const };
   });
 
 export const reportEvent = createServerFn({ method: "POST" })

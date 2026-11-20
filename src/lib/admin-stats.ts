@@ -1,6 +1,6 @@
 import type { AdminDayRow } from "./admin-records";
 
-export type AdminPlayer = { id: string; created_at: string; platform: string };
+export type AdminPlayer = { id: string; created_at: string; platform: string; deleted_at?: string | null };
 export type AdminAppDay = { player: string; day: string; platform: string };
 export type AdminEvent = { player: string | null; kind: string; name: string; platform: string; detail: string | null; created_at: string };
 export type AdminMatch = { white: string; black: string; finished_at: string; game_id: string | null; counts: boolean };
@@ -35,7 +35,8 @@ export function buildAdminStats(input: {
 }): { days: AdminDayRow[]; best: AdminBestTimes } {
   const now = input.now ?? new Date();
   const today = adminStockholmDay(now);
-  const players = new Map(input.players.filter((p) => NATIVE.has(p.platform) && !input.testIds.has(p.id)).map((p) => [p.id, p]));
+  const matchPlayers = new Set(input.players.filter((p) => NATIVE.has(p.platform) && !input.testIds.has(p.id)).map((p) => p.id));
+  const players = new Map(input.players.filter((p) => matchPlayers.has(p.id) && !p.deleted_at).map((p) => [p.id, p]));
   const days = new Map<string, AdminDayRow>();
   for (let i = 0; i < (input.periodDays ?? 30); i++) {
     const day = adminStockholmDay(new Date(now.getTime() - i * 86_400_000));
@@ -114,7 +115,7 @@ export function buildAdminStats(input: {
     row.returning_played = current && before ? [...current].filter((id) => before.has(id)).length : 0;
   }
   for (const match of input.matches) {
-    if (!match.game_id || input.testIds.has(match.white) || input.testIds.has(match.black)) continue;
+    if (!match.game_id || !matchPlayers.has(match.white) || !matchPlayers.has(match.black)) continue;
     const day = adminStockholmDay(new Date(match.finished_at));
     if (!days.has(day)) continue;
     bump(day, match.counts ? "online_finished" : "forfeits");

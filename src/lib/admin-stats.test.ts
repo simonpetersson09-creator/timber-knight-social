@@ -46,6 +46,25 @@ describe("admin statistics", () => {
     expect(result.days[0]!.played).toBe(2);
   });
 
+  it("excludes web and test matches even when the other participant is native", () => {
+    const result = buildAdminStats({ players, testIds: new Set(["test"]), now: NOW, appDays: [], events: [], matches: [
+      { white: "ios", black: "web", game_id: "web-match", counts: true, finished_at: "2026-11-19T11:00:00Z" },
+      { white: "ios", black: "test", game_id: "test-match", counts: true, finished_at: "2026-11-19T11:05:00Z" },
+      { white: "ios", black: "android", game_id: "native-match", counts: true, finished_at: "2026-11-19T11:10:00Z" },
+    ] });
+    expect(result.days[0]!).toMatchObject({ online_finished: 1, forfeits: 0 });
+  });
+
+  it("keeps a native opponent's match history after the other player is anonymized", () => {
+    const anonymized = { id: "deleted", created_at: "2026-11-01T08:00:00Z", platform: "android", deleted_at: "2026-11-19T12:00:00Z" };
+    const result = buildAdminStats({ players: [...players, anonymized], testIds: new Set(["test"]), now: NOW, appDays: [
+      { player: "deleted", day: "2026-11-19", platform: "android" },
+    ], events: [], matches: [
+      { white: "ios", black: "deleted", game_id: "preserved", counts: true, finished_at: "2026-11-19T11:00:00Z" },
+    ] });
+    expect(result.days[0]!).toMatchObject({ devices: 0, online_finished: 1 });
+  });
+
   it("supports a seven-day analysis without changing the native filters", () => {
     const result = buildAdminStats({ players, testIds: new Set(["test"]), now: NOW, appDays: [
       { player: "ios", day: "2026-11-13", platform: "ios" },

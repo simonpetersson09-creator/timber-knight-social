@@ -3,13 +3,12 @@ import { Link } from "@tanstack/react-router";
 import { ArrowLeft, BellRing, ChartLine, ChevronLeft, ChevronRight, Copy, LogOut, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AdminLineChart from "@/components/AdminLineChart";
-import { adminPushTest, adminSetTest, adminStats } from "@/lib/admin.functions";
+import { adminLogin, adminLogout, adminPushTest, adminSetTest, adminStats } from "@/lib/admin.functions";
 import {
   adminForfeitShare, adminOnlineOutcomes, adminRecordIndexes, adminReturningShare,
   adminRollingMean, buildRibbon, type AdminColumnKey, type AdminDayRow, type StarPoint,
 } from "@/lib/admin-records";
 
-const ADMIN_KEY_STORAGE = "lovable.admin.key";
 const COLUMNS: { key: AdminColumnKey; label: string }[] = [
   { key: "devices", label: "Aktiva enheter" },
   { key: "played", label: "Enheter som spelade" },
@@ -78,29 +77,43 @@ export default function AdminDashboard({ diagram = false }: { diagram?: boolean 
     return () => { observer?.disconnect(); cancelAnimationFrame(raf); window.removeEventListener("resize", measure); };
   }, [rows, diagram, collapsedColumns]);
 
-  const load = async (key: string, selectedPeriod: 7 | 30 | 90 = period) => {
+  const load = async (selectedPeriod: 7 | 30 | 90 = period, quiet = false) => {
     setLoading(true); setError(null);
     try {
-      const result = await adminStats({ data: { password: key, days: selectedPeriod } });
+      const result = await adminStats({ data: { days: selectedPeriod } });
       setStats(result);
-      try { localStorage.setItem(ADMIN_KEY_STORAGE, key); } catch { /* storage unavailable */ }
     } catch {
-      try { localStorage.removeItem(ADMIN_KEY_STORAGE); } catch { /* storage unavailable */ }
-      setAdminKey(""); setStats(null);
-      setError("Lösenordet godkändes inte, eller admin kunde inte öppnas. Försök igen.");
+      setStats(null);
+      if (!quiet) setError("Sessionen har gått ut, eller admin kunde inte öppnas. Logga in igen.");
     } finally { setLoading(false); }
   };
+  const login = async () => {
+    setLoading(true); setError(null);
+    try {
+      await adminLogin({ data: { password: adminKey } });
+      setAdminKey("");
+      await load(period);
+    } catch {
+      setStats(null);
+      setError("Lösenordet godkändes inte, eller admin kunde inte öppnas. Försök igen.");
+      setLoading(false);
+    }
+  };
+  const logout = async () => {
+    setLoading(true);
+    try { await adminLogout(); } catch { /* local logout still clears sensitive data */ }
+    setAdminKey(""); setStats(null); setError(null); setLoading(false);
+  };
   useEffect(() => {
-    let key = "";
-    try { key = localStorage.getItem(ADMIN_KEY_STORAGE) ?? ""; } catch { /* storage unavailable */ }
-    if (key) { setAdminKey(key); void load(key); } else setLoading(false);
-    // Initial remembered-key login only.
+    try { localStorage.removeItem("lovable.admin.key"); } catch { /* storage unavailable */ }
+    void load(30, true);
+    // Initial cookie-session restore only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!stats) {
     if (loading) return <div className="flex min-h-screen items-center justify-center bg-background p-6 text-foreground" role="status"><RefreshCw className="mr-2 h-5 w-5 motion-safe:animate-spin" />Öppnar admin…</div>;
-    return <div className="flex min-h-screen items-center justify-center bg-background p-6 text-foreground"><form className="w-full max-w-sm space-y-3" onSubmit={(e) => { e.preventDefault(); void load(adminKey); }}>
+    return <div className="flex min-h-screen items-center justify-center bg-background p-6 text-foreground"><form className="w-full max-w-sm space-y-3" onSubmit={(e) => { e.preventDefault(); void login(); }}>
       <h1 className="text-xl font-semibold">Admin</h1>
       <input name="admin-password" autoComplete="current-password" aria-label="Adminnyckel" type="password" value={adminKey} onChange={(e) => setAdminKey(e.target.value)} placeholder="Adminnyckel" className="w-full rounded-md border border-border bg-card px-3 py-2" />
       <Button type="submit" disabled={loading || !adminKey} className="w-full">{loading ? "Laddar…" : "Logga in"}</Button>
@@ -118,12 +131,12 @@ export default function AdminDashboard({ diagram = false }: { diagram?: boolean 
       <p className="text-sm text-muted-foreground">Svensk tid, bara appen (iPhone/Android). Dagens rad är inte komplett. Parentes: dagsmedel för upp till 30 dagar.</p>
     </div><div className="flex flex-wrap gap-2">
       <Button asChild variant="outline" size="sm"><Link to={diagram ? "/admin" : "/admin/diagram"}>{diagram ? <ArrowLeft /> : <ChartLine />}{diagram ? "Till tabellen" : "Diagram"}</Link></Button>
-      <Button variant="outline" size="sm" onClick={() => void load(adminKey)} disabled={loading}><RefreshCw />{loading ? "Uppdaterar…" : "Uppdatera"}</Button>
-      <Button variant="outline" size="sm" disabled={loading} onClick={() => { try { localStorage.removeItem(ADMIN_KEY_STORAGE); } catch { /* storage unavailable */ } setAdminKey(""); setStats(null); setError(null); }}><LogOut />Logga ut</Button>
+      <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}><RefreshCw />{loading ? "Uppdaterar…" : "Uppdatera"}</Button>
+      <Button variant="outline" size="sm" disabled={loading} onClick={() => void logout()}><LogOut />Logga ut</Button>
     </div></div>
     {error && <p className="mb-2 text-sm text-destructive">{error}</p>}
     <section aria-label="Periodanalys" className="mb-5 grid gap-3 lg:grid-cols-[auto_1fr_1fr]">
-      <div className="rounded-lg border border-border bg-card p-3"><label className="text-xs text-muted-foreground" htmlFor="admin-period">Analysera period</label><select id="admin-period" className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm" value={period} disabled={loading} onChange={(event) => { const next = Number(event.target.value) as 7 | 30 | 90; setPeriod(next); void load(adminKey, next); }}><option value={7}>7 dagar</option><option value={30}>30 dagar</option><option value={90}>90 dagar</option></select><p className="mt-1 text-xs text-muted-foreground">30-dagarstabellen finns alltid kvar.</p></div>
+      <div className="rounded-lg border border-border bg-card p-3"><label className="text-xs text-muted-foreground" htmlFor="admin-period">Analysera period</label><select id="admin-period" className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm" value={period} disabled={loading} onChange={(event) => { const next = Number(event.target.value) as 7 | 30 | 90; setPeriod(next); void load(next); }}><option value={7}>7 dagar</option><option value={30}>30 dagar</option><option value={90}>90 dagar</option></select><p className="mt-1 text-xs text-muted-foreground">30-dagarstabellen finns alltid kvar.</p></div>
       <div className="rounded-lg border border-border bg-card p-3"><p className="mb-2 text-xs text-muted-foreground">Återkommande appenheter · mogna kohorter</p><div className="grid grid-cols-3 gap-2">{retentionCards.map(([label, value]) => <div key={label}><p className="font-semibold">{label}: {value.rate == null ? "—" : `${value.rate.toLocaleString("sv-SE", { maximumFractionDigits: 1 })} %`}</p><p className="text-xs text-muted-foreground">{value.returned} av {value.eligible}</p></div>)}</div></div>
       <div className="rounded-lg border border-border bg-card p-3"><p className="text-xs text-muted-foreground">Onlineläge just nu</p><div className="mt-1 flex gap-5"><p><b className="text-xl">{stats.liveGames.active}</b><span className="ml-1 text-sm">pågående</span></p><p><b className="text-xl">{stats.liveGames.waiting}</b><span className="ml-1 text-sm">väntande</span></p></div><p className="mt-1 text-xs text-muted-foreground">{stats.liveGames.byKind.map(([key, count]) => `${key.replace(":", " · ")}: ${count}`).join(" · ") || "Inga aktiva eller väntande matcher"}</p></div>
     </section>
@@ -143,7 +156,7 @@ export default function AdminDashboard({ diagram = false }: { diagram?: boolean 
       <p className="mt-3 text-xs text-muted-foreground">Appålder bygger på första registrerade appaktivitet, inte verifierad nedladdningsdag. Nya appenheter är nya enhets-ID:n, inte verifierade nya personer. Partiannonser är bekräftade visningar / registrerade tillfällen. Avhoppsandel är avhopp / (färdiga onlinematcher + avhopp).</p>
       <p className="mt-3 text-xs text-muted-foreground">★ = högsta värdet i kolumnen under perioden. För avhopp och problem är röd stjärna den sämsta dagen. Enhetssummor visas inte eftersom samma enhet kan spela flera dagar.</p>
       <details className="mt-6 border-t border-border pt-4"><summary className="cursor-pointer font-semibold">Testenheter och loggdetaljer</summary>
-        <div className="mt-4 grid gap-5 lg:grid-cols-2"><section><h2 className="mb-2 font-semibold">Testtelefoner</h2><p className="text-sm text-muted-foreground">Spelarnummer syns i appens inställningar. Nu: {stats.testPlayers.join(", ") || "inga"}</p><div className="mt-2 flex flex-wrap gap-2"><input className="text-field max-w-40" inputMode="numeric" aria-label="Spelarnummer" value={num} onChange={(e) => setNum(e.target.value.replace(/\D/g, ""))} placeholder="Spelarnummer" /><Button size="sm" disabled={!num} onClick={async () => { await adminSetTest({ data: { password: adminKey, playerNumber: Number(num), isTest: true } }); setNum(""); await load(adminKey); }}>Lägg till</Button><Button size="sm" variant="outline" disabled={!num} onClick={async () => { await adminSetTest({ data: { password: adminKey, playerNumber: Number(num), isTest: false } }); setNum(""); await load(adminKey); }}>Ta bort</Button><Button size="sm" variant="outline" disabled={!num} onClick={async () => { const response = await adminPushTest({ data: { password: adminKey, playerNumber: Number(num) } }); setPushMessage({ sent: "Testnotisen skickades.", missing_token: "Enheten har ingen registrerad notismottagare.", not_configured: "Notisleveransen är inte konfigurerad ännu.", not_found: "Spelarnumret hittades inte.", failed: "Testnotisen kunde inte skickas." }[response.result]); }}><BellRing />Skicka testnotis</Button></div>{pushMessage && <p className="mt-2 text-sm" role="status">{pushMessage}</p>}</section>
+        <div className="mt-4 grid gap-5 lg:grid-cols-2"><section><h2 className="mb-2 font-semibold">Testtelefoner</h2><p className="text-sm text-muted-foreground">Spelarnummer syns i appens inställningar. Nu: {stats.testPlayers.join(", ") || "inga"}</p><div className="mt-2 flex flex-wrap gap-2"><input className="text-field max-w-40" inputMode="numeric" aria-label="Spelarnummer" value={num} onChange={(e) => setNum(e.target.value.replace(/\D/g, ""))} placeholder="Spelarnummer" /><Button size="sm" disabled={!num} onClick={async () => { await adminSetTest({ data: { playerNumber: Number(num), isTest: true } }); setNum(""); await load(); }}>Lägg till</Button><Button size="sm" variant="outline" disabled={!num} onClick={async () => { await adminSetTest({ data: { playerNumber: Number(num), isTest: false } }); setNum(""); await load(); }}>Ta bort</Button><Button size="sm" variant="outline" disabled={!num} onClick={async () => { const response = await adminPushTest({ data: { playerNumber: Number(num) } }); setPushMessage({ sent: "Testnotisen skickades.", missing_token: "Enheten har ingen registrerad notismottagare.", not_configured: "Notisleveransen är inte konfigurerad ännu.", not_found: "Spelarnumret hittades inte.", failed: "Testnotisen kunde inte skickas." }[response.result]); }}><BellRing />Skicka testnotis</Button></div>{pushMessage && <p className="mt-2 text-sm" role="status">{pushMessage}</p>}</section>
         <section><h2 className="mb-2 font-semibold">Händelser under perioden</h2>{[["Annonser", stats.ads], ["Fel", stats.errors], ["Spel", stats.play]].map(([label, values]) => <div key={label as string} className="mb-2"><p className="text-sm font-medium">{label as string}</p>{(values as [string, number][]).length ? (values as [string, number][]).map(([name, count]) => <p key={name} className="truncate text-xs text-muted-foreground">{name}: <b>{count}</b></p>) : <p className="text-xs text-muted-foreground">Inga rapporter ännu.</p>}</div>)}</section></div>
         <section className="mt-5"><h2 className="mb-2 font-semibold">Senaste feldetaljer</h2>{stats.recentErrors.length ? <div className="space-y-2">{stats.recentErrors.map((event, index) => <details key={`${event.created_at}-${index}`} className="rounded-md border border-border p-2 text-xs"><summary className="cursor-pointer">{event.created_at.slice(0, 16).replace("T", " ")} · {event.platform} · {event.name}</summary><pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words text-muted-foreground">{event.detail || "Ingen detalj"}</pre></details>)}</div> : <p className="text-xs text-muted-foreground">Inga feldetaljer under perioden.</p>}</section>
       </details>

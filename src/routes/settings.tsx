@@ -77,7 +77,9 @@ function SettingsPage() {
     if (busy) return;
     setBusy(true);
     try {
-      await deleteMyData({ data: getCred() }); clearIdentity();
+      const result = await deleteMyData({ data: getCred() });
+      if (!result.ok) throw new Error("data_delete_failed");
+      clearIdentity();
       Object.keys(localStorage).filter((k) => k.startsWith("mrbchess.")).forEach((k) => localStorage.removeItem(k));
       setWipe(false); reload(true); setS(getSettings()); setStats(getStats()); toast.success(t("dataDeleted"));
     } catch { toast.error(t("error")); } finally { setBusy(false); }

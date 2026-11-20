@@ -1,5 +1,13 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Releasegranskning – säkerhet och drift 20 nov
+- [x] S02: 30 minuters HttpOnly-adminsession; inloggning, omladdning, utloggning och borttagning av gammal nyckel provade
+- [x] S03: radering anonymiserar spelaren, kontrollerar varje steg och bevarar motståndarens matchhistorik; inställningsflöde och databasprov verifierade
+- [x] S04: webb- och testmatcher exkluderas konsekvent från adminstatistik och topplistor; enhets- och databastest verifierade
+- [ ] S05: väntar på åtkomst till Apple Developer och Google Play/Cloud för App Attest/Play Integrity; användaren avvaktar
+- [x] S06: fyra index verifierade, ägarlås hindrar överlapp och 45-sekundersbudget rapporterar delvis körning
+- [x] S07: främmande snabbstatus avvisades i databasprov; riktigt nolländringsjobb svarade noop och obehöriga får 401
+
 ## Releasegranskning – annonser och avgränsning 20 nov
 - [x] A03: exakt 12-sekundersregel, kombinerade native-/WebView-livscykler samt ogiltiga sena laddningar testade; fysisk enhet återstår under befintliga nativeprov
 - [x] A04: UMP före ATT, generationspärrar för gamla samtyckesflöden och statusbevis utan samtyckessträngar/identifierare testade för iOS/Android; live SDK-/enhetsbevis återstår under befintliga nativeprov
