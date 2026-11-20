@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { canCloseOnlineGame, DAY, HOUR, INVITE_TTL_MS, LOBBY_TTL_MS, moveDeadline, shouldAskRating, shouldSendPlayReminder, statsFor, webPathAllowed } from "./online-rules";
+import { canCloseOnlineGame, DAY, HOUR, INVITE_TTL_MS, LOBBY_TTL_MS, moveDeadline, QUICK_WAIT_MS, shouldAskRating, shouldSendPlayReminder, statsFor, webPathAllowed } from "./online-rules";
 
 const m = (white: string, black: string, result: "w" | "b" | "d", counts = true) => ({ white, black, result, counts, finished_at: "" });
 describe("online rules", () => {
+  it("searches for an online opponent for exactly 20 seconds before computer fallback", () => { expect(QUICK_WAIT_MS).toBe(20_000); });
   it("invites last 24 h, lobbies 6 h", () => { expect(INVITE_TTL_MS).toBe(24 * HOUR); expect(LOBBY_TTL_MS).toBe(6 * HOUR); });
   it("lets participants delete waiting and active games, but never finished history", () => {
     const game = { status: "waiting", host: "host", invitee: "guest", white: null, black: null };

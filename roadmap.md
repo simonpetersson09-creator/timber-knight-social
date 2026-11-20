@@ -1,5 +1,10 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Snabbspel med onlinesökning 20 nov
+- [x] Starta 20 sekunders onlinesökning från startsidans Snabbspel
+- [x] Använd vald nivå och klocka om datorn får ta över utan motståndare
+- [x] Kontrollera riktig spelare–spelare-matchning och att sen anslutning vinner över fallback
+
 ## Eftermatchannons vid samtliga utgångar 20 nov
 - [x] Visa samma engångsannons vid Spela igen, Hem, tillbakapil och native tillbaka efter avslutat parti
 - [x] Låt offline/no-fill fortsätta navigationen och behåll max ett försök per parti och tvåminutersspärren

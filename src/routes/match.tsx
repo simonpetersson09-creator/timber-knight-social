@@ -26,12 +26,12 @@ import { CHECKMATE_RESULT_DELAY_MS, MATCH_NOTICE_MS } from "@/lib/play-motion";
 import { celebrate, feedback } from "@/lib/feedback";
 import { noteGameFinished, setGameplayActive, showPostMatchAd } from "@/lib/ads";
 import { onGameFinished } from "@/lib/rate";
-import { createGame, recordResult } from "@/lib/storage";
+import { CLOCKS, createGame, recordResult } from "@/lib/storage";
 import { ResultShareButton } from "@/components/ResultShareButton";
 import { report, reportOnce } from "@/lib/report";
 
 export const Route = createFileRoute("/match")({
-  validateSearch: z.object({ id: z.string() }),
+  validateSearch: z.object({ id: z.string(), level: z.enum(["beginner", "medium", "hard", "master"]).optional(), clock: z.coerce.number().int().min(0).max(4).optional() }),
   head: () => ({
     meta: [
       { title: "Onlineparti – Mr B Chess" },
@@ -49,7 +49,7 @@ export const CHAT: Key[] = ["chat0", "chat1", "chat2", "chat3", "chat4", "chat5"
 type Data = Awaited<ReturnType<typeof getOnlineGame>>;
 
 function Match() {
-  const { id } = Route.useSearch();
+  const { id, level: fallbackLevel = "medium", clock: fallbackClock = 0 } = Route.useSearch();
   const { t } = useI18n();
   const navigate = useNavigate();
   const [d, setD] = useState<Data | null>(null);
@@ -68,6 +68,7 @@ function Match() {
   const prevPgn = useRef<string | null>(null);
   const prevDrawOffer = useRef<"w" | "b" | null>(null);
   const endHandled = useRef(false);
+  const fallbackStarted = useRef(false);
   const leavingRef = useRef(false);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resultTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -132,20 +133,31 @@ function Match() {
   const link = g?.code && typeof window !== "undefined" ? `${window.location.origin}/join?code=${g.code}` : "";
   useEffect(() => { if (link) void QRCode.toDataURL(link, { margin: 1, width: 320, color: { dark: "#0b2a2e", light: "#f5ecd7" } }).then(setQr); }, [link]);
 
-  // Quick match: if nobody shows up, play the computer instead.
+  // Give a late opponent precedence, then cancel once and fall back with the chosen local settings.
   useEffect(() => {
     if (g?.kind !== "quick" || g.status !== "waiting") return;
-    if (now - started < QUICK_WAIT_MS) return;
+    if (now - started < QUICK_WAIT_MS || fallbackStarted.current) return;
+    fallbackStarted.current = true;
     void (async () => {
-      await cancelGame({ data: { ...getCred(), gameId: g.id } });
-      const r = await quickMatch({ data: { ...getCred(), gameId: g.id } });
-      if (r.status === "active") return;
-      toast(t("noOpponent"));
-      const local = createGame({ mode: "ai", level: "medium", human: Math.random() < 0.5 ? "w" : "b", clock: null });
-      if (local) { report("play", "local_game_started", JSON.stringify({ game: local.id, level: local.level, mode: local.mode, fallback: true })); void navigate({ to: "/play", search: { id: local.id }, replace: true }); }
-      else void navigate({ to: "/" });
+      try {
+        const current = await quickMatch({ data: { ...getCred(), gameId: g.id } });
+        if (current.status === "active") return;
+        await cancelGame({ data: { ...getCred(), gameId: g.id } });
+        toast(t("noOpponent"));
+        const local = createGame({ mode: "ai", level: fallbackLevel, human: "w", clock: CLOCKS[fallbackClock] ?? null });
+        if (local) {
+          report("play", "local_game_started", JSON.stringify({ game: local.id, level: local.level, mode: local.mode, fallback: true }));
+          await navigate({ to: "/play", search: { id: local.id }, replace: true });
+        } else {
+          toast.error(t("maxSaved"));
+          await navigate({ to: "/" });
+        }
+      } catch {
+        fallbackStarted.current = false;
+        toast.error(t("error"));
+      }
     })();
-  }, [g?.kind, g?.status, g?.id, now, started, navigate, t]);
+  }, [g?.kind, g?.status, g?.id, now, started, navigate, t, fallbackLevel, fallbackClock]);
 
   useEffect(() => {
     if (g?.status !== "active") return;

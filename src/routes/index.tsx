@@ -1,11 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { Bot, Globe, Settings, Users, UserPlus, X, Cpu, Infinity as InfinityIcon, Trophy, ChevronDown, Gamepad2, Percent, Handshake, Flame, Play, Send, Clock, Loader2 } from "lucide-react";
+import { Globe, Settings, Users, UserPlus, X, Cpu, Infinity as InfinityIcon, Trophy, ChevronDown, Gamepad2, Percent, Handshake, Flame, Play, Send, Clock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getCred } from "@/lib/identity";
 import { useMe } from "@/hooks/use-me";
-import { cancelGame, joinGame, myOnline } from "@/lib/online.functions";
+import { cancelGame, joinGame, myOnline, quickMatch } from "@/lib/online.functions";
 import { Button } from "@/components/ui/button";
 import { BrandIcon } from "@/components/BrandIcon";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
@@ -50,11 +50,12 @@ function Home() {
   const [online, setOnline] = useState<OnlineRow[]>([]);
   const [closingOnline, setClosingOnline] = useState<string | null>(null);
   const closingRef = useRef(false);
-  const [level, setLevel] = useState<Level>("beginner");
+  const [level, setLevel] = useState<(typeof QUICK_LEVELS)[number]>("beginner");
   const [clock, setClock] = useState(0);
   const [langOpen, setLangOpen] = useState(false);
   const [more, setMore] = useState(false);
   const [quickTop, setQuickTop] = useState<number | null>(null);
+  const [startingQuick, setStartingQuick] = useState(false);
   const homeStack = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -107,12 +108,17 @@ function Home() {
     }
     setOpen(open === "ai" ? null : "ai");
   }
-  function start() {
-    // The player always gets the ivory pieces and moves first.
-    const g = createGame({ mode: "ai", level, human: "w", clock: CLOCKS[clock] ?? null });
-    if (g) {
-      report("play", "local_game_started", JSON.stringify({ game: g.id, level, mode: g.mode }));
-      void navigate({ to: "/play", search: { id: g.id } });
+  async function start() {
+    if (startingQuick || full) return;
+    setStartingQuick(true);
+    try {
+      const result = await quickMatch({ data: getCred() });
+      report("play", "quick_match_search_started", JSON.stringify({ game: result.id, level, clock }));
+      await navigate({ to: "/match", search: { id: result.id, level, clock } });
+    } catch {
+      toast.error(t("error"));
+    } finally {
+      setStartingQuick(false);
     }
   }
   function remove(id: string) {
@@ -154,7 +160,7 @@ function Home() {
 
         <motion.div variants={item} transition={{ duration: 0.45, ease: "easeOut" }} className="flex flex-col gap-[7px]">
           <Button className="action-btn action-blue" onClick={toggleQuick} aria-expanded={open === "ai"} aria-controls="quick-play-setup">
-            <Bot /> {t("playComputer")} <ChevronDown className="quick-chevron" data-open={open === "ai"} />
+            <Gamepad2 /> {t("playComputer")} <ChevronDown className="quick-chevron" data-open={open === "ai"} />
           </Button>
           <AnimatePresence initial={false}>
             {open === "ai" && (
@@ -166,7 +172,7 @@ function Home() {
                   ))}
                 </div>
                 <ClockPicker value={clock} onChange={setClock} />
-                <StartButton full={full} onClick={start} />
+                <StartButton full={full} busy={startingQuick} onClick={() => void start()} />
               </Expand>
             )}
           </AnimatePresence>
@@ -290,12 +296,12 @@ function ClockPicker({ value, onChange }: { value: number; onChange: (i: number)
   );
 }
 
-function StartButton({ full, onClick }: { full: boolean; onClick: () => void }) {
+function StartButton({ full, busy, onClick }: { full: boolean; busy: boolean; onClick: () => void }) {
   const { t } = useI18n();
   return (
     <>
       {full && <p className="text-center text-xs text-destructive">{t("maxSaved")}</p>}
-      <Button variant="ghost" className="action-btn action-gold quick-start" disabled={full} onClick={onClick}>{t("start")}</Button>
+      <Button variant="ghost" className="action-btn action-gold quick-start" disabled={full || busy} onClick={onClick}>{busy ? <Loader2 className="mx-auto size-5 animate-spin" /> : t("start")}</Button>
     </>
   );
 }
