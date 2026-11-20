@@ -4,8 +4,9 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "capacitor:sync:after": "node scripts/ios-permissions.mjs",
-    "capacitor:copy:after": "node scripts/ios-permissions.mjs",
+    "capacitor:sync:after": "node scripts/ios-permissions.mjs && node scripts/ios-ads.mjs",
+    "capacitor:copy:after": "node scripts/ios-permissions.mjs && node scripts/ios-ads.mjs",
+    "ios:ads": "node scripts/ios-ads.mjs",
     "native:ios": "bunx cap add ios && bunx cap sync ios",
     "native:android": "bunx cap add android && bunx cap sync android",
     "native:offline": "CAPACITOR_OFFLINE=1 bun run build && bunx cap sync",

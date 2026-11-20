@@ -18,7 +18,7 @@ import { cancelGame, gameAction, getOnlineGame, makeMove, quickMatch, sendChat }
 import { displayName, flagOf } from "@/lib/profile";
 import { QUICK_WAIT_MS } from "@/lib/online-rules";
 import { celebrate, feedback } from "@/lib/feedback";
-import { showGameEndAd } from "@/lib/ads";
+import { noteGameFinished, setGameplayActive } from "@/lib/ads";
 import { onGameFinished } from "@/lib/rate";
 import { createGame, recordResult } from "@/lib/storage";
 import { ResultShareButton } from "@/components/ResultShareButton";
@@ -104,20 +104,23 @@ function Match() {
     })();
   }, [g?.kind, g?.status, g?.id, now, started, navigate, t]);
 
-  // Game end: full-screen ad first, result only after the player closed it.
+  // Results and statistics complete immediately; the next-match ad only preloads here.
   useEffect(() => {
     if (g?.status !== "finished" || endHandled.current) return;
     endHandled.current = true;
     const won = g.result !== "d" && g.result === myColor;
     recordResult(g.id, g.result === "d" ? "draw" : won ? "win" : "loss", null, g.end_reason !== "resign", "online");
-    void (async () => {
-      await showGameEndAd();
-      setShowResult(true);
-      feedback(won ? "win" : g.result === "d" ? "draw" : "lose");
-      if (won) void celebrate();
-      void onGameFinished();
-    })();
+    noteGameFinished(g.id);
+    setShowResult(true);
+    feedback(won ? "win" : g.result === "d" ? "draw" : "lose");
+    if (won) void celebrate();
+    void onGameFinished();
   }, [g?.status, g?.result, myColor]);
+
+  useEffect(() => {
+    setGameplayActive(g?.status === "active");
+    return () => setGameplayActive(false);
+  }, [g?.status, id]);
 
   const players = useMemo(() => Object.fromEntries((d?.players ?? []).map((p) => [p.id, p])), [d?.players]);
   if (!g || !me) return <main className="min-h-dvh" />;

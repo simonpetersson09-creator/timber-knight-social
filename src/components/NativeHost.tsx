@@ -3,17 +3,21 @@ import { useLocation, useRouter } from "@tanstack/react-router";
 import { isNative } from "@/lib/native";
 import { isBackSwipe, type SwipePoint } from "@/lib/swipe-back";
 import { runTopBackHandler } from "@/lib/back-handler";
-import { maybeShowAppOpen, initAds } from "@/lib/ads";
+import {
+  cancelScheduledAppOpen, initAds, maybeShowAppOpen, preloadInterstitial, scheduleAppOpen, setAdForeground, setAdLocation,
+} from "@/lib/ads";
 import { resumePush } from "@/lib/push";
 import { flushReports, report } from "@/lib/report";
 import { loadMe } from "@/lib/identity";
 
-/** App-wide native behaviour: back button, iOS swipe back, launch ad, push, error reports. */
+/** App-wide native behaviour: navigation, ads, push and error reports. */
 export function NativeHost() {
   const router = useRouter();
   const { pathname } = useLocation();
   const path = useRef(pathname);
   path.current = pathname;
+
+  useEffect(() => { setAdLocation(pathname); }, [pathname]);
 
   useEffect(() => {
     void loadMe().catch(() => {});
@@ -31,18 +35,32 @@ export function NativeHost() {
   useEffect(() => {
     if (!isNative()) return;
     void resumePush();
-    void initAds().then(() => maybeShowAppOpen(path.current));
+    setAdForeground(document.visibilityState === "visible");
+    void initAds().then(() => {
+      void preloadInterstitial();
+      scheduleAppOpen(() => path.current);
+    });
+    const foregroundAds = () => {
+      const active = document.visibilityState === "visible";
+      setAdForeground(active);
+      if (active) { void maybeShowAppOpen(path.current); void preloadInterstitial(); }
+    };
+    document.addEventListener("visibilitychange", foregroundAds);
     let remove: (() => void) | undefined;
     void import("@capacitor/app").then(({ App }) => {
-      const h = App.addListener("backButton", () => {
+      const back = App.addListener("backButton", () => {
         if (runTopBackHandler()) return; // close popups first
         if (path.current === "/") void App.minimizeApp();
         else if (window.history.length > 1) router.history.back();
         else void router.navigate({ to: "/" });
       });
-      remove = () => { void h.then((x) => x.remove()); };
+      const state = App.addListener("appStateChange", ({ isActive }) => {
+        setAdForeground(isActive);
+        if (isActive) { void maybeShowAppOpen(path.current); void preloadInterstitial(); }
+      });
+      remove = () => { void Promise.all([back, state]).then((handles) => handles.forEach((handle) => handle.remove())); };
     });
-    return () => remove?.();
+    return () => { cancelScheduledAppOpen(); document.removeEventListener("visibilitychange", foregroundAds); remove?.(); };
   }, [router]);
 
   // All touch devices: edge swipe goes back, including saved/online games.

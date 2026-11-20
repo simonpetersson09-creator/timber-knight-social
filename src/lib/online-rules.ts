@@ -46,11 +46,6 @@ export function shouldAskRating(finished: number, asked: number): boolean {
   return asked < RATE_AT.length && finished >= RATE_AT[asked]!;
 }
 
-/** App-open ad: only on the start page, never in a game, only after ≥1 finished game, once per launch. */
-export function canShowAppOpen(o: { path: string; finished: number; shownThisLaunch: boolean; native: boolean }): boolean {
-  return o.native && o.path === "/" && o.finished >= 1 && !o.shownThisLaunch;
-}
-
 /** Web visitors only see the download page – except joining, rules, legal and admin pages. */
 export function webPathAllowed(path: string): boolean {
   return ["/join", "/legal", "/rules", "/admin", "/add"].some((p) => path === p || path.startsWith(p + "/"));

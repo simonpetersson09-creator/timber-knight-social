@@ -1,11 +1,7 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
 ## Google AdMob iOS 20 nov
-- [ ] Konfigurera Chess iOS App-ID, App Open och Interstitial med test-ID:n i utveckling
-- [ ] Implementera delad UMP/ATT-livscykel, förladdning, tids- och visningsspärrar samt offline/felutfall
-- [ ] Visa App Open tidigast efter 12 sekunder och Interstitial först vid val att starta ny match
-- [ ] Skapa och synka iOS-konfiguration med AdMob, ATT och SKAdNetwork
-- [ ] Lägg till regeltester och redovisa kvarvarande fysisk iPhone-verifiering
+- [ ] Fysisk iPhone/TestFlight: verifiera UMP/ATT, testannonser, bakgrundsåterkomst, no-fill och avbrutna försök; kräver macOS/Xcode och enhet.
 
 ## Kompakta spelval 20 nov
 - [x] Behåll de fem bekräftade tidsvalen: ingen klocka, 3+2, 5+0, 10+0 och 15+10
@@ -77,7 +73,7 @@
 
 ## Annonser (egna AdMob-ID:n för Chess)
 - [x] 1 App Open (appstart), bara på startsidan, aldrig mitt i parti, kräver minst 1 avslutat parti
-- [x] Mellanannons vid avslut av parti (en per parti, väntar tills stängd)
+- [x] Mellanannons efter avslutat parti när spelaren väljer ny match (en per parti, väntar tills stängd)
 - Avstår: banner och belöningsannons
 - [x] Google-samtycke (UMP) + iOS ATT, ändra annonsval i inställningar, inga annonser på webben
 - [x] app-ads.txt på juridiksidan
@@ -95,7 +91,6 @@
 
 ## Väntar på
 - [ ] Notiser skickas först när Firebase kopplas (koden är klar)
-- [ ] Egna AdMob-ID:n för Chess (testannonser tills dess)
 - [ ] Butikslänkar när appen finns i App Store/Google Play
 - [ ] Bygga iOS/Android-paket på dator (Xcode/Android Studio) efter publicering
 - [ ] Riktig app-ads.txt-rad och supportmejl på juridiksidan

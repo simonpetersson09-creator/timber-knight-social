@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DAY, HOUR, INVITE_TTL_MS, LOBBY_TTL_MS, canShowAppOpen, moveDeadline, shouldAskRating, shouldSendPlayReminder, statsFor, webPathAllowed } from "./online-rules";
+import { DAY, HOUR, INVITE_TTL_MS, LOBBY_TTL_MS, moveDeadline, shouldAskRating, shouldSendPlayReminder, statsFor, webPathAllowed } from "./online-rules";
 
 const m = (white: string, black: string, result: "w" | "b" | "d", counts = true) => ({ white, black, result, counts, finished_at: "" });
 describe("online rules", () => {
@@ -29,14 +29,6 @@ describe("online rules", () => {
     expect(shouldAskRating(15, 1)).toBe(true);
     expect(shouldAskRating(35, 2)).toBe(true);
     expect(shouldAskRating(500, 3)).toBe(false);
-  });
-  it("app-open ad only on start page after a finished game", () => {
-    const ok = { path: "/", finished: 1, shownThisLaunch: false, native: true };
-    expect(canShowAppOpen(ok)).toBe(true);
-    expect(canShowAppOpen({ ...ok, finished: 0 })).toBe(false);
-    expect(canShowAppOpen({ ...ok, path: "/play" })).toBe(false);
-    expect(canShowAppOpen({ ...ok, native: false })).toBe(false);
-    expect(canShowAppOpen({ ...ok, shownThisLaunch: true })).toBe(false);
   });
   it("web shows only join and legal pages", () => {
     expect(webPathAllowed("/join")).toBe(true);

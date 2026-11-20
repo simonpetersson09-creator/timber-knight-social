@@ -20,7 +20,7 @@ import { stockfishMove, preloadStockfish } from "@/lib/stockfish";
 import { AI_MOVE_DELAY_MS } from "@/lib/play-motion";
 import { useI18n } from "@/lib/i18n";
 import { celebrate, feedback } from "@/lib/feedback";
-import { showGameEndAd } from "@/lib/ads";
+import { noteGameFinished, setGameplayActive, showPostMatchAd } from "@/lib/ads";
 import { onGameFinished } from "@/lib/rate";
 import { createGame, deleteGame, getGame, recordResult, saveGame, type Color, type SavedGame } from "@/lib/storage";
 import { ResultShareButton } from "@/components/ResultShareButton";
@@ -72,6 +72,8 @@ function Play() {
   };
   const [now, setNow] = useState(() => Date.now());
   const [showEnd, setShowEnd] = useState(false);
+  const [startingNewGame, setStartingNewGame] = useState(false);
+  const startingNewGameRef = useRef(false);
   const turnStart = useRef(Date.now());
   const savedRef = useRef<SavedGame | null>(null);
   const finishedGame = useRef<string | null>(null);
@@ -92,6 +94,11 @@ function Play() {
     setSaved(g);
   }, [id, game, navigate]);
 
+  useEffect(() => {
+    setGameplayActive(!!saved && !result);
+    return () => setGameplayActive(false);
+  }, [saved?.id, result]);
+
   const vsAi = saved?.mode === "ai";
   const human: Color = saved?.human ?? "w";
   const aiTurn = !!saved && vsAi && game.turn() !== human && !result;
@@ -108,8 +115,9 @@ function Play() {
     finishedGame.current = s.id;
     setResult(res);
     deleteGame(s.id);
-    setShowEnd(false);
-    void showGameEndAd().then(() => { setShowEnd(true); void onGameFinished(); });
+    setShowEnd(true);
+    noteGameFinished(s.id);
+    void onGameFinished();
     report("play", "local_game_finished", JSON.stringify({ game: s.id, reason: res.reason, winner: res.winner, level: s.level }));
     if (s.mode === "ai") {
       const outcome = res.winner === null ? "draw" : res.winner === s.human ? "win" : "loss";
@@ -239,12 +247,20 @@ function Play() {
     finish({ winner: other(loser), reason: "resigned" });
   }
 
-  function playAgain() {
+  async function playAgain() {
     const s = savedRef.current;
-    if (!s) return;
-    const g = createGame({ mode: s.mode, level: s.level, human: s.human, clock: s.clock });
-    if (g) void navigate({ to: "/play", search: { id: g.id }, replace: true });
-    else void navigate({ to: "/" });
+    if (!s || startingNewGameRef.current) return;
+    startingNewGameRef.current = true;
+    setStartingNewGame(true);
+    try {
+      await showPostMatchAd(s.id);
+      const g = createGame({ mode: s.mode, level: s.level, human: s.human, clock: s.clock });
+      if (g) await navigate({ to: "/play", search: { id: g.id }, replace: true });
+      else await navigate({ to: "/" });
+    } finally {
+      startingNewGameRef.current = false;
+      setStartingNewGame(false);
+    }
   }
 
   if (!saved) return <main className="min-h-dvh" />;
@@ -353,7 +369,7 @@ function Play() {
           <h2 className="brand-wordmark text-3xl">{title}</h2>
           <p className="text-muted-foreground">{resultText()}</p>
           <ResultShareButton title="Mr B Chess" text={`${title} – ${resultText()}${vsAi ? ` · ${t(saved.level)}` : ""}`} />
-          <button onClick={playAgain} className="action-btn action-gold">{t("playAgain")}</button>
+          <button onClick={() => void playAgain()} disabled={startingNewGame} className="action-btn action-gold">{t("playAgain")}</button>
           <Link to="/" className="action-btn action-ghost">{t("home")}</Link>
         </div>
       </Modal>

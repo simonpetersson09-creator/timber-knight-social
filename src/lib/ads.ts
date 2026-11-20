@@ -1,96 +1,306 @@
 /**
- * AdMob: one App Open ad at launch (start page only, after ≥1 finished game) and one
- * interstitial when a game ends. Google UMP consent + Apple ATT. Never on web.
+ * Native AdMob for iOS. UMP consent is gathered before ATT and SDK initialization.
+ * App Open is restricted to the home screen; post-match Interstitials are shown only
+ * by an explicit new-match action. No web ads, banners or rewarded ads.
  */
+import { Capacitor } from "@capacitor/core";
 import { isNative, platform } from "./native";
 import { report } from "./report";
 import { getMeta } from "./meta";
-import { canShowAppOpen } from "./online-rules";
+import {
+  APP_OPEN_DELAY_MS, APP_OPEN_NO_FILL_RETRY_MS,
+  canPresentAppOpen, canShowAppOpen, canShowPostMatchInterstitial, noFillRetryAt,
+} from "./ad-rules";
 
-type Ids = { appOpen: string | null; interstitial: string | null };
-/** Chess's own AdMob IDs go here. While null, real ads are off (test ads in development builds). */
+type Ids = { appId: string | null; appOpen: string | null; interstitial: string | null };
+type AdKind = "appOpen" | "interstitial";
+type AdModule = typeof import("@capacitor-community/admob");
+
 export const ADMOB_IDS: Record<"ios" | "android", Ids> = {
-  ios: { appOpen: null, interstitial: null },
-  android: { appOpen: null, interstitial: null },
+  ios: {
+    appId: "ca-app-pub-7448540924654868~9129867558",
+    appOpen: "ca-app-pub-7448540924654868/5190622544",
+    interstitial: "ca-app-pub-7448540924654868/3006865222",
+  },
+  android: { appId: null, appOpen: null, interstitial: null },
 };
-const TEST: Record<"ios" | "android", Ids> = {
+const TEST: Record<"ios" | "android", Omit<Ids, "appId">> = {
   ios: { appOpen: "ca-app-pub-3940256099942544/5575463023", interstitial: "ca-app-pub-3940256099942544/4411468910" },
   android: { appOpen: "ca-app-pub-3940256099942544/9257395921", interstitial: "ca-app-pub-3940256099942544/1033173712" },
 };
-function unit(kind: keyof Ids): string | null {
+
+function unit(kind: AdKind): string | null {
   const p = platform();
   if (p === "web") return null;
-  return ADMOB_IDS[p][kind] ?? (import.meta.env.DEV ? TEST[p][kind] : null);
+  if (import.meta.env.DEV) return TEST[p][kind];
+  return ADMOB_IDS[p][kind];
+}
+function adAvailable(): boolean {
+  return isNative() && Capacitor.isPluginAvailable("AdMob");
 }
 const mod = () => import("@capacitor-community/admob");
-let ready: Promise<boolean> | null = null;
+const online = () => typeof navigator === "undefined" || navigator.onLine;
+const reason = (error: unknown) => String((error as { message?: string } | undefined)?.message ?? error ?? "unknown").slice(0, 180);
 
-/** Initializes AdMob, asks ATT (iOS) and shows Google's consent form when required. */
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label}_timeout`)), ms);
+    promise.then((value) => { clearTimeout(timer); resolve(value); }, (error) => { clearTimeout(timer); reject(error); });
+  });
+}
+
+const STORAGE_KEY = "mrbchess.ads.v2";
+type StoredAds = { lastFullScreenAt: number; lastAttemptMatchId: string | null; pendingMatchId: string | null; appOpenNoFillRetryAt: number };
+const EMPTY_ADS: StoredAds = { lastFullScreenAt: 0, lastAttemptMatchId: null, pendingMatchId: null, appOpenNoFillRetryAt: 0 };
+function storedAds(): StoredAds {
+  if (typeof localStorage === "undefined") return EMPTY_ADS;
+  try { return { ...EMPTY_ADS, ...(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}") as Partial<StoredAds>) }; }
+  catch { return EMPTY_ADS; }
+}
+function patchAds(patch: Partial<StoredAds>) {
+  if (typeof localStorage === "undefined") return;
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...storedAds(), ...patch })); } catch { /* Storage failure must not affect play. */ }
+}
+function noteFullScreenShown() { patchAds({ lastFullScreenAt: Date.now() }); }
+
+const launchAt = Date.now();
+let foreground = true;
+let currentPath = "/";
+let gameplayActive = false;
+let privacyGeneration = 0;
+let initPromise: Promise<boolean> | null = null;
+let listenersPromise: Promise<void> | null = null;
+let appOpenTimer: ReturnType<typeof setTimeout> | null = null;
+let appOpenAttempt = 0;
+let appOpenShown = false;
+let appOpenShowing = false;
+let appOpenLoadedAt = 0;
+let appOpenPreload: Promise<boolean> | null = null;
+let interstitialReady = false;
+let interstitialPreparedAt = 0;
+let interstitialPreload: Promise<boolean> | null = null;
+let interstitialShowing = false;
+let interstitialDismiss: (() => void) | null = null;
+
+/** Route and app-state context invalidates pending App Open attempts immediately. */
+export function setAdLocation(path: string) {
+  if (currentPath !== path) appOpenAttempt++;
+  currentPath = path;
+}
+export function setGameplayActive(active: boolean) {
+  if (active && !gameplayActive) appOpenAttempt++;
+  gameplayActive = active;
+}
+export function setAdForeground(active: boolean) {
+  if (foreground !== active) appOpenAttempt++;
+  foreground = active;
+}
+
+async function ensureListeners(module: AdModule): Promise<void> {
+  listenersPromise ??= (async () => {
+    const { AdMob, AppOpenAdPluginEvents, InterstitialAdPluginEvents } = module;
+    await Promise.all([
+      AdMob.addListener(AppOpenAdPluginEvents.Opened, () => { noteFullScreenShown(); report("ad", "app_open_shown"); }),
+      AdMob.addListener(AppOpenAdPluginEvents.Closed, () => { appOpenShowing = false; report("ad", "app_open_dismissed"); }),
+      AdMob.addListener(AppOpenAdPluginEvents.FailedToShow, (error) => { appOpenShowing = false; report("ad", "app_open_failed_to_show", reason(error)); }),
+      AdMob.addListener(InterstitialAdPluginEvents.Showed, () => { noteFullScreenShown(); report("ad", "interstitial_shown"); }),
+      AdMob.addListener(InterstitialAdPluginEvents.Dismissed, () => {
+        interstitialShowing = false;
+        report("ad", "interstitial_dismissed");
+        const done = interstitialDismiss;
+        interstitialDismiss = null;
+        done?.();
+      }),
+      AdMob.addListener(InterstitialAdPluginEvents.FailedToShow, (error) => {
+        interstitialShowing = false;
+        report("ad", "interstitial_failed_to_show", reason(error));
+        const done = interstitialDismiss;
+        interstitialDismiss = null;
+        done?.();
+      }),
+    ]);
+  })().catch((error) => { listenersPromise = null; throw error; });
+  return listenersPromise;
+}
+
+/** Initializes once for simultaneous callers. Failed attempts may be retried later. */
 export function initAds(): Promise<boolean> {
-  if (!isNative()) return Promise.resolve(false);
-  ready ??= (async () => {
+  if (!adAvailable()) return Promise.resolve(false);
+  if (initPromise) return initPromise;
+  const generation = privacyGeneration;
+  const attempt = (async () => {
     try {
-      const { AdMob } = await mod();
-      if (platform() === "ios") {
-        const st = await AdMob.trackingAuthorizationStatus();
-        if (st.status === "notDetermined") await AdMob.requestTrackingAuthorization();
+      const module = await mod();
+      const { AdMob } = module;
+      await ensureListeners(module);
+      let consent = await withTimeout(AdMob.requestConsentInfo(), 15_000, "consent_info");
+      if (consent.isConsentFormAvailable && consent.status === "REQUIRED") {
+        consent = await withTimeout(AdMob.showConsentForm(), 120_000, "consent_form");
       }
-      await AdMob.initialize({});
-      const info = await AdMob.requestConsentInfo();
-      if (info.isConsentFormAvailable && info.status === "REQUIRED") await AdMob.showConsentForm();
+      if (!consent.canRequestAds) { report("ad", "consent_not_ready"); return false; }
+      if (platform() === "ios") {
+        const status = await withTimeout(AdMob.trackingAuthorizationStatus(), 10_000, "att_status");
+        if (status.status === "notDetermined") await withTimeout(AdMob.requestTrackingAuthorization(), 120_000, "att_request");
+      }
+      await withTimeout(AdMob.initialize({ initializeForTesting: import.meta.env.DEV }), 15_000, "admob_init");
+      if (generation !== privacyGeneration) return false;
       report("ad", "init_ok");
       return true;
-    } catch (e) { report("ad", "init_failed", String(e)); return false; }
+    } catch (error) { report("ad", "init_failed", reason(error)); return false; }
   })();
-  return ready;
+  initPromise = attempt;
+  void attempt.then((ok) => { if (!ok && initPromise === attempt) initPromise = null; });
+  return attempt;
 }
 
-/** Opens Google's privacy options so the player can change ad choices. */
+/** Privacy choices remain accessible even when consent does not currently permit ads. */
 export async function openAdChoices(): Promise<boolean> {
-  if (!(await initAds())) return false;
-  try { const { AdMob } = await mod(); await AdMob.showPrivacyOptionsForm(); return true; } catch (e) { report("ad", "privacy_form_failed", String(e)); return false; }
+  if (!adAvailable()) return false;
+  try {
+    await initAds();
+    const { AdMob } = await mod();
+    await withTimeout(AdMob.showPrivacyOptionsForm(), 120_000, "privacy_form");
+    privacyGeneration++;
+    initPromise = null;
+    appOpenLoadedAt = 0;
+    interstitialReady = false;
+    interstitialPreparedAt = 0;
+    void initAds().then(() => { void preloadInterstitial(); });
+    return true;
+  } catch (error) { report("ad", "privacy_form_failed", reason(error)); return false; }
 }
 
-let appOpenShown = false;
-export async function maybeShowAppOpen(path: string) {
-  if (!canShowAppOpen({ path, finished: getMeta().finished, shownThisLaunch: appOpenShown, native: isNative() })) return;
+async function preloadAppOpen(): Promise<boolean> {
   const id = unit("appOpen");
+  if (!id || !adAvailable() || !online()) return false;
+  if (appOpenLoadedAt > 0) return true;
+  if (appOpenPreload) return appOpenPreload;
+  const generation = privacyGeneration;
+  const promise = (async () => {
+    try {
+      if (!(await initAds()) || generation !== privacyGeneration) return false;
+      const { AdMob } = await mod();
+      await withTimeout(AdMob.loadAppOpen({ adId: id }), 12_000, "app_open_load");
+      if (generation !== privacyGeneration) return false;
+      appOpenLoadedAt = Date.now();
+      report("ad", "app_open_loaded");
+      return true;
+    } catch (error) {
+      if (generation === privacyGeneration) {
+        const retryAt = noFillRetryAt(error, Date.now());
+        if (retryAt) patchAds({ appOpenNoFillRetryAt: retryAt });
+        report("ad", "app_open_load_failed", reason(error));
+      }
+      return false;
+    }
+  })();
+  appOpenPreload = promise;
+  try { return await promise; } finally { if (appOpenPreload === promise) appOpenPreload = null; }
+}
+
+export function scheduleAppOpen(getPath: () => string) {
+  if (appOpenTimer) clearTimeout(appOpenTimer);
+  const delay = Math.max(0, APP_OPEN_DELAY_MS - (Date.now() - launchAt));
+  appOpenTimer = setTimeout(() => { appOpenTimer = null; void maybeShowAppOpen(getPath()); }, delay);
+}
+export function cancelScheduledAppOpen() { if (appOpenTimer) clearTimeout(appOpenTimer); appOpenTimer = null; }
+
+/** Loads ahead when possible, then repeats every eligibility check immediately before showing. */
+export async function maybeShowAppOpen(path: string): Promise<boolean> {
+  setAdLocation(path);
+  const attempt = ++appOpenAttempt;
+  const gate = () => ({
+    native: adAvailable(), foreground, online: online(), now: Date.now(), lastFullScreenAt: storedAds().lastFullScreenAt,
+    otherAdShowing: appOpenShowing || interstitialShowing, path: currentPath, finished: getMeta().finished,
+    shownThisLaunch: appOpenShown, launchAt, playing: gameplayActive, noFillRetryAt: storedAds().appOpenNoFillRetryAt,
+  });
+  if (!canShowAppOpen(gate())) return false;
   report("ad", "app_open_opportunity");
-  if (!id) { report("ad", "app_open_no_unit"); return; }
-  if (!(await initAds())) return;
-  appOpenShown = true;
+  if (!(await preloadAppOpen())) return false;
+  const loadedAt = appOpenLoadedAt;
+  if (!canPresentAppOpen({ ...gate(), loadedAt, attemptValid: attempt === appOpenAttempt })) return false;
+  const id = unit("appOpen");
+  if (!id) return false;
   try {
     const { AdMob } = await mod();
-    await AdMob.loadAppOpen({ adId: id });
-    if (location.pathname !== "/") return; // player already left the start page
-    await AdMob.showAppOpen();
-    report("ad", "app_open_shown");
-  } catch (e) { report("ad", "app_open_failed", String(e)); }
+    // This final synchronous gate is the cancellation point for late loads and game starts.
+    if (!canPresentAppOpen({ ...gate(), loadedAt, attemptValid: attempt === appOpenAttempt })) return false;
+    appOpenShown = true;
+    appOpenShowing = true;
+    await AdMob.showAppOpen({ adId: id }); // iOS resolves after the ad closes.
+    return true;
+  } catch (error) { report("ad", "app_open_failed", reason(error)); return false; }
+  finally {
+    appOpenShowing = false;
+    appOpenLoadedAt = 0;
+    void preloadAppOpen();
+  }
 }
 
-/** Full-screen ad at game end. Resolves only after the player has closed it. */
-export async function showGameEndAd(): Promise<void> {
-  if (!isNative()) return;
-  report("ad", "interstitial_opportunity");
+/** Preloads without presenting. Safe to call at startup and immediately after every result. */
+export async function preloadInterstitial(): Promise<boolean> {
   const id = unit("interstitial");
-  if (!id) { report("ad", "interstitial_no_unit"); return; }
-  if (!(await initAds())) return;
-  try {
-    const { AdMob, InterstitialAdPluginEvents } = await mod();
-    await AdMob.prepareInterstitial({ adId: id });
-    report("ad", "interstitial_loaded");
-    await new Promise<void>((resolve) => {
-      let done = false;
-      const handles: { remove: () => Promise<void> }[] = [];
-      const finish = () => { if (!done) { done = true; for (const handle of handles) void handle.remove(); resolve(); } };
-      void (async () => {
-        const dismissed = await AdMob.addListener(InterstitialAdPluginEvents.Dismissed, () => { report("ad", "interstitial_dismissed"); finish(); });
-        handles.push(dismissed);
-        const failed = await AdMob.addListener(InterstitialAdPluginEvents.FailedToShow, () => { report("ad", "interstitial_failed_to_show"); finish(); });
-        handles.push(failed);
-        try { await AdMob.showInterstitial(); report("ad", "interstitial_shown"); }
-        catch (e) { report("ad", "interstitial_failed", String(e)); finish(); }
-      })().catch(() => finish());
-    });
-  } catch (e) { report("ad", "interstitial_load_failed", String(e)); }
+  if (!id || !adAvailable() || !online() || interstitialShowing) return false;
+  if (interstitialReady && Date.now() - interstitialPreparedAt < 55 * 60_000) return true;
+  interstitialReady = false;
+  if (interstitialPreload) return interstitialPreload;
+  const generation = privacyGeneration;
+  const promise = (async () => {
+    try {
+      if (!(await initAds()) || generation !== privacyGeneration) return false;
+      const { AdMob } = await mod();
+      await withTimeout(AdMob.prepareInterstitial({ adId: id }), 12_000, "interstitial_load");
+      if (generation !== privacyGeneration || interstitialShowing) return false;
+      interstitialPreparedAt = Date.now();
+      interstitialReady = true;
+      report("ad", "interstitial_loaded");
+      return true;
+    } catch (error) { report("ad", "interstitial_load_failed", reason(error)); return false; }
+  })();
+  interstitialPreload = promise;
+  try { return await promise; } finally { if (interstitialPreload === promise) interstitialPreload = null; }
 }
+
+/** Marks a result immediately and starts loading; no ad is shown by this function. */
+export function noteGameFinished(matchId: string) {
+  setGameplayActive(false);
+  patchAds({ pendingMatchId: matchId });
+  void preloadInterstitial();
+}
+
+/** Called only by an explicit new-match action. Any failure resolves so play can continue. */
+export async function showPostMatchAd(matchId: string): Promise<boolean> {
+  report("ad", "interstitial_opportunity", matchId);
+  const state = storedAds();
+  const gate = () => ({
+    native: adAvailable(), foreground, online: online(), now: Date.now(), lastFullScreenAt: storedAds().lastFullScreenAt,
+    otherAdShowing: appOpenShowing || interstitialShowing, matchId, pendingMatchId: storedAds().pendingMatchId,
+    lastAttemptMatchId: storedAds().lastAttemptMatchId, matchActive: gameplayActive, ready: interstitialReady,
+  });
+  if (!canShowPostMatchInterstitial(gate())) return false;
+  const id = unit("interstitial");
+  if (!id || !(await initAds())) return false;
+  // Consume before calling the SDK: a second tap can never present the same match twice.
+  patchAds({ lastAttemptMatchId: matchId });
+  interstitialShowing = true;
+  try {
+    const { AdMob } = await mod();
+    if (!canShowPostMatchInterstitial({ ...gate(), lastAttemptMatchId: state.lastAttemptMatchId, otherAdShowing: false })) return false;
+    interstitialReady = false;
+    const dismissed = new Promise<void>((resolve) => {
+      interstitialDismiss = resolve;
+      setTimeout(() => { if (interstitialDismiss === resolve) { interstitialDismiss = null; resolve(); } }, 90_000);
+    });
+    await AdMob.showInterstitial({ adId: id });
+    await dismissed;
+    return true;
+  } catch (error) { report("ad", "interstitial_failed", reason(error)); return false; }
+  finally {
+    interstitialShowing = false;
+    interstitialDismiss = null;
+    void preloadInterstitial();
+  }
+}
+
+// Kept for diagnostics: no-fill policy is shared only by App Open, not gameplay navigation.
+export { APP_OPEN_NO_FILL_RETRY_MS };
