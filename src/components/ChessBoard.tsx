@@ -12,10 +12,11 @@ type Props = {
   orientation: "w" | "b";
   disabled?: boolean;
   lastMove?: { from: Square; to: Square } | null;
+  showHints?: boolean;
   onMove: (from: Square, to: Square) => void;
 };
 
-export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Props) {
+export function ChessBoard({ game, orientation, disabled, lastMove, showHints = false, onMove }: Props) {
   const reduceMotion = useReducedMotion();
   const [selected, setSelected] = useState<Square | null>(null);
   const [dragging, setDragging] = useState<Square | null>(null);
@@ -34,6 +35,7 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
     () => (selected ? new Set(game.moves({ square: selected, verbose: true }).map((m) => m.to)) : new Set<string>()),
     [selected, game, game.fen()],
   );
+  const visibleTargets = showHints ? targets : new Set<string>();
   const checkmate = game.isCheckmate();
   const checkSquare = useMemo(() => {
     if (!game.inCheck()) return null;
@@ -115,7 +117,7 @@ export function ChessBoard({ game, orientation, disabled, lastMove, onMove }: Pr
               const sq = `${FILES[c]}${8 - r}` as Square;
               const p = board[r]?.[c];
               const light = (r + c) % 2 === 0;
-              const isTarget = targets.has(sq);
+              const isTarget = visibleTargets.has(sq);
               const grainStyle = {
                 "--grain-x": `${(c / 7) * 100}%`,
                 "--grain-y": `${(r / 7) * 100}%`,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PROMOTION_CHOICES, squareAtPoint } from "./board-interaction";
+import { PROMOTION_CHOICES, shouldShowMoveHints, squareAtPoint } from "./board-interaction";
 
 const rect = { left: 100, top: 200, width: 400, height: 400 };
 
@@ -16,6 +16,13 @@ describe("board interaction", () => {
   it("mirrors both axes when black is at the bottom", () => {
     expect(squareAtPoint({ x: 125, y: 575 }, rect, "b")).toBe("h8");
     expect(squareAtPoint({ x: 475, y: 225 }, rect, "b")).toBe("a1");
+  });
+
+  it("shows legal-move dots only against the beginner computer", () => {
+    expect(shouldShowMoveHints("ai", "beginner")).toBe(true);
+    for (const level of ["medium", "hard", "expert"]) expect(shouldShowMoveHints("ai", level)).toBe(false);
+    expect(shouldShowMoveHints("local", "beginner")).toBe(false);
+    expect(shouldShowMoveHints("online", null)).toBe(false);
   });
 
   it("rejects drops outside every board edge", () => {

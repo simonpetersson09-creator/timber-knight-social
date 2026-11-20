@@ -1,5 +1,9 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Eget perspektiv och dragpluttar 20 nov
+- [x] Säkerställ att spelarens egna pjäser och profil ligger nederst för båda färgerna; svart perspektiv mobilprovat
+- [x] Visa dragpluttar endast på Nybörjare; inga dragtips på övriga nivåer, lokalt eller online; Nybörjare/ Medel mobilprovat
+
 ## Spelvyn 20 nov
 - [x] Ersätt utfällbar draghistorik med två pilar, stega pjäserna ett drag åt gången och begränsa till tio drag bakåt; lokalt och online provspelat
 - [x] Visa spelarnamn i stället för pjäsfärg i lokala status- och resultatnotiser; mottagen onlinenotis provad med två spelare

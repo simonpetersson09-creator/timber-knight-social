@@ -8,6 +8,11 @@ export type PromotionChoice = (typeof PROMOTION_CHOICES)[number];
 export type BoardPoint = { x: number; y: number };
 export type BoardRect = { left: number; top: number; width: number; height: number };
 
+/** Move hints are a beginner aid, not assistance in competitive or higher-level games. */
+export function shouldShowMoveHints(mode: "ai" | "local" | "online", level: string | null): boolean {
+  return mode === "ai" && level === "beginner";
+}
+
 /** Converts a pointer's viewport position to a board square, respecting board orientation. */
 export function squareAtPoint(
   point: BoardPoint,

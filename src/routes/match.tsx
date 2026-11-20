@@ -3,6 +3,7 @@ import { GameClock } from "@/components/GameClock";
 import { CapturedPieces } from "@/components/CapturedPieces";
 import { MoveHistory } from "@/components/MoveHistory";
 import { gameAtPly, lastMoveOf } from "@/lib/game-presentation";
+import { shouldShowMoveHints } from "@/lib/board-interaction";
 import { Button } from "@/components/ui/button";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -265,7 +266,7 @@ function Match() {
       </header>
       <div className="play-col relative">
         <div className="player-top"><div className="player-profile-line">{card(oppId, myColor === "w" ? "b" : "w")}{clock(myColor === "w" ? "b" : "w")}</div><CapturedPieces game={boardGame} mine={myColor === "w" ? "b" : "w"} /></div>
-        <ChessBoard key={reviewing ? `review-${reviewPly}` : "live"} game={boardGame} orientation={myColor} disabled={reviewing || !myTurn || !!promo} lastMove={lastMoveOf(boardGame)} onMove={onBoardMove} />
+        <ChessBoard key={reviewing ? `review-${reviewPly}` : "live"} game={boardGame} orientation={myColor} showHints={shouldShowMoveHints("online", null)} disabled={reviewing || !myTurn || !!promo} lastMove={lastMoveOf(boardGame)} onMove={onBoardMove} />
         <div className="player-bottom"><CapturedPieces game={boardGame} mine={myColor} /><div className="player-profile-line">{clock(myColor)}{card(me, myColor)}</div></div>
         <BoardNotice notice={notice} />
         {bubble && <div className="chat-bubble" data-mine={bubble.mine}>{bubble.text}</div>}

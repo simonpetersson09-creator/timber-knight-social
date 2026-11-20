@@ -8,6 +8,7 @@ import { GameClock } from "@/components/GameClock";
 import { CapturedPieces } from "@/components/CapturedPieces";
 import { MoveHistory } from "@/components/MoveHistory";
 import { gameAtPly, lastMoveOf } from "@/lib/game-presentation";
+import { shouldShowMoveHints } from "@/lib/board-interaction";
 import { useMe } from "@/hooks/use-me";
 import { displayName } from "@/lib/profile";
 import { computerDisplayName } from "@/lib/computer-opponent";
@@ -288,8 +289,8 @@ function Play() {
 
   if (!saved) return <main className="min-h-dvh" />;
 
-  const top: Color = vsAi ? other(human) : "b";
-  const bottom: Color = other(top);
+  const top: Color = other(human);
+  const bottom: Color = human;
   const nameOf = (c: Color) => {
     if (vsAi) return c === human ? me ? displayName(me) : t("you") : computerDisplayName(saved.level, t(saved.level));
     return c === human ? me ? displayName(me) : t("playerN", { n: 1 }) : t("playerN", { n: 2 });
@@ -338,7 +339,7 @@ function Play() {
 
       <div className="play-col">
         <div className="player-top"><div className="player-profile-line">{card(top)}{clock(top)}</div><CapturedPieces game={boardGame} mine={top} /></div>
-        <ChessBoard key={reviewing ? `review-${reviewPly}` : "live"} game={boardGame} orientation={vsAi ? human : "w"} disabled={reviewing || aiTurn || !!result || !!promo} lastMove={boardLastMove} onMove={onBoardMove} />
+        <ChessBoard key={reviewing ? `review-${reviewPly}` : "live"} game={boardGame} orientation={human} showHints={shouldShowMoveHints(saved.mode, saved.level)} disabled={reviewing || aiTurn || !!result || !!promo} lastMove={boardLastMove} onMove={onBoardMove} />
         <div className="player-bottom"><CapturedPieces game={boardGame} mine={bottom} /><div className="player-profile-line">{clock(bottom)}{card(bottom)}</div></div>
         <BoardNotice notice={notice} />
       </div>
