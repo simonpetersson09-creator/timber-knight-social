@@ -1,5 +1,10 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Releasegranskning – annonser och avgränsning 20 nov
+- [x] A03: exakt 12-sekundersregel, kombinerade native-/WebView-livscykler samt ogiltiga sena laddningar testade; fysisk enhet återstår under befintliga nativeprov
+- [x] A04: UMP före ATT, generationspärrar för gamla samtyckesflöden och statusbevis utan samtyckessträngar/identifierare testade för iOS/Android; live SDK-/enhetsbevis återstår under befintliga nativeprov
+- Avgränsat av användaren: L01 hoppas över (separat integritets-URL), L02/applänkar avvaktar, R01/Stockfish-intyg hoppas över, N01–N05/push senare
+
 ## Releasegranskning – spel och online 20 nov
 - [x] G05: beständiga klockankare och idempotenta avbrotts-/återupptagningspunkter; exakt tid verifierad i spelvyn efter paus och omladdning
 - [x] G06: Stockfish får startställning och samtliga UCI-drag; repetition och bondeförvandling testade

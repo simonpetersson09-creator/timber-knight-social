@@ -4,6 +4,11 @@ export const APP_OPEN_MAX_AGE_MS = 4 * 60 * 60 * 1000;
 export const APP_OPEN_NO_FILL_RETRY_MS = 60_000;
 export const FULLSCREEN_AD_INTERVAL_MS = 2 * 60_000;
 
+/** Both native activity and WebView visibility must agree before any ad opportunity. */
+export function adForegroundActive(nativeActive: boolean, pageVisible: boolean): boolean {
+  return nativeActive && pageVisible;
+}
+
 export type FullScreenGate = {
   native: boolean;
   foreground: boolean;

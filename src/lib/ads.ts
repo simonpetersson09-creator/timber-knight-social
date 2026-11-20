@@ -147,22 +147,38 @@ export function initAds(): Promise<boolean> {
   if (!adAvailable()) return Promise.resolve(false);
   if (initPromise) return initPromise;
   const generation = privacyGeneration;
+  const current = () => generation === privacyGeneration;
   const attempt = (async () => {
     try {
       const module = await mod();
       const { AdMob } = module;
       await ensureListeners(module);
+      if (!current()) return false;
       let consent = await withTimeout(AdMob.requestConsentInfo(), 15_000, "consent_info");
+      if (!current()) return false;
       if (consent.isConsentFormAvailable && consent.status === "REQUIRED") {
         consent = await withTimeout(AdMob.showConsentForm(), 120_000, "consent_form");
+        if (!current()) return false;
       }
       if (!consent.canRequestAds) { report("ad", "consent_not_ready"); return false; }
+      let attStatus: string | null = null;
       if (platform() === "ios") {
         const status = await withTimeout(AdMob.trackingAuthorizationStatus(), 10_000, "att_status");
-        if (status.status === "notDetermined") await withTimeout(AdMob.requestTrackingAuthorization(), 120_000, "att_request");
+        if (!current()) return false;
+        attStatus = status.status;
+        if (status.status === "notDetermined") {
+          await withTimeout(AdMob.requestTrackingAuthorization(), 120_000, "att_request");
+          if (!current()) return false;
+          const requested = await withTimeout(AdMob.trackingAuthorizationStatus(), 10_000, "att_status");
+          if (!current()) return false;
+          attStatus = requested.status;
+        }
       }
       await withTimeout(AdMob.initialize({ initializeForTesting: import.meta.env.DEV }), 15_000, "admob_init");
-      if (generation !== privacyGeneration) return false;
+      if (!current()) return false;
+      // Status-only evidence makes live UMP/ATT checks auditable without storing consent strings or identifiers.
+      report("ad", "consent_status", JSON.stringify({ status: consent.status, canRequestAds: consent.canRequestAds, privacyOptions: consent.privacyOptionsRequirementStatus }));
+      if (attStatus) report("ad", "att_status", attStatus);
       report("ad", "init_ok");
       return true;
     } catch (error) { report("ad", "init_failed", reason(error)); return false; }
@@ -198,21 +214,24 @@ export async function openAdChoices(): Promise<boolean> {
 
 async function preloadAppOpen(): Promise<boolean> {
   const id = unit("appOpen");
-  if (!id || !adAvailable() || !online() || privacyChoicesOpen) return false;
+  if (!id || !adAvailable() || !online() || privacyChoicesOpen || !foreground || currentPath !== "/" || gameplayActive) return false;
   if (appOpenLoadedAt > 0) return true;
   if (appOpenPreload) return appOpenPreload;
   const generation = privacyGeneration;
+  const attempt = appOpenAttempt;
+  const current = () => generation === privacyGeneration && attempt === appOpenAttempt && foreground && currentPath === "/" && !gameplayActive;
   const promise = (async () => {
     try {
-      if (!(await initAds()) || generation !== privacyGeneration) return false;
+      if (!(await initAds()) || !current()) return false;
       const { AdMob } = await mod();
       await withTimeout(AdMob.loadAppOpen({ adId: id }), 12_000, "app_open_load");
-      if (generation !== privacyGeneration) return false;
+      // A backgrounded, navigated or superseded load must never become a later presentation opportunity.
+      if (!current()) return false;
       appOpenLoadedAt = Date.now();
       report("ad", "app_open_loaded");
       return true;
     } catch (error) {
-      if (generation === privacyGeneration) {
+      if (current()) {
         const retryAt = noFillRetryAt(error, Date.now());
         if (retryAt) patchAds({ appOpenNoFillRetryAt: retryAt });
         report("ad", "app_open_load_failed", reason(error));

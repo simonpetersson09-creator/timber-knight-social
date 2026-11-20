@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   APP_OPEN_DELAY_MS, APP_OPEN_MAX_AGE_MS, APP_OPEN_NO_FILL_RETRY_MS, FULLSCREEN_AD_INTERVAL_MS,
-  canPresentAppOpen, canShowAppOpen, canShowPostMatchInterstitial, createAdMutex, fullScreenIntervalElapsed, isNoFillError, noFillRetryAt,
+  adForegroundActive, canPresentAppOpen, canShowAppOpen, canShowPostMatchInterstitial, createAdMutex, fullScreenIntervalElapsed, isNoFillError, noFillRetryAt,
   type AppOpenGate, type InterstitialGate,
 } from "./ad-rules";
 import { ADMOB_IDS, ADMOB_TEST_IDS } from "./ads";
@@ -17,6 +17,11 @@ const interstitial: InterstitialGate = {
 };
 
 describe("full-screen ad policy", () => {
+  it("requires native activity and page visibility to agree", () => {
+    expect(adForegroundActive(true, true)).toBe(true);
+    expect(adForegroundActive(false, true)).toBe(false);
+    expect(adForegroundActive(true, false)).toBe(false);
+  });
   it("enforces exactly 12 seconds after app launch", () => {
     expect(canShowAppOpen({ ...appOpen, now: appOpen.launchAt + 11_999 })).toBe(false);
     expect(canShowAppOpen({ ...appOpen, now: appOpen.launchAt + 12_000 })).toBe(true);

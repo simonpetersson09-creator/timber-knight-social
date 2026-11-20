@@ -7,6 +7,7 @@ import {
   cancelScheduledAppOpen, initAds, maybeShowAppOpen, preloadInterstitial, scheduleAppOpen, setAdForeground, setAdLocation, showPendingPostMatchAd,
 } from "@/lib/ads";
 import { resumePush } from "@/lib/push";
+import { adForegroundActive } from "@/lib/ad-rules";
 import { flushReports, report } from "@/lib/report";
 import { loadMe } from "@/lib/identity";
 
@@ -44,20 +45,29 @@ export function NativeHost() {
 
   useEffect(() => {
     if (!isNative()) return;
+    let disposed = false;
+    let nativeActive = true;
+    let pageVisible = document.visibilityState === "visible";
+    const syncForeground = () => {
+      const active = adForegroundActive(nativeActive, pageVisible);
+      setAdForeground(active);
+      if (active) { void maybeShowAppOpen(path.current); void preloadInterstitial(); }
+    };
     void resumePush();
-    setAdForeground(document.visibilityState === "visible");
+    setAdForeground(adForegroundActive(nativeActive, pageVisible));
     void initAds().then(() => {
+      if (disposed) return;
       void preloadInterstitial();
       scheduleAppOpen(() => path.current);
     });
     const foregroundAds = () => {
-      const active = document.visibilityState === "visible";
-      setAdForeground(active);
-      if (active) { void maybeShowAppOpen(path.current); void preloadInterstitial(); }
+      pageVisible = document.visibilityState === "visible";
+      syncForeground();
     };
     document.addEventListener("visibilitychange", foregroundAds);
     let remove: (() => void) | undefined;
     void import("@capacitor/app").then(({ App }) => {
+      if (disposed) return;
       const back = App.addListener("backButton", async () => {
         if (runTopBackHandler()) return; // close popups first
         if (path.current === "/") void App.minimizeApp();
@@ -66,12 +76,18 @@ export function NativeHost() {
         else void router.navigate({ to: "/" });
       });
       const state = App.addListener("appStateChange", ({ isActive }) => {
-        setAdForeground(isActive);
-        if (isActive) { void maybeShowAppOpen(path.current); void preloadInterstitial(); }
+        nativeActive = isActive;
+        syncForeground();
       });
       remove = () => { void Promise.all([back, state]).then((handles) => handles.forEach((handle) => handle.remove())); };
     });
-    return () => { cancelScheduledAppOpen(); document.removeEventListener("visibilitychange", foregroundAds); remove?.(); };
+    return () => {
+      disposed = true;
+      setAdForeground(false);
+      cancelScheduledAppOpen();
+      document.removeEventListener("visibilitychange", foregroundAds);
+      remove?.();
+    };
   }, [router, leaveMatch]);
 
   // All touch devices: edge swipe goes back, including saved/online games.
