@@ -8,10 +8,11 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Chess, type Square } from "chess.js";
 import QRCode from "qrcode";
-import { ArrowLeft, Crown, Eye, Flag, Handshake, MessageCircle, Share2, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Eye, Flag, Handshake, MessageCircle, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { ChessBoard } from "@/components/ChessBoard";
+import { BoardNotice, type BoardNoticeData } from "@/components/BoardNotice";
 import { Piece } from "@/components/Piece";
 import { Modal } from "@/components/Modal";
 import { PromotionPicker } from "@/components/PromotionPicker";
@@ -20,6 +21,7 @@ import { getCred } from "@/lib/identity";
 import { cancelGame, gameAction, getOnlineGame, makeMove, quickMatch, sendChat } from "@/lib/online.functions";
 import { displayName, flagOf } from "@/lib/profile";
 import { QUICK_WAIT_MS } from "@/lib/online-rules";
+import { CHECKMATE_RESULT_DELAY_MS, MATCH_NOTICE_MS } from "@/lib/play-motion";
 import { celebrate, feedback } from "@/lib/feedback";
 import { noteGameFinished, setGameplayActive } from "@/lib/ads";
 import { onGameFinished } from "@/lib/rate";
@@ -52,30 +54,47 @@ function Match() {
   const [chat, setChat] = useState<{ id: number; player: string; phrase: number }[]>([]);
   const [bubble, setBubble] = useState<{ mine: boolean; text: string } | null>(null);
   const [promo, setPromo] = useState<{ from: Square; to: Square } | null>(null);
-  const [ask, setAsk] = useState<"resign" | "chat" | null>(null);
+  const [ask, setAsk] = useState<"resign" | "offerDraw" | "chat" | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [reviewPly, setReviewPly] = useState<number | null>(null);
-  const [notice, setNotice] = useState<"check" | "checkmate" | null>(null);
+  const [notice, setNotice] = useState<BoardNoticeData | null>(null);
   const [qr, setQr] = useState("");
   const [started] = useState(() => Date.now());
   const [now, setNow] = useState(Date.now());
   const lastChat = useRef(0);
   const prevPgn = useRef<string | null>(null);
+  const prevDrawOffer = useRef<"w" | "b" | null>(null);
   const endHandled = useRef(false);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resultTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const game = useRef(new Chess()).current;
 
+  const showNotice = useCallback((text: string, kind: BoardNoticeData["kind"] = "draw") => {
+    setNotice({ text, kind });
+    if (noticeTimer.current) clearTimeout(noticeTimer.current);
+    noticeTimer.current = setTimeout(() => setNotice(null), MATCH_NOTICE_MS);
+  }, []);
+
   const notifyCheck = useCallback(() => {
     if (!game.inCheck()) return;
-    setNotice(game.isCheckmate() ? "checkmate" : "check");
-    if (noticeTimer.current) clearTimeout(noticeTimer.current);
-    noticeTimer.current = setTimeout(() => setNotice(null), 2400);
-  }, [game]);
+    const kind = game.isCheckmate() ? "checkmate" : "check";
+    showNotice(t(kind), kind);
+  }, [game, showNotice, t]);
 
   const load = useCallback(async () => {
     try {
       const r = await getOnlineGame({ data: { ...getCred(), gameId: id, after: lastChat.current } });
+      const color = r.game.black === r.me ? "b" : "w";
+      const samePosition = r.game.pgn === prevPgn.current;
+      if (samePosition && prevDrawOffer.current === color && !r.game.draw_offer && r.game.status === "active") {
+        showNotice(t("drawDeclined"));
+      }
+      if (r.game.draw_offer && r.game.draw_offer !== color && prevDrawOffer.current !== r.game.draw_offer) {
+        const opponentId = color === "w" ? r.game.black : r.game.white;
+        const opponent = r.players.find((player) => player.id === opponentId);
+        showNotice(t("drawOffer", { side: opponent ? displayName(opponent) : "" }));
+      }
+      prevDrawOffer.current = r.game.draw_offer === "w" || r.game.draw_offer === "b" ? r.game.draw_offer : null;
       if (r.chat.length) {
         const last = r.chat[r.chat.length - 1];
         if (!last) return;
@@ -91,7 +110,7 @@ function Match() {
       }
       setD(r);
     } catch { toast.error(t("error")); void navigate({ to: "/" }); }
-  }, [id, game, t, navigate, notifyCheck]);
+  }, [id, game, t, navigate, notifyCheck, showNotice]);
 
   useEffect(() => { void load(); const i = setInterval(() => void load(), 2000); return () => clearInterval(i); }, [load]);
   useEffect(() => setReviewPly(null), [id]);
@@ -131,7 +150,7 @@ function Match() {
     recordResult(g.id, g.result === "d" ? "draw" : won ? "win" : "loss", null, g.end_reason !== "resign", "online");
     noteGameFinished(g.id);
     setShowResult(false);
-    resultTimer.current = setTimeout(() => setShowResult(true), g.end_reason === "checkmate" ? 1600 : 0);
+    resultTimer.current = setTimeout(() => setShowResult(true), g.end_reason === "checkmate" ? CHECKMATE_RESULT_DELAY_MS : 0);
     feedback(won ? "win" : g.result === "d" ? "draw" : "lose");
     if (won) void celebrate();
     void onGameFinished();
@@ -202,9 +221,14 @@ function Match() {
   }
   async function act(action: "resign" | "offerDraw" | "acceptDraw" | "declineDraw") {
     setAsk(null);
-    await gameAction({ data: { ...getCred(), gameId: id, action } }).catch(() => toast.error(t("error")));
-    if (action === "offerDraw") toast(t("drawOffered"));
-    void load();
+    try {
+      await gameAction({ data: { ...getCred(), gameId: id, action } });
+      if (action === "offerDraw") showNotice(t("drawOffered"));
+      else if (action === "declineDraw") showNotice(t("drawDeclined"));
+      void load();
+    } catch {
+      toast.error(t("error"));
+    }
   }
   async function say(i: number) {
     setAsk(null);
@@ -241,7 +265,7 @@ function Match() {
         <div className="player-top"><div className="player-profile-line">{card(oppId, myColor === "w" ? "b" : "w")}{clock(myColor === "w" ? "b" : "w")}</div><CapturedPieces game={boardGame} mine={myColor === "w" ? "b" : "w"} /></div>
         <ChessBoard key={reviewing ? `review-${reviewPly}` : "live"} game={boardGame} orientation={myColor} disabled={reviewing || !myTurn || !!promo} lastMove={lastMoveOf(boardGame)} onMove={onBoardMove} />
         <div className="player-bottom"><CapturedPieces game={boardGame} mine={myColor} /><div className="player-profile-line">{clock(myColor)}{card(me, myColor)}</div></div>
-        {notice && <div className="board-notice" data-tone={notice} role="status">{notice === "checkmate" ? <Crown className="size-5" /> : <ShieldAlert className="size-5" />}{t(notice)}</div>}
+        <BoardNotice notice={notice} />
         {bubble && <div className="chat-bubble" data-mine={bubble.mine}>{bubble.text}</div>}
       </div>
       <div className="play-side">
@@ -257,7 +281,7 @@ function Match() {
           </div>
         )}
         <div className="game-actions">
-          <Button variant="ghost" onClick={() => act("offerDraw")} disabled={g.status !== "active" || game.history().length < 2 || !!g.draw_offer} className="game-action-button game-action-draw"><Handshake className="size-4" /> {t("offerDraw")}</Button>
+          <Button variant="ghost" onClick={() => setAsk("offerDraw")} disabled={g.status !== "active" || game.history().length < 2 || !!g.draw_offer} className="game-action-button game-action-draw"><Handshake className="size-4" /> {t("offerDraw")}</Button>
           <Button variant="ghost" onClick={() => setAsk("resign")} disabled={g.status !== "active"} className="game-action-button game-action-resign"><Flag className="size-4" /> {t("resign")}</Button>
         </div>
         {g.status === "finished" && !showResult && <button className="action-btn action-gold" onClick={() => navigate({ to: "/" })}>{t("home")}</button>}
@@ -278,6 +302,13 @@ function Match() {
           setPromo(null);
         }}
       />
+      <Modal open={ask === "offerDraw"} onClose={() => setAsk(null)}>
+        <p className="mb-4 text-center font-semibold">{t("offerDraw")}</p>
+        <div className="flex gap-2">
+          <button className="action-btn action-ghost" onClick={() => setAsk(null)}>{t("cancel")}</button>
+          <button className="action-btn action-gold" onClick={() => void act("offerDraw")}>{t("offerDraw")}</button>
+        </div>
+      </Modal>
       <Modal open={ask === "resign"} onClose={() => setAsk(null)}>
         <p className="mb-2 text-center font-semibold">{t("confirmResign")}</p>
         <p className="mb-4 text-center text-xs text-muted-foreground">{t("resignNoStats")}</p>

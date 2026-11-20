@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Chess } from "chess.js";
-import { AI_MOVE_DELAY_MS, CAPTURE_DURATION_MS, MAX_DRAW_OFFERS, assignPieceIds, shouldSendDrawOffer, type BoardPiece, type PieceIds } from "./play-motion";
+import { AI_MOVE_DELAY_MS, CAPTURE_DURATION_MS, CHECKMATE_RESULT_DELAY_MS, MATCH_NOTICE_MS, MAX_DRAW_OFFERS, assignPieceIds, shouldSendDrawOffer, type BoardPiece, type PieceIds } from "./play-motion";
 
 function pieces(game: Chess): BoardPiece[] {
   return game.board().flat().filter((piece): piece is BoardPiece => piece !== null);
@@ -25,6 +25,10 @@ describe("play motion", () => {
   });
   it("keeps the flying piece and tray handoff at the same 1400 ms boundary", () => {
     expect(CAPTURE_DURATION_MS).toBe(1400);
+  });
+  it("closes the checkmate notice before opening the result dialog", () => {
+    expect(MATCH_NOTICE_MS).toBe(2400);
+    expect(CHECKMATE_RESULT_DELAY_MS).toBeGreaterThan(MATCH_NOTICE_MS);
   });
 
   it("keeps the moved pawn identity and all untouched identities", () => {

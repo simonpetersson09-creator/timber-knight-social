@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Chess, type Square } from "chess.js";
-import { ArrowLeft, Crown, Eye, Flag, Handshake, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Eye, Flag, Handshake } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GamePlayerCard } from "@/components/GamePlayerCard";
 import { GameClock } from "@/components/GameClock";
@@ -13,8 +13,8 @@ import { displayName } from "@/lib/profile";
 import { computerDisplayName } from "@/lib/computer-opponent";
 import { report } from "@/lib/report";
 import { toast } from "sonner";
-import { AnimatePresence, motion } from "framer-motion";
-import { MAX_DRAW_OFFERS, shouldSendDrawOffer } from "@/lib/play-motion";
+import { BoardNotice } from "@/components/BoardNotice";
+import { CHECKMATE_RESULT_DELAY_MS, MATCH_NOTICE_MS, MAX_DRAW_OFFERS, shouldSendDrawOffer } from "@/lib/play-motion";
 import { ChessBoard } from "@/components/ChessBoard";
 import { Piece } from "@/components/Piece";
 import { Modal } from "@/components/Modal";
@@ -73,7 +73,7 @@ function Play() {
   const showNotice = (msg: string, kind: "draw" | "check" | "checkmate" = "draw") => {
     setNotice({ text: msg, kind });
     if (noticeTimer.current) clearTimeout(noticeTimer.current);
-    noticeTimer.current = setTimeout(() => setNotice(null), 2400);
+    noticeTimer.current = setTimeout(() => setNotice(null), MATCH_NOTICE_MS);
   };
   const [now, setNow] = useState(() => Date.now());
   const [showEnd, setShowEnd] = useState(false);
@@ -131,7 +131,7 @@ function Play() {
     setShowEnd(false);
     deleteGame(s.id);
     if (res.reason === "checkmate") showNotice(t("checkmate"), "checkmate");
-    endTimer.current = setTimeout(() => setShowEnd(true), res.reason === "checkmate" ? 1600 : 0);
+    endTimer.current = setTimeout(() => setShowEnd(true), res.reason === "checkmate" ? CHECKMATE_RESULT_DELAY_MS : 0);
     noteGameFinished(s.id);
     void onGameFinished();
     report("play", "local_game_finished", JSON.stringify({ game: s.id, reason: res.reason, winner: res.winner, level: s.level }));
@@ -336,15 +336,7 @@ function Play() {
         <div className="player-top"><div className="player-profile-line">{card(top)}{clock(top)}</div><CapturedPieces game={boardGame} mine={top} /></div>
         <ChessBoard key={reviewing ? `review-${reviewPly}` : "live"} game={boardGame} orientation={vsAi ? human : "w"} disabled={reviewing || aiTurn || !!result || !!promo} lastMove={boardLastMove} onMove={onBoardMove} />
         <div className="player-bottom"><CapturedPieces game={boardGame} mine={bottom} /><div className="player-profile-line">{clock(bottom)}{card(bottom)}</div></div>
-        <AnimatePresence>
-          {notice && (
-            <motion.div key={notice.text} className="board-notice" data-tone={notice.kind} role="status"
-              initial={{ opacity: 0, scale: 0.85, x: "-50%", y: "-40%" }} animate={{ opacity: 1, scale: 1, x: "-50%", y: "-50%" }}
-              exit={{ opacity: 0, scale: 0.92, x: "-50%", y: "-50%" }} transition={{ type: "spring", stiffness: 320, damping: 24 }}>
-              {notice.kind === "checkmate" ? <Crown className="size-5" /> : notice.kind === "check" ? <ShieldAlert className="size-5" /> : <Handshake className="size-5" />}{notice.text}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <BoardNotice notice={notice} />
       </div>
 
       <div className="play-side">

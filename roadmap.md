@@ -1,6 +1,10 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
 ## Spelvyn 20 nov
+- [x] Genomkörning av spelrutor, bekräftelser och matchnotiser lokalt samt med två separata onlinespelare
+- [x] Samma extra remibekräftelse och centrerade skickat/mottaget/avslaget-notiser online; avbryt skickar inget
+- [x] Resultatet öppnas först efter att schackmattnotisen har stängts, utan överlapp
+- [x] Chatt, avböj/acceptera remi, ge upp, resultat, dragning, promotion och revansch provspelade; 131 tester godkända
 - [x] Kompakt promotionsrad med dam, torn, löpare och springare, lokalt och online; springare vald via riktig mobil dragning
 - [x] Statisk diskret guldmarkering runt den schackmatte kungen; e8 visuellt verifierad
 - [x] Direkt lokal revansch med exakt samma läge, nivå, färg och klocka; Proffs/vit/15+10 provspelat
