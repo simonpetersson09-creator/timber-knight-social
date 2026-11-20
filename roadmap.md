@@ -1,16 +1,16 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
 ## Releasegranskning – nästa tio åtgärder 20 nov
-- [ ] S01: missbruksskydd, kvoter och adminspärr utan nya adminprofiler
-- [ ] S08: åtgärda sårbara beroenden och verifiera regressioner
-- [ ] A01: annonser stoppas omedelbart när samtycket ändras eller återkallas
-- [ ] A02: förhindra dubbla och samtidiga helskärmsannonser
-- [ ] L01: integritetstexten beskriver faktisk data, lagring, annonser och push
-- [ ] L02: riktiga support-/butikslänkar och korrekt app-ads.txt; supportadress väntar på användaren
-- [ ] L03: snabbspelstexter på samtliga språk
-- [ ] R01: Stockfish- och medielicenser med korrekt attribution
-- [ ] N01: komplett iOS-push med APNs; extern konfiguration och enhetstest kan återstå
-- [ ] N02: komplett Android-push med Firebase; extern konfiguration och enhetstest kan återstå
+- [x] S01: beständiga hashade kvoter, 750 kB storleksspärr och adminbackoff; åtta fel registrerades och nionde spärrades i 30 minuter, testdata rensades
+- [x] S08: säkra produktions- och utvecklingsberoenden; 0 produktionssårbarheter och 0 auditvarningar
+- [x] A01: samtyckesval invaliderar App Open, Interstitial och banner före formuläret; gamla laddningar kan inte presenteras
+- [x] A02: gemensam single-flight för alla helskärmsannonser och synkron engångsreservation före första await; samtidighetstest passerar
+- [ ] L01: appens svenska/engelska text beskriver telemetri och samtliga annonsformat; separat Mrbchess Privacy-projekt är skrivskyddat härifrån och måste uppdateras/publiceras där
+- [ ] L02: simon@shiningdays.se och Chess publisherpost i app-ads.txt är införda; numerisk App Store-länk och extern integritetsdomäns app-ads.txt återstår
+- [x] L03: Snabbspel och datorfallback översatta på samtliga 40 språk; 41 riktade språktester
+- [ ] R01: käll-, GPL-, font- och mediaunderlag dokumenterat; exakt WASM-byggproveniens och distributionsrätt för pjäser/trätexturer/maskot måste bekräftas externt
+- [ ] N01: APNs-forwarders, capability och miljöanpassade entitlements klara; FCM-tokenintegration, Apple/APNs-konfiguration och fysisk leverans återstår
+- [ ] N02: säker Firebase-CI-kontroll och Android 13-tillstånd klara; google-services.json, Firebase-koppling, Android SDK för byggverifiering och fysisk leverans återstår
 
 ## Releasegranskning – första tio åtgärderna 20 nov
 - [x] G01: korrekt tredragupprepning samt automatisk 50-/75-dragsregel lokalt och online; delade regeltester och riktiga serverdrag verifierade

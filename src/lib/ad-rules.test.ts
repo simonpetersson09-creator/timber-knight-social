@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   APP_OPEN_DELAY_MS, APP_OPEN_MAX_AGE_MS, APP_OPEN_NO_FILL_RETRY_MS, FULLSCREEN_AD_INTERVAL_MS,
-  canPresentAppOpen, canShowAppOpen, canShowPostMatchInterstitial, fullScreenIntervalElapsed, isNoFillError, noFillRetryAt,
+  canPresentAppOpen, canShowAppOpen, canShowPostMatchInterstitial, createAdMutex, fullScreenIntervalElapsed, isNoFillError, noFillRetryAt,
   type AppOpenGate, type InterstitialGate,
 } from "./ad-rules";
 import { ADMOB_IDS, ADMOB_TEST_IDS } from "./ads";
@@ -78,6 +78,19 @@ describe("full-screen ad policy", () => {
     expect(canShowPostMatchInterstitial({ ...interstitial, foreground: false })).toBe(false);
     expect(canShowPostMatchInterstitial({ ...interstitial, native: false })).toBe(false);
     expect(canShowPostMatchInterstitial({ ...interstitial, otherAdShowing: true })).toBe(false);
+  });
+});
+
+describe("full-screen presentation ownership", () => {
+  it("rejects a second call before the first asynchronous operation finishes", async () => {
+    const run = createAdMutex();
+    let release!: (shown: boolean) => void;
+    const first = run(() => new Promise<boolean>((resolve) => { release = resolve; }));
+    const second = run(async () => true);
+    await expect(second).resolves.toBe(false);
+    release(true);
+    await expect(first).resolves.toBe(true);
+    await expect(run(async () => true)).resolves.toBe(true);
   });
 });
 

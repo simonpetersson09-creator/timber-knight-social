@@ -37,6 +37,9 @@
         <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-7448540924654868~3769729660" />
     </application>
 
+    <!-- Android 13+ notification permission; requested at runtime by Capacitor. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />

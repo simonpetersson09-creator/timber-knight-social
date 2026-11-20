@@ -9,7 +9,7 @@ import { report } from "./report";
 import { getMeta } from "./meta";
 import {
   APP_OPEN_DELAY_MS, APP_OPEN_NO_FILL_RETRY_MS,
-  canPresentAppOpen, canShowAppOpen, canShowPostMatchInterstitial, noFillRetryAt,
+  canPresentAppOpen, canShowAppOpen, canShowPostMatchInterstitial, createAdMutex, noFillRetryAt,
 } from "./ad-rules";
 
 type Ids = { appId: string | null; appOpen: string | null; interstitial: string | null };
@@ -85,6 +85,21 @@ let interstitialPreparedAt = 0;
 let interstitialPreload: Promise<boolean> | null = null;
 let interstitialShowing = false;
 let interstitialDismiss: (() => void) | null = null;
+let privacyChoicesOpen = false;
+let searchBannerAttempt = 0;
+const runFullScreenAd = createAdMutex();
+
+function invalidateAdState() {
+  privacyGeneration++;
+  appOpenAttempt++;
+  cancelScheduledAppOpen();
+  appOpenLoadedAt = 0;
+  interstitialReady = false;
+  interstitialPreparedAt = 0;
+  appOpenPreload = null;
+  interstitialPreload = null;
+  initPromise = null;
+}
 
 /** Route and app-state context invalidates pending App Open attempts immediately. */
 export function setAdLocation(path: string) {
@@ -160,23 +175,30 @@ export function initAds(): Promise<boolean> {
 /** Privacy choices remain accessible even when consent does not currently permit ads. */
 export async function openAdChoices(): Promise<boolean> {
   if (!adAvailable()) return false;
+  privacyChoicesOpen = true;
+  invalidateAdState();
   try {
+    // Block every presentation path before opening the form, including banners and late loads.
+    await hideSearchBanner();
     await initAds();
     const { AdMob } = await mod();
     await withTimeout(AdMob.showPrivacyOptionsForm(), 120_000, "privacy_form");
-    privacyGeneration++;
-    initPromise = null;
-    appOpenLoadedAt = 0;
-    interstitialReady = false;
-    interstitialPreparedAt = 0;
-    void initAds().then(() => { void preloadInterstitial(); });
+    invalidateAdState();
     return true;
   } catch (error) { report("ad", "privacy_form_failed", reason(error)); return false; }
+  finally {
+    privacyChoicesOpen = false;
+    initPromise = null;
+    const generation = privacyGeneration;
+    void initAds().then((ok) => {
+      if (ok && generation === privacyGeneration && !privacyChoicesOpen) void preloadInterstitial();
+    });
+  }
 }
 
 async function preloadAppOpen(): Promise<boolean> {
   const id = unit("appOpen");
-  if (!id || !adAvailable() || !online()) return false;
+  if (!id || !adAvailable() || !online() || privacyChoicesOpen) return false;
   if (appOpenLoadedAt > 0) return true;
   if (appOpenPreload) return appOpenPreload;
   const generation = privacyGeneration;
@@ -210,7 +232,12 @@ export function scheduleAppOpen(getPath: () => string) {
 export function cancelScheduledAppOpen() { if (appOpenTimer) clearTimeout(appOpenTimer); appOpenTimer = null; }
 
 /** Loads ahead when possible, then repeats every eligibility check immediately before showing. */
-export async function maybeShowAppOpen(path: string): Promise<boolean> {
+export function maybeShowAppOpen(path: string): Promise<boolean> {
+  return runFullScreenAd(() => maybeShowAppOpenExclusive(path));
+}
+
+async function maybeShowAppOpenExclusive(path: string): Promise<boolean> {
+  if (privacyChoicesOpen) return false;
   setAdLocation(path);
   const attempt = ++appOpenAttempt;
   const gate = () => ({
@@ -227,8 +254,8 @@ export async function maybeShowAppOpen(path: string): Promise<boolean> {
   if (!id) return false;
   try {
     const { AdMob } = await mod();
-    // This final synchronous gate is the cancellation point for late loads and game starts.
-    if (!canPresentAppOpen({ ...gate(), loadedAt, attemptValid: attempt === appOpenAttempt })) return false;
+    // This final synchronous gate is the cancellation point for late loads, privacy changes and game starts.
+    if (privacyChoicesOpen || !canPresentAppOpen({ ...gate(), loadedAt, attemptValid: attempt === appOpenAttempt })) return false;
     appOpenShown = true;
     appOpenShowing = true;
     await AdMob.showAppOpen({ adId: id }); // Both native plugins resolve after the ad closes.
@@ -244,7 +271,7 @@ export async function maybeShowAppOpen(path: string): Promise<boolean> {
 /** Preloads without presenting. Safe to call at startup and immediately after every result. */
 export async function preloadInterstitial(): Promise<boolean> {
   const id = unit("interstitial");
-  if (!id || !adAvailable() || !online() || interstitialShowing) return false;
+  if (!id || !adAvailable() || !online() || interstitialShowing || privacyChoicesOpen) return false;
   if (interstitialReady && Date.now() - interstitialPreparedAt < 55 * 60_000) return true;
   interstitialReady = false;
   if (interstitialPreload) return interstitialPreload;
@@ -273,7 +300,13 @@ export function noteGameFinished(matchId: string) {
 }
 
 /** Called only by an explicit replay or exit action. Any failure resolves so play can continue. */
-export async function showPostMatchAd(matchId: string, action: "replay" | "home" | "back" = "replay"): Promise<boolean> {
+export function showPostMatchAd(matchId: string, action: "replay" | "home" | "back" = "replay"): Promise<boolean> {
+  return runFullScreenAd(() => showPostMatchAdExclusive(matchId, action));
+}
+
+async function showPostMatchAdExclusive(matchId: string, action: "replay" | "home" | "back"): Promise<boolean> {
+  if (privacyChoicesOpen) return false;
+  const generation = privacyGeneration;
   report("ad", "interstitial_opportunity", JSON.stringify({ matchId, action }));
   const state = storedAds();
   const gate = () => ({
@@ -283,13 +316,16 @@ export async function showPostMatchAd(matchId: string, action: "replay" | "home"
   });
   if (!canShowPostMatchInterstitial(gate())) return false;
   const id = unit("interstitial");
-  if (!id || !(await initAds())) return false;
-  // Consume before calling the SDK: a second tap can never present the same match twice.
+  if (!id) return false;
+  // Reserve synchronously before the first await; the shared mutex covers both ad formats.
   patchAds({ lastAttemptMatchId: matchId });
   interstitialShowing = true;
   try {
+    if (!(await initAds()) || generation !== privacyGeneration || privacyChoicesOpen) return false;
     const { AdMob } = await mod();
-    if (!canShowPostMatchInterstitial({ ...gate(), lastAttemptMatchId: state.lastAttemptMatchId, otherAdShowing: false })) return false;
+    if (generation !== privacyGeneration || privacyChoicesOpen || !canShowPostMatchInterstitial({
+      ...gate(), lastAttemptMatchId: state.lastAttemptMatchId, otherAdShowing: appOpenShowing,
+    })) return false;
     interstitialReady = false;
     const dismissed = new Promise<void>((resolve) => {
       interstitialDismiss = resolve;
@@ -344,22 +380,26 @@ function searchSlotMargin(): number | null {
 
 export async function showSearchBanner(): Promise<void> {
   searchBannerWanted = true;
+  const generation = privacyGeneration;
+  const attempt = ++searchBannerAttempt;
+  const current = () => searchBannerWanted && !privacyChoicesOpen && generation === privacyGeneration && attempt === searchBannerAttempt;
   const p = platform();
-  if (p === "web" || !adAvailable() || !online()) return;
+  if (p === "web" || !adAvailable() || !online() || privacyChoicesOpen) return;
   const adId = import.meta.env.DEV ? TEST_BANNER[p] : SEARCH_BANNER_IDS[p];
   if (!adId) return;
   const margin = searchSlotMargin();
   if (margin === null) return;
   if (searchBannerShown && margin === searchBannerMargin) return;
   try {
-    if (!(await initAds()) || !searchBannerWanted) return;
+    if (!(await initAds()) || !current()) return;
     const m = await mod();
     if (searchBannerShown) await m.AdMob.removeBanner();
+    if (!current()) return;
     await m.AdMob.showBanner({ adId, adSize: m.BannerAdSize.MEDIUM_RECTANGLE, position: m.BannerAdPosition.BOTTOM_CENTER, margin, isTesting: import.meta.env.DEV });
+    if (!current()) { await m.AdMob.removeBanner(); return; }
     searchBannerShown = true;
     searchBannerMargin = margin;
     report("ad", "search_banner_shown");
-    if (!searchBannerWanted) await hideSearchBanner();
   } catch (error) {
     report("ad", "search_banner_failed", reason(error));
   }
@@ -367,8 +407,10 @@ export async function showSearchBanner(): Promise<void> {
 
 export async function hideSearchBanner(): Promise<void> {
   searchBannerWanted = false;
-  if (!searchBannerShown) return;
+  searchBannerAttempt++;
   searchBannerShown = false;
   searchBannerMargin = -1;
+  if (!adAvailable()) return;
+  // Remove even after a stale local flag: native presentation may have raced the old state.
   try { await (await mod()).AdMob.removeBanner(); } catch { /* banner already gone */ }
 }

@@ -3,7 +3,7 @@ import { Chess } from "chess.js";
 import { z } from "zod";
 import { canCloseOnlineGame, INVITE_TTL_MS, LOBBY_TTL_MS, MOVE_LIMIT_MS, statsFor, type MatchRow } from "./online-rules";
 import { automaticDrawReason } from "./chess-rules";
-import { Cred, PLAYER_COLS, allMatches, auth, finishGame, finishTimedOutGame, nameOf, notify, sweepGames, type DB } from "./server/core";
+import { Cred, PLAYER_COLS, allMatches, auth, enforceAbuseLimit, finishGame, finishTimedOutGame, nameOf, notify, requestSubject, sweepGames, type DB } from "./server/core";
 
 const GAME_COLS = "id, kind, status, host, invitee, white, black, code, pgn, fen, result, end_reason, draw_offer, draw_offers_w, draw_offers_b, last_move_at, reminded, expires_at, created_at";
 const later = (ms: number) => new Date(Date.now() + ms).toISOString();
@@ -56,6 +56,7 @@ export const inviteFriend = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Cred.extend({ friend: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     const { a, me } = await auth(data);
+    await enforceAbuseLimit("invites", requestSubject(me));
     const { data: fr } = await a.from("friendships").select("id").eq("status", "accepted")
       .or(`and(requester.eq.${me},addressee.eq.${data.friend}),and(requester.eq.${data.friend},addressee.eq.${me})`).maybeSingle();
     if (!fr) throw new Error("not_friends");
@@ -77,6 +78,7 @@ export const createLobby = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Cred.parse(d))
   .handler(async ({ data }) => {
     const { a, me } = await auth(data);
+    await enforceAbuseLimit("lobby_creates", requestSubject(me));
     for (let i = 0; i < 5; i++) {
       const { data: g, error } = await a.from("games").insert({ kind: "lobby", host: me, code: lobbyCode(), expires_at: later(LOBBY_TTL_MS) }).select("id, code").single();
       if (!error) return g;
@@ -122,6 +124,7 @@ export const quickMatch = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Cred.extend({ gameId: z.string().uuid().optional() }).parse(d))
   .handler(async ({ data }) => {
     const { a, me } = await auth(data);
+    await enforceAbuseLimit("quick_matches", requestSubject(me));
     const args = data.gameId ? { p_player: me, p_game: data.gameId } : { p_player: me };
     const { data: rows, error } = await a.rpc("quick_match", args);
     if (error) throw new Error("quick_match_failed");

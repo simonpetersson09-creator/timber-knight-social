@@ -5,6 +5,8 @@ import { translate, type Key } from "@/lib/i18n/translate";
 import { moveDeadline } from "@/lib/online-rules";
 import { timeoutWinner } from "@/lib/chess-rules";
 import { allowsNotification } from "@/lib/notification-preferences";
+import { getRequestHeader } from "@tanstack/react-start/server";
+import { ABUSE_QUOTAS, type AbuseAction } from "./abuse-policy";
 
 export const Cred = z.object({ id: z.string().uuid(), secret: z.string().min(20).max(100) });
 export type CredT = z.infer<typeof Cred>;
@@ -17,8 +19,32 @@ export async function db() { return (await import("@/integrations/supabase/clien
 export type DB = Awaited<ReturnType<typeof db>>;
 export const PLAYER_COLS = "id, player_number, name, avatar, country, friend_code, last_seen";
 
+/** A non-reversible request subject; raw IP addresses are never persisted. */
+export function requestSubject(identity = ""): string {
+  const forwarded = getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim() ?? "";
+  const ip = getRequestHeader("cf-connecting-ip") ?? getRequestHeader("x-real-ip") ?? forwarded ?? "unknown";
+  return `${identity}:${ip}`.slice(0, 240);
+}
+
+/** Atomic persistent quota. Admin prechecks use consume=false; failures consume. */
+export async function enforceAbuseLimit(action: AbuseAction, subject: string, consume = true): Promise<void> {
+  const quota = ABUSE_QUOTAS[action];
+  const a = await db();
+  const { data: allowed, error } = await a.rpc("chess_abuse_limit", {
+    p_action: action,
+    p_subject: await sha256(`${action}:${subject}`),
+    p_limit: quota.limit,
+    p_window_seconds: quota.windowSeconds,
+    p_block_seconds: quota.blockSeconds,
+    p_consume: consume,
+  });
+  if (error) throw new Error("abuse_limit_unavailable");
+  if (!allowed) throw new Error("rate_limited");
+}
+
 /** Verifies the anonymous device credentials and marks the player as seen. */
 export async function auth(c: CredT) {
+  await enforceAbuseLimit("api", requestSubject(c.id));
   const a = await db();
   const { data } = await a.from("players").select("id, secret_hash, platform").eq("id", c.id).maybeSingle();
   if (!data || data.secret_hash !== (await sha256(c.secret))) throw new Error("unauthorized");

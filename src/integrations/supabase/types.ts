@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      abuse_limits: {
+        Row: {
+          action: string
+          blocked_until: string | null
+          hits: number
+          subject_hash: string
+          window_started_at: string
+        }
+        Insert: {
+          action: string
+          blocked_until?: string | null
+          hits?: number
+          subject_hash: string
+          window_started_at?: string
+        }
+        Update: {
+          action?: string
+          blocked_until?: string | null
+          hits?: number
+          subject_hash?: string
+          window_started_at?: string
+        }
+        Relationships: []
+      }
       app_days: {
         Row: {
           day: string
@@ -383,6 +407,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      chess_abuse_limit: {
+        Args: {
+          p_action: string
+          p_block_seconds: number
+          p_consume?: boolean
+          p_limit: number
+          p_subject: string
+          p_window_seconds: number
+        }
+        Returns: boolean
+      }
       ingest_chess_event: {
         Args: {
           p_detail: string

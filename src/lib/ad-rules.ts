@@ -77,3 +77,16 @@ export function isNoFillError(error: unknown): boolean {
 export function noFillRetryAt(error: unknown, now: number): number {
   return isNoFillError(error) ? now + APP_OPEN_NO_FILL_RETRY_MS : 0;
 }
+
+/** One owner across every await; simultaneous App Open/Interstitial calls fail closed. */
+export function createAdMutex() {
+  let active: Promise<boolean> | null = null;
+  return (operation: () => Promise<boolean>): Promise<boolean> => {
+    if (active) return Promise.resolve(false);
+    const current = operation();
+    active = current;
+    const release = () => { if (active === current) active = null; };
+    void current.then(release, release);
+    return current;
+  };
+}

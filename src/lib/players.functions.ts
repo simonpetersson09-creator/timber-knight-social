@@ -1,13 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { cleanName, friendCode } from "./profile";
-import { Cred, PLAYER_COLS as COLS, allMatches, auth, db, sha256 as hash, stockholmDay } from "./server/core";
+import { Cred, PLAYER_COLS as COLS, allMatches, auth, db, enforceAbuseLimit, requestSubject, sha256 as hash, stockholmDay } from "./server/core";
 
 export const registerPlayer = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Cred.extend({
     platform: z.enum(["ios", "android", "web"]).default("web"), tz: z.string().max(60).nullable().default(null), lang: z.string().max(8).default("en"), country: z.string().length(2).nullable().default(null),
   }).parse(d))
   .handler(async ({ data }) => {
+    await enforceAbuseLimit("register", requestSubject(data.id));
     const a = await db();
     const { data: existing } = await a.from("players").select("id").eq("id", data.id).maybeSingle();
     if (!existing) {
@@ -93,6 +94,7 @@ export const sendFriendRequest = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Cred.extend({ code: z.string().trim().toUpperCase().regex(/^[A-Z0-9]{6}$/) }).parse(d))
   .handler(async ({ data }) => {
     const { a, me } = await auth(data);
+    await enforceAbuseLimit("friend_requests", requestSubject(me));
     const { data: other } = await a.from("players").select("id").eq("friend_code", data.code).maybeSingle();
     if (!other) return { result: "not_found" as const };
     if (other.id === me) return { result: "self" as const };
@@ -127,6 +129,7 @@ export const saveProfilePhoto = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Cred.extend({ jpeg: z.string().max(680000).nullable() }).parse(d))
   .handler(async ({ data }) => {
     const { a, me } = await auth(data);
+    await enforceAbuseLimit("photo_uploads", requestSubject(me));
     const path = `${me}/avatar.jpg`;
     if (data.jpeg === null) {
       await a.storage.from("profile-photos").remove([path]);

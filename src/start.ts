@@ -2,6 +2,15 @@ import { createStart, createCsrfMiddleware, createMiddleware } from "@tanstack/r
 
 import { renderErrorPage } from "./lib/error-page";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
+import { MAX_SERVER_REQUEST_BYTES } from "./lib/server/abuse-policy";
+
+const requestSizeMiddleware = createMiddleware().server(async ({ request, next }) => {
+  const contentLength = Number(request.headers.get("content-length") ?? "0");
+  if (Number.isFinite(contentLength) && contentLength > MAX_SERVER_REQUEST_BYTES) {
+    return Response.json({ error: "request_too_large" }, { status: 413 });
+  }
+  return next();
+});
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
   try {
@@ -33,5 +42,5 @@ const csrfMiddleware = createCsrfMiddleware({
 // project did not intentionally replace it.
 export const startInstance = createStart(() => ({
   functionMiddleware: [attachSupabaseAuth],
-  requestMiddleware: [errorMiddleware, csrfMiddleware],
+  requestMiddleware: [requestSizeMiddleware, errorMiddleware, csrfMiddleware],
 }));

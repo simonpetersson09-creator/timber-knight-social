@@ -44,11 +44,14 @@ dependencies {
 
 apply from: 'capacitor.build.gradle'
 
-try {
-    def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
-        apply plugin: 'com.google.gms.google-services'
-    }
-} catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+// Local/CI Firebase client configuration is intentionally not version controlled.
+// Missing configuration permits local builds, but FCM will not work.
+// CI can require it explicitly: ./gradlew assembleRelease -PrequirePushConfig=true
+def servicesJSON = file('google-services.json')
+if (servicesJSON.isFile()) {
+    apply plugin: 'com.google.gms.google-services'
+} else if (providers.gradleProperty('requirePushConfig').getOrElse('false').toBoolean()) {
+    throw new GradleException('Push requires android/app/google-services.json supplied locally or by CI.')
+} else {
+    logger.warn('Firebase configuration absent: Android push is disabled. Supply android/app/google-services.json locally.')
 }

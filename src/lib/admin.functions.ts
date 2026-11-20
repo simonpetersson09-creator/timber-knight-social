@@ -2,10 +2,17 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { buildAdminStats, type AdminAppDay, type AdminEvent, type AdminMatch, type AdminPlayer } from "./admin-stats";
 import { buildRetention } from "./admin-retention";
+import { enforceAbuseLimit, requestSubject } from "./server/core";
 
 async function check(pw: string) {
+  const subject = requestSubject("admin");
+  await enforceAbuseLimit("admin_requests", subject);
+  await enforceAbuseLimit("admin_failures", subject, false);
   const want = process.env["ADMIN_PASSWORD"];
-  if (!want || pw !== want) throw new Error("wrong_password");
+  if (!want || pw !== want) {
+    await enforceAbuseLimit("admin_failures", subject);
+    throw new Error("wrong_password");
+  }
   return (await import("@/integrations/supabase/client.server")).supabaseAdmin;
 }
 

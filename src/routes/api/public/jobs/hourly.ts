@@ -11,6 +11,8 @@ export const Route = createFileRoute("/api/public/jobs/hourly")({
         const authFailure = await authenticateCronRequest(request);
         if (authFailure) return authFailure;
         const a = await db();
+        // Bound the ad-hoc quota store; all configured windows/blocks are at most one day.
+        await a.from("abuse_limits").delete().lt("window_started_at", new Date(Date.now() - 2 * 86_400_000).toISOString());
         let swept = 0;
         let cursor = "00000000-0000-0000-0000-000000000000";
         for (;;) {

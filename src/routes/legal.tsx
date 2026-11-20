@@ -23,7 +23,7 @@ function Legal() {
       <h1 className="brand-wordmark text-4xl">Mr B Chess Legal</h1>
       <section className="space-y-2 p-5">
         <h2 className="text-xl font-bold">{t("legalSupport")}</h2>
-        <p>{t("legalSupportText")} <a className="underline" href="mailto:support@example.com">support@example.com</a>.</p>
+        <p>{t("legalSupportText")} <a className="underline" href="mailto:simon@shiningdays.se">simon@shiningdays.se</a>.</p>
       </section>
       <section id="privacy" className="space-y-2 p-5">
         <h2 className="text-xl font-bold">{t("privacy")}</h2>
