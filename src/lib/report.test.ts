@@ -59,6 +59,20 @@ it("delivers errors before older routine events", async () => {
   await vi.waitFor(() => expect(JSON.parse(localStorage.getItem("mrbchess.reports.v1") ?? "[]")).toHaveLength(0));
 });
 
+it("drops poison queue entries and delivers the next valid event", async () => {
+  mocks.send.mockResolvedValue({ ok: true });
+  const valid = { eventId: crypto.randomUUID(), kind: "play", name: "settings_opened", detail: "ok" };
+  localStorage.setItem("mrbchess.reports.v1", JSON.stringify([
+    { ...valid, eventId: "not-a-uuid", name: "blocked_forever" },
+    { ...valid, eventId: crypto.randomUUID(), detail: "x".repeat(2001) },
+    valid,
+  ]));
+  await flushReports();
+  expect(mocks.send).toHaveBeenCalledTimes(1);
+  expect(mocks.send.mock.calls[0]?.[0].data.eventId).toBe(valid.eventId);
+  expect(JSON.parse(localStorage.getItem("mrbchess.reports.v1") ?? "[]")).toEqual([]);
+});
+
 it("recovers from malformed queue and once-marker storage", () => {
   const online = vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
   try {

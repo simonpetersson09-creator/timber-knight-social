@@ -13,7 +13,9 @@ export function WebGate({ children }: { children: ReactNode }) {
   const [runtime, setRuntime] = useState<"pending" | "app" | "download">("pending");
   useEffect(() => setRuntime(isNative() || isPreviewHost() ? "app" : "download"), []);
   const publicPath = webPathAllowed(pathname);
-  const knownPath = publicPath || Object.prototype.hasOwnProperty.call(router.routesByPath, pathname);
+  const normalizedPath = pathname.length > 1 ? pathname.replace(/\/+$/, "").toLowerCase() : pathname;
+  const knownPath = publicPath || Object.prototype.hasOwnProperty.call(router.routesByPath, normalizedPath);
+  // Unknown routes render only the router's 404; normalized protected routes must never bypass the gate.
   if (!knownPath) return <>{children}</>;
   if (runtime === "pending") return publicPath ? <>{children}</> : null;
   if (runtime === "download" && !publicPath) return <DownloadPage />;

@@ -1,5 +1,17 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Skrivskyddad felsökning – nio åtgärder 20 nov
+- [x] 1: Datorn återupptar sitt drag efter bakgrundsväxling även utan klocka; verkligt mobilprov gav svart datorrespons
+- [x] 2: Publik webb spärrar även adressvarianter innan montering; okända adresser behåller säker 404
+- [x] 3: Onlinepollning väntar på varje svar och kör aldrig överlappande läsningar; tidsstyrt regressionstest
+- [x] 4: Android-tillbaka och vänstersvep avbryter väntande snabbsökning via samma serveråtgärd som Avbryt; svep provat hem utan konsolfel
+- [x] 5: Avtalad oavgjort har beständig slutmarkering och återställs efter lagringsfel; enhetstest och omladdning i appen verifierade
+- [x] 6: Promotionsval stängs vid timeout, avslut och revansch; timeout med öppet val mobilprovat
+- [x] 7: Datorns tänkstatus rensas vid paus, avslut och revansch; revanschens kontroller mobilprovade
+- [x] 8: Ogiltiga logghändelser rensas utan att blockera giltiga efterföljande händelser; regressionstest passerar
+- [x] 9: Tidiga fel- och 404-gränser använder valt/enhetens språk efter hydration; SSR- och klienttest passerar
+- Verifiering: 259 tester, ren bygglogg samt fem mobila slut-till-slut-scenarier utan sidfel
+
 ## Releasegranskning – slutåtgärder U01–U07 20 nov
 - [x] U01: Radix-dialoger med fokusfälla, Escape, återfokus och namn; mobilprov utan konsolfel
 - [x] U02: 64 rutor med roving fokus, pilar/Enter, pjäsnamn, tillgänglig bondeförvandling och radiospråkval provade

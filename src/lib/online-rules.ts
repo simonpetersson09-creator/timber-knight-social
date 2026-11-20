@@ -76,6 +76,21 @@ export function shouldAskRating(finished: number, asked: number): boolean {
   return asked < RATE_AT.length && finished >= RATE_AT[asked]!;
 }
 
+/** Starts the next poll only after the previous request has settled. */
+export function startSequentialPolling(task: () => Promise<void>, delayMs = 2000): () => void {
+  let stopped = false;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const run = async () => {
+    try { await task(); } catch { /* a later poll can retry */ }
+    if (!stopped) timer = setTimeout(() => { void run(); }, delayMs);
+  };
+  void run();
+  return () => {
+    stopped = true;
+    if (timer) clearTimeout(timer);
+  };
+}
+
 /** Web visitors only see the download page – except joining, rules, legal and admin pages. */
 export function webPathAllowed(path: string): boolean {
   return ["/join", "/legal", "/rules", "/admin", "/add"].some((p) => path === p || path.startsWith(p + "/"));

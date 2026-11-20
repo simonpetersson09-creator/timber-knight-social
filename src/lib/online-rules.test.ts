@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { canCloseOnlineGame, DAY, HOUR, INVITE_TTL_MS, LOBBY_TTL_MS, moveDeadline, QUICK_WAIT_MS, shouldAskRating, shouldSendPlayReminder, statsFor, webPathAllowed } from "./online-rules";
+import { describe, expect, it, vi } from "vitest";
+import { canCloseOnlineGame, DAY, HOUR, INVITE_TTL_MS, LOBBY_TTL_MS, moveDeadline, QUICK_WAIT_MS, shouldAskRating, shouldSendPlayReminder, startSequentialPolling, statsFor, webPathAllowed } from "./online-rules";
 
 const m = (white: string, black: string, result: "w" | "b" | "d", counts = true) => ({ white, black, result, counts, finished_at: "" });
 describe("online rules", () => {
@@ -44,5 +44,30 @@ describe("online rules", () => {
     expect(webPathAllowed("/legal")).toBe(true);
     expect(webPathAllowed("/")).toBe(false);
     expect(webPathAllowed("/play")).toBe(false);
+  });
+  it("never overlaps slow polls or schedules another poll after disposal", async () => {
+    vi.useFakeTimers();
+    let release: (() => void) | undefined;
+    const task = vi.fn(() => new Promise<void>((resolve) => { release = resolve; }));
+    const stop = startSequentialPolling(task, 2000);
+    try {
+      await vi.advanceTimersByTimeAsync(10_000);
+      expect(task).toHaveBeenCalledTimes(1);
+      release?.();
+      await Promise.resolve();
+      await Promise.resolve();
+      await vi.advanceTimersByTimeAsync(1999);
+      expect(task).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(task).toHaveBeenCalledTimes(2);
+      stop();
+      release?.();
+      await Promise.resolve();
+      await vi.advanceTimersByTimeAsync(10_000);
+      expect(task).toHaveBeenCalledTimes(2);
+    } finally {
+      stop();
+      vi.useRealTimers();
+    }
   });
 });

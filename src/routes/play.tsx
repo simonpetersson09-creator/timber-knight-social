@@ -86,6 +86,7 @@ function Play() {
   const [startingNewGame, setStartingNewGame] = useState(false);
   const startingNewGameRef = useRef(false);
   const paused = useRef(false);
+  const [isPaused, setIsPaused] = useState(false);
   const savedRef = useRef<SavedGame | null>(null);
   const finishedGame = useRef<string | null>(null);
   const refresh = () => setTick((x) => x + 1);
@@ -104,12 +105,16 @@ function Play() {
     const l = h[h.length - 1];
     setLastMove(l ? { from: l.from, to: l.to } : null);
     setResult(null);
+    setThinking(false);
+    setPromo(null);
+    setAsk(null);
     setDrawOffers(normalizedDrawOffers(g.drawOffers));
     setShowEnd(false);
     setReviewPly(null);
     if (endTimer.current) clearTimeout(endTimer.current);
     finishedGame.current = null;
     paused.current = document.visibilityState === "hidden";
+    setIsPaused(paused.current);
     const resumed = checkpointClock(g, game.turn(), Date.now(), !paused.current);
     savedRef.current = resumed;
     saveGame(resumed);
@@ -132,7 +137,7 @@ function Play() {
 
   const vsAi = saved?.mode === "ai";
   const human: Color = saved?.human ?? "w";
-  const aiTurn = !!saved && vsAi && game.turn() !== human && !result && !paused.current;
+  const aiTurn = !!saved && vsAi && game.turn() !== human && !result && !isPaused;
 
   const remaining = useCallback((c: Color) => {
     const s = savedRef.current;
@@ -145,11 +150,19 @@ function Play() {
     if (!s || finishedGame.current === s.id) return;
     finishedGame.current = s.id;
     setResult(res);
+    setThinking(false);
+    setPromo(null);
+    setAsk(null);
     setShowEnd(false);
     setReviewPly(null);
     const outcome = res.winner === null ? "draw" : res.winner === s.human ? "win" : "loss";
+    // Keep an explicit ending too: an agreed draw cannot be inferred from the final PGN.
+    const completed: SavedGame = { ...s, completion: { winner: res.winner, reason: res.reason } };
+    savedRef.current = completed;
+    saveGame(completed);
+    setSaved(completed);
     // Never discard the recoverable final position until its result is durably recorded.
-    completeSavedGame(s, outcome, res.reason !== "resigned");
+    completeSavedGame(completed, outcome, res.reason !== "resigned");
     if (res.reason === "checkmate") showNotice(t("checkmate"), "checkmate");
     endTimer.current = setTimeout(() => setShowEnd(true), res.reason === "checkmate" ? CHECKMATE_RESULT_DELAY_MS : 0);
     noteGameFinished(s.id);
@@ -162,7 +175,8 @@ function Play() {
   // Recover a game closed between saving the final move and recording its result.
   useEffect(() => {
     if (!saved || result || finishedGame.current === saved.id) return;
-    if (game.isCheckmate()) finish({ winner: other(game.turn()), reason: "checkmate" });
+    if (saved.completion) finish(saved.completion);
+    else if (game.isCheckmate()) finish({ winner: other(game.turn()), reason: "checkmate" });
     else if (automaticDrawReason(game)) finish({ winner: null, reason: "draw" });
   }, [saved, result, game, finish]);
 
@@ -229,7 +243,7 @@ function Play() {
         if (mv) applyMove(mv);
       }, wait);
     }, 0);
-    return () => { cancelled = true; clearTimeout(timer); if (moveTimer) clearTimeout(moveTimer); cancelStockfish(); };
+    return () => { cancelled = true; clearTimeout(timer); if (moveTimer) clearTimeout(moveTimer); cancelStockfish(); setThinking(false); };
   }, [aiTurn, saved?.id, game.fen()]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Clock ticking + timeout
@@ -254,6 +268,7 @@ function Play() {
       const current = savedRef.current;
       if (!current || current.id !== id || finishedGame.current === current.id || paused.current === !running) return;
       paused.current = !running;
+      setIsPaused(!running);
       const next = checkpointClock(current, game.turn(), Date.now(), running);
       savedRef.current = next;
       saveGame(next);

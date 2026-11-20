@@ -15,8 +15,11 @@ export type SavedGame = GameConfig & {
   times: { w: number; b: number } | null; pgn: string; updatedAt: number;
   /** Confirmed offers per colour; older saves fall back to zero when opened. */
   drawOffers: Record<Color, number>;
+  /** Kept with the final position until statistics have been stored successfully. */
+  completion: GameCompletion | null;
 };
 export type Outcome = "win" | "loss" | "draw";
+export type GameCompletion = { winner: Color | null; reason: "checkmate" | "timeout" | "resigned" | "draw" };
 export type ResultStats = { played: number; wins: number; losses: number; draws: number };
 export type Stats = ResultStats & {
   streak: number; bestStreak: number;
@@ -51,6 +54,9 @@ export function validatedGame(value: unknown): SavedGame | null {
   if (v["clockStartedAt"] !== undefined && v["clockStartedAt"] !== null && !finite(v["clockStartedAt"])) return null;
   try { const chess = new Chess(); if (v["pgn"]) chess.loadPgn(v["pgn"]); } catch { return null; }
   const offers = object(v["drawOffers"]);
+  const rawCompletion = v["completion"], completion = object(rawCompletion);
+  if (rawCompletion != null && (!(completion["winner"] === null || ["w", "b"].includes(completion["winner"] as string)) ||
+      !["checkmate", "timeout", "resigned", "draw"].includes(completion["reason"] as string))) return null;
   return {
     id: v["id"], mode: v["mode"] as GameConfig["mode"], level: v["level"] as Level, human: v["human"] as Color,
     pgn: v["pgn"], updatedAt: v["updatedAt"],
@@ -58,6 +64,7 @@ export function validatedGame(value: unknown): SavedGame | null {
     times: v["clock"] === null ? null : { w: times["w"] as number, b: times["b"] as number },
     clockStartedAt: v["clockStartedAt"] == null ? null : v["clockStartedAt"] as number,
     drawOffers: { w: Math.min(2, count(offers["w"])), b: Math.min(2, count(offers["b"])) },
+    completion: rawCompletion == null ? null : { winner: completion["winner"] as Color | null, reason: completion["reason"] as GameCompletion["reason"] },
   };
 }
 
@@ -93,7 +100,7 @@ export function rematchConfig(game: GameConfig): GameConfig {
 export function createGame(cfg: GameConfig): SavedGame | null {
   if (listGames().length >= MAX_SAVED) return null;
   const ms = cfg.clock ? cfg.clock.minutes * 60_000 : 0;
-  const g: SavedGame = { ...cfg, id: crypto.randomUUID(), times: cfg.clock ? { w: ms, b: ms } : null, pgn: "", updatedAt: Date.now(), drawOffers: { w: 0, b: 0 } };
+  const g: SavedGame = { ...cfg, id: crypto.randomUUID(), times: cfg.clock ? { w: ms, b: ms } : null, pgn: "", updatedAt: Date.now(), drawOffers: { w: 0, b: 0 }, completion: null };
   saveGame(g);
   return g;
 }

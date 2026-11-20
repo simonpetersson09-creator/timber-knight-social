@@ -21,7 +21,8 @@ import { useI18n, type Key } from "@/lib/i18n";
 import { getCred } from "@/lib/identity";
 import { abandonQuickMatch, cancelGame, gameAction, getOnlineGame, makeMove, quickMatch, sendChat } from "@/lib/online.functions";
 import { displayName, flagOf } from "@/lib/profile";
-import { createOnlineReadGuard, onlineGameCountsForStats, QUICK_WAIT_MS } from "@/lib/online-rules";
+import { createOnlineReadGuard, onlineGameCountsForStats, QUICK_WAIT_MS, startSequentialPolling } from "@/lib/online-rules";
+import { useBackHandler } from "@/lib/back-handler";
 import { CHECKMATE_RESULT_DELAY_MS, MATCH_NOTICE_MS, MAX_DRAW_OFFERS, PLAY_FALLBACK_NOTICE } from "@/lib/play-motion";
 import { celebrate, feedback } from "@/lib/feedback";
 import { hideSearchBanner, noteGameFinished, setGameplayActive, showPostMatchAd, showSearchBanner } from "@/lib/ads";
@@ -74,6 +75,7 @@ function MatchSession() {
   const prevDrawOffer = useRef<"w" | "b" | null>(null);
   const endHandled = useRef(false);
   const fallbackStarted = useRef(false);
+  const quickCancelStarted = useRef(false);
   const leavingRef = useRef(false);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resultTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -144,9 +146,8 @@ function MatchSession() {
   }, [id, game, t, navigate, notifyCheck, showNotice, fallbackLevel, fallbackClock, readGuard]);
 
   useEffect(() => {
-    void load();
-    const i = setInterval(() => void load(), 2000);
-    return () => { clearInterval(i); readGuard.invalidate(); };
+    const stop = startSequentialPolling(load);
+    return () => { stop(); readGuard.invalidate(); };
   }, [load, readGuard]);
   useEffect(() => setReviewPly(null), [id]);
   useEffect(() => () => {
@@ -170,13 +171,13 @@ function MatchSession() {
     void (async () => {
       try {
         const current = await quickMatch({ data: { ...getCred(), gameId: g.id } });
-        if (!readGuard.active) return;
+        if (!readGuard.active || leavingRef.current) return;
         if (current.status === "active") {
           if (current.id !== g.id) await navigate({ to: "/match", search: { id: current.id, level: fallbackLevel, clock: fallbackClock }, replace: true });
           return;
         }
         const abandoned = await abandonQuickMatch({ data: { ...getCred(), gameId: g.id } });
-        if (!readGuard.active) return;
+        if (!readGuard.active || leavingRef.current) return;
         if (abandoned.status === "active") return;
         if (abandoned.status !== "expired") { fallbackStarted.current = false; return; }
         const local = createGame({ mode: "ai", level: fallbackLevel, human: "w", clock: CLOCKS[fallbackClock] ?? null });
@@ -188,7 +189,7 @@ function MatchSession() {
           await navigate({ to: "/" });
         }
       } catch {
-        if (!readGuard.active) return;
+        if (!readGuard.active || leavingRef.current) return;
         fallbackStarted.current = false;
         toast.error(t("error"));
       }
@@ -239,8 +240,16 @@ function MatchSession() {
 
   if (g.kind === "quick" && g.status === "waiting") {
     return <QuickSearchScreen key={g.id} onCancel={async () => {
+      if (quickCancelStarted.current) return;
+      quickCancelStarted.current = true;
+      leavingRef.current = true;
       const result = await abandonQuickMatch({ data: { ...getCred(), gameId: g.id } }).catch(() => null);
-      if (result?.status === "expired") void navigate({ to: "/" });
+      if (result?.status === "expired") {
+        await navigate({ to: "/" });
+        return;
+      }
+      leavingRef.current = false;
+      quickCancelStarted.current = false;
     }} />;
   }
 
@@ -441,6 +450,7 @@ function MatchSession() {
 /** Yatzy-style quick search: centred status, progress bar, cancel and a 300×250 ad slot below. */
 function QuickSearchScreen({ onCancel }: { onCancel: () => void }) {
   const { t } = useI18n();
+  useBackHandler(true, onCancel);
   useEffect(() => {
     const show = () => { void showSearchBanner(); };
     const first = window.setTimeout(show, 350);

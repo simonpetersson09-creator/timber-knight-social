@@ -12,16 +12,18 @@ let flushing = false;
 function isEvent(value: unknown): value is Event {
   if (!value || typeof value !== "object") return false;
   const event = value as Record<string, unknown>;
-  return typeof event["eventId"] === "string" && !!event["eventId"] &&
+  return typeof event["eventId"] === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(event["eventId"]) &&
     ["error", "ad", "play"].includes(event["kind"] as string) &&
-    typeof event["name"] === "string" &&
-    (event["detail"] === null || typeof event["detail"] === "string");
+    typeof event["name"] === "string" && event["name"].length > 0 && event["name"].length <= 80 &&
+    (event["detail"] === null || (typeof event["detail"] === "string" && event["detail"].length <= 2000));
 }
 
 function queue(): Event[] {
   try {
     const value: unknown = JSON.parse(localStorage.getItem(KEY) ?? "[]");
-    return Array.isArray(value) ? value.filter(isEvent) : [];
+    const events = Array.isArray(value) ? value.filter(isEvent) : [];
+    if (!Array.isArray(value) || events.length !== value.length) save(events);
+    return events;
   } catch { return []; }
 }
 

@@ -13,7 +13,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { report } from "../lib/report";
-import { I18nProvider, translate } from "../lib/i18n";
+import { I18nProvider, resolveDeviceLang, translate } from "../lib/i18n";
+import { getSettings } from "../lib/storage";
 import { Toaster } from "../components/ui/sonner";
 import { NativeHost } from "../components/NativeHost";
 import { WebGate } from "../components/WebGate";
@@ -21,7 +22,10 @@ import brandIcon from "../assets/chess-mascot.png.asset.json";
 
 function useBoundaryLanguage() {
   const [lang, setLang] = useState("sv");
-  useEffect(() => { setLang(document.documentElement.lang || "sv"); }, []);
+  useEffect(() => {
+    const choice = getSettings().lang;
+    setLang(choice === "auto" ? resolveDeviceLang(navigator.languages ?? [navigator.language]) : choice);
+  }, []);
   return lang;
 }
 

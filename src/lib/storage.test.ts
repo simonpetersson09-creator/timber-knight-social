@@ -82,6 +82,27 @@ describe("local statistics", () => {
     expect(getStats().played).toBe(1);
     expect(getGame(game.id)).toBeNull();
   });
+  it("restores an agreed draw after statistics storage fails, then records it once", () => {
+    const game = createGame({ mode: "local", level: "beginner", human: "w", clock: null });
+    if (!game) throw new Error("Expected a new game");
+    const completed = { ...game, pgn: "1. e4 e5", completion: { winner: null, reason: "draw" as const } };
+    saveGame(completed);
+    const original = Storage.prototype.setItem;
+    const spy = vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key: string, value: string) {
+      if (key === "mrbchess.stats.v1") throw new DOMException("full", "QuotaExceededError");
+      original.call(this, key, value);
+    });
+    try {
+      expect(completeSavedGame(completed, "draw", true).stored).toBe(false);
+      expect(getGame(game.id)?.completion).toEqual({ winner: null, reason: "draw" });
+      expect(getStats().played).toBe(0);
+    } finally { spy.mockRestore(); }
+    const restored = getGame(game.id);
+    if (!restored?.completion) throw new Error("Expected recoverable agreed draw");
+    expect(completeSavedGame(restored, "draw", true).stored).toBe(true);
+    expect(getStats().draws).toBe(1);
+    expect(getGame(game.id)).toBeNull();
+  });
   it("keeps the final position recoverable when result storage fails", () => {
     const game = createGame({ mode: "ai", level: "hard", human: "w", clock: null });
     if (!game) throw new Error("Expected a new game");
