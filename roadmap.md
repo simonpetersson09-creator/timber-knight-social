@@ -1,5 +1,12 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Google AdMob iOS 20 nov
+- [ ] Konfigurera Chess iOS App-ID, App Open och Interstitial med test-ID:n i utveckling
+- [ ] Implementera delad UMP/ATT-livscykel, förladdning, tids- och visningsspärrar samt offline/felutfall
+- [ ] Visa App Open tidigast efter 12 sekunder och Interstitial först vid val att starta ny match
+- [ ] Skapa och synka iOS-konfiguration med AdMob, ATT och SKAdNetwork
+- [ ] Lägg till regeltester och redovisa kvarvarande fysisk iPhone-verifiering
+
 ## Kompakta spelval 20 nov
 - [x] Behåll de fem bekräftade tidsvalen: ingen klocka, 3+2, 5+0, 10+0 och 15+10
 - [x] Komprimera snabbspelspanelen och låt den öppnas nedåt utan att startsidan hoppar uppåt
