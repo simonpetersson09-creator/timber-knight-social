@@ -65,7 +65,8 @@ describe("full-screen ad policy", () => {
     expect(canShowPostMatchInterstitial({ ...interstitial, pendingMatchId: "other" })).toBe(false);
     expect(canShowPostMatchInterstitial({ ...interstitial, ready: false })).toBe(false);
   });
-  it("permits at most one Interstitial attempt per completed match", () => {
+  it("allows replay or back first, but never both for the same completed match", () => {
+    expect(canShowPostMatchInterstitial(interstitial)).toBe(true);
     expect(canShowPostMatchInterstitial({ ...interstitial, lastAttemptMatchId: "match-1" })).toBe(false);
     expect(canShowPostMatchInterstitial({ ...interstitial, lastAttemptMatchId: "match-0" })).toBe(true);
   });

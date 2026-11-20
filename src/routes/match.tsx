@@ -24,7 +24,7 @@ import { displayName, flagOf } from "@/lib/profile";
 import { QUICK_WAIT_MS } from "@/lib/online-rules";
 import { CHECKMATE_RESULT_DELAY_MS, MATCH_NOTICE_MS } from "@/lib/play-motion";
 import { celebrate, feedback } from "@/lib/feedback";
-import { noteGameFinished, setGameplayActive } from "@/lib/ads";
+import { noteGameFinished, setGameplayActive, showPostMatchAd } from "@/lib/ads";
 import { onGameFinished } from "@/lib/rate";
 import { createGame, recordResult } from "@/lib/storage";
 import { ResultShareButton } from "@/components/ResultShareButton";
@@ -58,6 +58,7 @@ function Match() {
   const [promo, setPromo] = useState<{ from: Square; to: Square } | null>(null);
   const [ask, setAsk] = useState<"resign" | "offerDraw" | "chat" | null>(null);
   const [showResult, setShowResult] = useState(false);
+  const [leavingHome, setLeavingHome] = useState(false);
   const [reviewPly, setReviewPly] = useState<number | null>(null);
   const [notice, setNotice] = useState<BoardNoticeData | null>(null);
   const [qr, setQr] = useState("");
@@ -67,6 +68,7 @@ function Match() {
   const prevPgn = useRef<string | null>(null);
   const prevDrawOffer = useRef<"w" | "b" | null>(null);
   const endHandled = useRef(false);
+  const leavingRef = useRef(false);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resultTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const game = useRef(new Chess()).current;
@@ -174,6 +176,19 @@ function Match() {
   const players = useMemo(() => Object.fromEntries((d?.players ?? []).map((p) => [p.id, p])), [d?.players]);
   if (!g || !me) return <main className="min-h-dvh" />;
 
+  async function goHome() {
+    if (!g || leavingRef.current) return;
+    leavingRef.current = true;
+    setLeavingHome(true);
+    try {
+      if (g.status === "finished") await showPostMatchAd(g.id, "home");
+      await navigate({ to: "/" });
+    } finally {
+      leavingRef.current = false;
+      setLeavingHome(false);
+    }
+  }
+
   if (g.status === "waiting" || g.status === "expired") {
     const remainS = Math.max(0, Math.ceil((QUICK_WAIT_MS - (now - started)) / 1000));
     return (
@@ -267,7 +282,7 @@ function Match() {
   return (
     <main className="play-layout">
       <header className="flex w-full max-w-[560px] items-center justify-between">
-        <Link to="/" className="action-ghost flex size-10 items-center justify-center rounded-full" aria-label={t("home")}><ArrowLeft className="size-5" /></Link>
+        <button className="action-ghost flex size-10 items-center justify-center rounded-full" aria-label={t("home")} disabled={leavingHome} onClick={() => void goHome()}><ArrowLeft className="size-5" /></button>
         <span className="brand-wordmark text-2xl">Mr B Chess</span>
         <button className="action-ghost flex size-10 items-center justify-center rounded-full" aria-label={t("quickChat")} disabled={g.status !== "active"} onClick={() => setAsk("chat")}><MessageCircle className="size-5" /></button>
       </header>
@@ -294,7 +309,7 @@ function Match() {
           <Button variant="ghost" onClick={() => setAsk("offerDraw")} disabled={g.status !== "active" || game.history().length < 2 || !!g.draw_offer} className="game-action-button game-action-draw"><Handshake className="size-4" /> {t("offerDraw")}</Button>
           <Button variant="ghost" onClick={() => setAsk("resign")} disabled={g.status !== "active"} className="game-action-button game-action-resign"><Flag className="size-4" /> {t("resign")}</Button>
         </div>
-        {g.status === "finished" && !showResult && <button className="action-btn action-gold" onClick={() => navigate({ to: "/" })}>{t("home")}</button>}
+        {g.status === "finished" && !showResult && <button className="action-btn action-gold" disabled={leavingHome} onClick={() => void goHome()}>{t("home")}</button>}
         {chat.length > 0 && (
           <div className="game-chat-history max-h-16 overflow-y-auto text-xs">
             {chat.slice(-6).map((c) => <p key={c.id}><b>{c.player === me ? t("you") : opp ? displayName(opp) : ""}:</b> {t(CHAT[c.phrase] ?? "chat0")}</p>)}
@@ -340,7 +355,7 @@ function Match() {
           <p className="text-muted-foreground">{reasonText}</p>
           <ResultShareButton title="Mr B Chess" text={`${title} – ${reasonText} · ${opp ? displayName(opp) : t("playOnline")}`} />
           <button className="action-btn action-ghost" onClick={() => setShowResult(false)}><Eye className="size-4" />{t("close")}</button>
-          <button className="action-btn action-gold" onClick={() => navigate({ to: "/" })}>{t("home")}</button>
+          <button className="action-btn action-gold" disabled={leavingHome} onClick={() => void goHome()}>{t("home")}</button>
         </div>
       </Modal>
     </main>

@@ -1,7 +1,7 @@
 /**
  * Native AdMob for iOS and Android. UMP consent is gathered before ATT/SDK initialization.
  * App Open is restricted to the home screen; post-match Interstitials are shown only
- * by an explicit new-match action. No web ads, banners or rewarded ads.
+ * by an explicit replay or exit action. No web ads, banners or rewarded ads.
  */
 import { Capacitor } from "@capacitor/core";
 import { isNative, platform } from "./native";
@@ -272,9 +272,9 @@ export function noteGameFinished(matchId: string) {
   void preloadInterstitial();
 }
 
-/** Called only by an explicit new-match action. Any failure resolves so play can continue. */
-export async function showPostMatchAd(matchId: string): Promise<boolean> {
-  report("ad", "interstitial_opportunity", matchId);
+/** Called only by an explicit replay or exit action. Any failure resolves so play can continue. */
+export async function showPostMatchAd(matchId: string, action: "replay" | "home" | "back" = "replay"): Promise<boolean> {
+  report("ad", "interstitial_opportunity", JSON.stringify({ matchId, action }));
   const state = storedAds();
   const gate = () => ({
     native: adAvailable(), foreground, online: online(), now: Date.now(), lastFullScreenAt: storedAds().lastFullScreenAt,
@@ -304,6 +304,13 @@ export async function showPostMatchAd(matchId: string): Promise<boolean> {
     interstitialDismiss = null;
     void preloadInterstitial();
   }
+}
+
+/** Native back/swipe uses the same pending match and one-attempt guard as visible buttons. */
+export async function showPendingPostMatchAd(currentMatchId: string): Promise<boolean> {
+  const pending = storedAds().pendingMatchId;
+  if (!pending || pending !== currentMatchId) return false;
+  return showPostMatchAd(pending, "back");
 }
 
 // Kept for diagnostics: no-fill policy is shared only by App Open, not gameplay navigation.

@@ -56,7 +56,7 @@ export type InterstitialGate = FullScreenGate & {
   ready: boolean;
 };
 
-/** A prepared post-match ad is consumed only by the explicit new-match action. */
+/** A prepared post-match ad is consumed only by an explicit replay or exit action. */
 export function canShowPostMatchInterstitial(gate: InterstitialGate): boolean {
   return commonAllowed(gate)
     && gate.ready

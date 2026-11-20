@@ -1,5 +1,9 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Eftermatchannons vid samtliga utgångar 20 nov
+- [x] Visa samma engångsannons vid Spela igen, Hem, tillbakapil och native tillbaka efter avslutat parti
+- [x] Låt offline/no-fill fortsätta navigationen och behåll max ett försök per parti och tvåminutersspärren
+
 ## Serverstängning och Yatzy-loggning 20 nov
 - [x] Radera väntande/aktiva onlinespel vid Stäng och ta bara bort kortet efter serverbekräftelse; båda mobilprovade och noll databasrader kvar
 - [x] Komplettera viktig Yatzy-lik loggning: appstart, globala fel, lokala/onlinepartier, inställningar/statistik och språk

@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Chess, type Square } from "chess.js";
 import { ArrowLeft, Eye, Flag, Handshake } from "lucide-react";
@@ -271,13 +271,27 @@ function Play() {
     finish({ winner: other(loser), reason: "resigned" });
   }
 
+  async function goHomeAfterMatch() {
+    const s = savedRef.current;
+    if (!s || startingNewGameRef.current) return;
+    startingNewGameRef.current = true;
+    setStartingNewGame(true);
+    try {
+      await showPostMatchAd(s.id, "home");
+      await navigate({ to: "/" });
+    } finally {
+      startingNewGameRef.current = false;
+      setStartingNewGame(false);
+    }
+  }
+
   async function playAgain() {
     const s = savedRef.current;
     if (!s || startingNewGameRef.current) return;
     startingNewGameRef.current = true;
     setStartingNewGame(true);
     try {
-      await showPostMatchAd(s.id);
+      await showPostMatchAd(s.id, "replay");
       const g = createGame(rematchConfig(s));
       if (g) await navigate({ to: "/play", search: { id: g.id }, replace: true });
       else await navigate({ to: "/" });
@@ -330,9 +344,9 @@ function Play() {
   return (
     <main className="play-layout">
       <header className="flex w-full max-w-[560px] items-center justify-between">
-        <Link to="/" className="play-back" aria-label={t("home")}>
+        <button className="play-back" aria-label={t("home")} disabled={startingNewGame} onClick={() => { if (result) void goHomeAfterMatch(); else void navigate({ to: "/" }); }}>
           <ArrowLeft className="size-5" />
-        </Link>
+        </button>
         <span className="brand-wordmark play-wordmark text-2xl">Mr B Chess</span>
         <span className="size-10" />
       </header>
@@ -351,7 +365,7 @@ function Play() {
             <button className="finished-review-result" onClick={() => setShowEnd(true)}><Eye className="size-4" />{resultText()}</button>
             <div className="finished-review-actions">
               <button onClick={() => void playAgain()} disabled={startingNewGame} className="action-btn action-gold">{t("playAgain")}</button>
-              <Link to="/" className="action-btn action-ghost">{t("home")}</Link>
+              <button onClick={() => void goHomeAfterMatch()} disabled={startingNewGame} className="action-btn action-ghost">{t("home")}</button>
             </div>
           </div>
         ) : (
@@ -409,7 +423,7 @@ function Play() {
           <ResultShareButton title="Mr B Chess" text={`${title} – ${resultText()}${vsAi ? ` · ${t(saved.level)}` : ""}`} />
           <button onClick={() => setShowEnd(false)} className="action-btn action-ghost"><Eye className="size-4" />{t("close")}</button>
           <button onClick={() => void playAgain()} disabled={startingNewGame} className="action-btn action-gold">{t("playAgain")}</button>
-          <Link to="/" className="action-btn action-ghost">{t("home")}</Link>
+          <button onClick={() => void goHomeAfterMatch()} disabled={startingNewGame} className="action-btn action-ghost">{t("home")}</button>
         </div>
       </Modal>
     </main>

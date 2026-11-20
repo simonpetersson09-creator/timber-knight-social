@@ -1,10 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useLocation, useRouter } from "@tanstack/react-router";
 import { isNative } from "@/lib/native";
 import { isBackSwipe, type SwipePoint } from "@/lib/swipe-back";
 import { runTopBackHandler } from "@/lib/back-handler";
 import {
-  cancelScheduledAppOpen, initAds, maybeShowAppOpen, preloadInterstitial, scheduleAppOpen, setAdForeground, setAdLocation,
+  cancelScheduledAppOpen, initAds, maybeShowAppOpen, preloadInterstitial, scheduleAppOpen, setAdForeground, setAdLocation, showPendingPostMatchAd,
 } from "@/lib/ads";
 import { resumePush } from "@/lib/push";
 import { flushReports, report } from "@/lib/report";
@@ -19,6 +19,14 @@ export function NativeHost() {
   path.current = pathname;
 
   useEffect(() => { setAdLocation(pathname); }, [pathname]);
+
+  const leaveMatch = useCallback(async () => {
+    if (path.current !== "/play" && path.current !== "/match") return false;
+    const matchId = new URLSearchParams(window.location.search).get("id");
+    if (matchId) await showPendingPostMatchAd(matchId);
+    await router.navigate({ to: "/" });
+    return true;
+  }, [router]);
 
   useEffect(() => {
     if (!opened.current) { opened.current = true; report("play", "app_opened"); }
@@ -50,9 +58,10 @@ export function NativeHost() {
     document.addEventListener("visibilitychange", foregroundAds);
     let remove: (() => void) | undefined;
     void import("@capacitor/app").then(({ App }) => {
-      const back = App.addListener("backButton", () => {
+      const back = App.addListener("backButton", async () => {
         if (runTopBackHandler()) return; // close popups first
         if (path.current === "/") void App.minimizeApp();
+        else if (await leaveMatch()) return;
         else if (window.history.length > 1) router.history.back();
         else void router.navigate({ to: "/" });
       });
@@ -63,7 +72,7 @@ export function NativeHost() {
       remove = () => { void Promise.all([back, state]).then((handles) => handles.forEach((handle) => handle.remove())); };
     });
     return () => { cancelScheduledAppOpen(); document.removeEventListener("visibilitychange", foregroundAds); remove?.(); };
-  }, [router]);
+  }, [router, leaveMatch]);
 
   // All touch devices: edge swipe goes back, including saved/online games.
   useEffect(() => {
@@ -77,7 +86,8 @@ export function NativeHost() {
       if (!valid) return;
       if (runTopBackHandler()) return;
       if (path.current === "/") return;
-      if (path.current === "/play" || path.current === "/match" || !router.history.canGoBack()) void router.navigate({ to: "/" });
+      if (path.current === "/play" || path.current === "/match") { void leaveMatch(); return; }
+      if (!router.history.canGoBack()) void router.navigate({ to: "/" });
       else router.history.back();
     };
     const cancel = () => { start = null; };
@@ -85,7 +95,7 @@ export function NativeHost() {
     window.addEventListener("touchend", end, { passive: true });
     window.addEventListener("touchcancel", cancel, { passive: true });
     return () => { window.removeEventListener("touchstart", s); window.removeEventListener("touchend", end); window.removeEventListener("touchcancel", cancel); };
-  }, [router]);
+  }, [router, leaveMatch]);
 
   return null;
 }
