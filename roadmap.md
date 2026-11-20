@@ -1,6 +1,8 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
 ## Spelvyn 20 nov
+- [x] Tidskort och namnkort med exakt samma höjd (30 px), mätt på 320/394 px
+- [x] Centrerad extra bekräftelse innan Föreslå oavgjort skickas eller räknas; avbryt och tvåförslagsspärr provspelade
 - [x] Noa, Alva, Kim och Sam med bonde, springare, löpare och krona som nivåikoner (användarbekräftat)
 - [x] Fyrkantiga tidskort bredvid respektive namn; runda klockan ovanför knapparna borttagen; provspelat på 320/394 px med alla nivåer
 - [x] Utslagen pjäs synlig utan blink från brädet till sin exakta skålplats; 111 mätta bildrutor utan dold pjäs eller tom överlämning

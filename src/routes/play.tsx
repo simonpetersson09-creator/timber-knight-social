@@ -12,7 +12,7 @@ import { computerDisplayName } from "@/lib/computer-opponent";
 import { report } from "@/lib/report";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
-import { MAX_DRAW_OFFERS } from "@/lib/play-motion";
+import { MAX_DRAW_OFFERS, shouldSendDrawOffer } from "@/lib/play-motion";
 import { ChessBoard } from "@/components/ChessBoard";
 import { Piece } from "@/components/Piece";
 import { Modal } from "@/components/Modal";
@@ -61,7 +61,7 @@ function Play() {
   const [result, setResult] = useState<Result | null>(null);
   const [thinking, setThinking] = useState(false);
   const [promo, setPromo] = useState<{ from: Square; to: Square } | null>(null);
-  const [ask, setAsk] = useState<"resign" | "draw" | null>(null);
+  const [ask, setAsk] = useState<"resign" | "offerDraw" | "draw" | null>(null);
   // Each player may propose a draw at most twice per game.
   const [drawOffers, setDrawOffers] = useState(0);
   const [notice, setNotice] = useState<{ text: string; kind: "draw" | "check" | "checkmate" } | null>(null);
@@ -241,8 +241,12 @@ function Play() {
     else applyMove({ from, to });
   }
 
-  function offerDraw() {
-    if (drawOffers >= MAX_DRAW_OFFERS) return;
+  function offerDraw(confirmed = false) {
+    if (!shouldSendDrawOffer(confirmed, drawOffers)) {
+      if (drawOffers < MAX_DRAW_OFFERS) setAsk("offerDraw");
+      return;
+    }
+    setAsk(null);
     setDrawOffers((n) => n + 1);
     if (vsAi) {
       const ai = other(human);
@@ -346,7 +350,7 @@ function Play() {
           </div>
         ) : (
           <div className="game-actions">
-            <Button variant="ghost" onClick={offerDraw} disabled={busy || game.history().length < 2 || drawOffers >= MAX_DRAW_OFFERS} className="game-action-button game-action-draw">
+            <Button variant="ghost" onClick={() => offerDraw()} disabled={busy || game.history().length < 2 || drawOffers >= MAX_DRAW_OFFERS} className="game-action-button game-action-draw">
               <Handshake className="size-4" /> {t("offerDraw")}
             </Button>
             <Button variant="ghost" onClick={() => setAsk("resign")} disabled={busy} className="game-action-button game-action-resign">
@@ -372,6 +376,14 @@ function Play() {
         <div className="flex gap-2">
           <button className="action-btn action-ghost" onClick={() => setAsk(null)}>{t("cancel")}</button>
           <button className="action-btn action-gold" onClick={resign}>{t("resign")}</button>
+        </div>
+      </Modal>
+
+      <Modal open={ask === "offerDraw"} onClose={() => setAsk(null)}>
+        <p className="mb-4 text-center font-semibold">{t("offerDraw")}</p>
+        <div className="flex gap-2">
+          <button className="action-btn action-ghost" onClick={() => setAsk(null)}>{t("cancel")}</button>
+          <button className="action-btn action-gold" onClick={() => offerDraw(true)}>{t("offerDraw")}</button>
         </div>
       </Modal>
 

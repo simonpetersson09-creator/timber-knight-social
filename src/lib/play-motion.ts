@@ -6,6 +6,11 @@ export const CAPTURE_DURATION_MS = 1400;
 /** A draw may be proposed at most this many times per game. */
 export const MAX_DRAW_OFFERS = 2;
 
+/** The first click only opens confirmation; a confirmed click may send within the limit. */
+export function shouldSendDrawOffer(confirmed: boolean, previousOffers: number): boolean {
+  return confirmed && previousOffers < MAX_DRAW_OFFERS;
+}
+
 export type BoardPiece = { square: Square; color: Color; type: PieceSymbol };
 export type PieceIds = Partial<Record<Square, string>>;
 

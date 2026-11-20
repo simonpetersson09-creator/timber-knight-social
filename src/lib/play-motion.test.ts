@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Chess } from "chess.js";
-import { AI_MOVE_DELAY_MS, CAPTURE_DURATION_MS, MAX_DRAW_OFFERS, assignPieceIds, type BoardPiece, type PieceIds } from "./play-motion";
+import { AI_MOVE_DELAY_MS, CAPTURE_DURATION_MS, MAX_DRAW_OFFERS, assignPieceIds, shouldSendDrawOffer, type BoardPiece, type PieceIds } from "./play-motion";
 
 function pieces(game: Chess): BoardPiece[] {
   return game.board().flat().filter((piece): piece is BoardPiece => piece !== null);
@@ -13,6 +13,13 @@ function factory() {
 
 describe("play motion", () => {
   it("allows proposing a draw at most twice", () => { expect(MAX_DRAW_OFFERS).toBe(2); });
+  it("requires a second confirmation before sending a draw offer", () => {
+    expect(shouldSendDrawOffer(false, 0)).toBe(false);
+    expect(shouldSendDrawOffer(true, 0)).toBe(true);
+  });
+  it("does not send a confirmed draw offer after two earlier offers", () => {
+    expect(shouldSendDrawOffer(true, 2)).toBe(false);
+  });
   it("gives the computer an 1800 ms pause before calculating", () => {
     expect(AI_MOVE_DELAY_MS).toBe(1800);
   });
