@@ -1,5 +1,10 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Kompakta spelval 20 nov
+- [x] Behåll de fem bekräftade tidsvalen: ingen klocka, 3+2, 5+0, 10+0 och 15+10
+- [x] Komprimera snabbspelspanelen och låt den öppnas nedåt utan att startsidan hoppar uppåt
+- [x] Komprimera Spela med vän-sidan och kontrollera mobil/desktop
+
 ## Bakgrund och ikon 20 nov
 - [x] Matcha bakgrunden mot Yatzy
 - [x] Färgmatcha bondeikonen med spelets svarta pjäser och behåll hatt/monokel/kedja

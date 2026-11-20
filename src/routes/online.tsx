@@ -22,7 +22,7 @@ export const Route = createFileRoute("/online")({
   component: FriendPlay,
 });
 
-/** Same two-card layout as Mr B Yatzy: invite (create) and join with a code. */
+/** Compact two-card layout: invite (create) and join with a code. */
 function FriendPlay() {
   const { t } = useI18n();
   const { me, failed } = useMe();
@@ -47,10 +47,10 @@ function FriendPlay() {
     } catch { toast.error(t("error")); } finally { setBusy(false); }
   }
   const ready = code.length === 6;
-  return <main className="page-screen space-y-8">
+  return <main className="page-screen online-page">
     <PageHeader title={t("playOnline")} />
-    {failed && <p className="text-center text-sm text-destructive">{t("error")}</p>}
-    <div className="space-y-4">
+    {failed && <p className="online-error text-center text-sm text-destructive">{t("error")}</p>}
+    <div className="online-options">
       <section className="lobby-card lobby-card-create">
         <div className="flex items-start gap-3">
           <div className="lobby-card-icon"><Send /></div>

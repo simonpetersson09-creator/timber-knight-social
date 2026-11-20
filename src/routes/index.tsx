@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bot, Globe, Settings, Users, UserPlus, X, Cpu, Infinity as InfinityIcon, Trophy, ChevronDown, Gamepad2, Percent, Handshake, Flame, Play, Send, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { getCred } from "@/lib/identity";
@@ -51,6 +51,8 @@ function Home() {
   const [clock, setClock] = useState(0);
   const [langOpen, setLangOpen] = useState(false);
   const [more, setMore] = useState(false);
+  const [quickTop, setQuickTop] = useState<number | null>(null);
+  const homeStack = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const refresh = () => { setGames(listGames()); setStats(getStats()); };
@@ -79,6 +81,16 @@ function Home() {
   async function decline(id: string) { await cancelGame({ data: { ...getCred(), gameId: id } }); setOnline((o) => o.filter((x) => x.id !== id)); }
 
   const full = games.length >= MAX_SAVED;
+  function toggleQuick() {
+    if (quickTop === null && homeStack.current) {
+      const stack = homeStack.current;
+      const main = stack.parentElement;
+      const mainBox = main?.getBoundingClientRect();
+      const paddingTop = main ? Number.parseFloat(getComputedStyle(main).paddingTop) : 0;
+      setQuickTop(Math.max(0, stack.getBoundingClientRect().top - (mainBox?.top ?? 0) - paddingTop));
+    }
+    setOpen(open === "ai" ? null : "ai");
+  }
   function start() {
     // The player always gets the ivory pieces and moves first.
     const g = createGame({ mode: "ai", level, human: "w", clock: CLOCKS[clock] ?? null });
@@ -93,7 +105,7 @@ function Home() {
 
   return (
     <main className="relative flex min-h-dvh flex-col items-center overflow-x-hidden px-6 pt-[calc(28px+env(safe-area-inset-top))] pb-[calc(28px+env(safe-area-inset-bottom))]">
-      <motion.div className="home-stack" initial={false} animate="show"
+      <motion.div ref={homeStack} className="home-stack" style={{ marginTop: quickTop ?? "auto" }} initial={false} animate="show"
         variants={{ show: { transition: { staggerChildren: 0.08, delayChildren: 0.15 } } }}>
         <motion.div variants={item} transition={{ duration: 0.45, ease: "easeOut" }} className="mb-8 space-y-1 text-center sm:mb-10">
           <motion.div className="mx-auto mb-2 size-28 drop-shadow-[0_6px_16px_rgba(0,0,0,0.45)] sm:size-32"
@@ -120,8 +132,8 @@ function Home() {
         )}
 
         <motion.div variants={item} transition={{ duration: 0.45, ease: "easeOut" }} className="flex flex-col gap-[7px]">
-          <Button className="action-btn action-blue" onClick={() => setOpen(open === "ai" ? null : "ai")}>
-            <Bot /> {t("playComputer")}
+          <Button className="action-btn action-blue" onClick={toggleQuick} aria-expanded={open === "ai"} aria-controls="quick-play-setup">
+            <Bot /> {t("playComputer")} <ChevronDown className="quick-chevron" data-open={open === "ai"} />
           </Button>
           <AnimatePresence initial={false}>
             {open === "ai" && (
@@ -133,7 +145,7 @@ function Home() {
                   ))}
                 </div>
                 <ClockPicker value={clock} onChange={setClock} />
-                <p className="text-center text-xs text-muted-foreground">{t("youGetMahogany")}</p>
+                <p className="quick-piece-note">{t("youGetMahogany")}</p>
                 <StartButton full={full} onClick={start} />
               </Expand>
             )}
@@ -228,7 +240,13 @@ function OnlineCard({ g, onAccept, onDecline }: { g: OnlineRow; onAccept: () => 
 
 function Expand({ children }: { children: React.ReactNode }) {
   return (
-    <div className="panel setup-panel">{children}</div>
+    <motion.div id="quick-play-setup" className="setup-expand"
+      initial={{ height: 0, opacity: 0, y: -8 }}
+      animate={{ height: "auto", opacity: 1, y: 0 }}
+      exit={{ height: 0, opacity: 0, y: -8 }}
+      transition={{ height: { duration: 0.24, ease: "easeOut" }, opacity: { duration: 0.16 }, y: { duration: 0.22, ease: "easeOut" } }}>
+      <div className="panel setup-panel">{children}</div>
+    </motion.div>
   );
 }
 
@@ -244,7 +262,7 @@ function ClockPicker({ value, onChange }: { value: number; onChange: (i: number)
           </Button>
         ))}
       </div>
-      <p className="-mt-1 text-center text-xs text-muted-foreground">{t(`clockDesc${value}` as "clockDesc0")}</p>
+      <p className="quick-clock-description">{t(`clockDesc${value}` as "clockDesc0")}</p>
     </>
   );
 }
@@ -254,7 +272,7 @@ function StartButton({ full, onClick }: { full: boolean; onClick: () => void }) 
   return (
     <>
       {full && <p className="text-center text-xs text-destructive">{t("maxSaved")}</p>}
-      <Button variant="ghost" className="action-btn action-gold" disabled={full} onClick={onClick}>{t("start")}</Button>
+      <Button variant="ghost" className="action-btn action-gold quick-start" disabled={full} onClick={onClick}>{t("start")}</Button>
     </>
   );
 }
