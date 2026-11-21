@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  APP_OPEN_DELAY_MS, APP_OPEN_MAX_AGE_MS, APP_OPEN_NO_FILL_RETRY_MS, FULLSCREEN_AD_INTERVAL_MS,
+  APP_OPEN_LOAD_TIMEOUT_MS, APP_OPEN_MAX_AGE_MS, APP_OPEN_NO_FILL_RETRY_MS, FULLSCREEN_AD_INTERVAL_MS,
   adForegroundActive, canPresentAppOpen, canShowAppOpen, canShowPostMatchInterstitial, createAdMutex, fullScreenIntervalElapsed, isNoFillError, noFillRetryAt,
   type AppOpenGate, type InterstitialGate,
 } from "./ad-rules";
@@ -9,7 +9,7 @@ import { ADMOB_IDS, ADMOB_TEST_IDS } from "./ads";
 const now = 1_000_000_000;
 const appOpen: AppOpenGate = {
   native: true, foreground: true, online: true, now, lastFullScreenAt: 0, otherAdShowing: false,
-  path: "/", finished: 1, shownThisLaunch: false, launchAt: now - APP_OPEN_DELAY_MS, playing: false, noFillRetryAt: 0,
+  path: "/", finished: 1, shownThisLaunch: false, launchAt: now, playing: false, noFillRetryAt: 0,
 };
 const interstitial: InterstitialGate = {
   native: true, foreground: true, online: true, now, lastFullScreenAt: 0, otherAdShowing: false,
@@ -22,9 +22,12 @@ describe("full-screen ad policy", () => {
     expect(adForegroundActive(false, true)).toBe(false);
     expect(adForegroundActive(true, false)).toBe(false);
   });
-  it("enforces exactly 12 seconds after app launch", () => {
-    expect(canShowAppOpen({ ...appOpen, now: appOpen.launchAt + 11_999 })).toBe(false);
-    expect(canShowAppOpen({ ...appOpen, now: appOpen.launchAt + 12_000 })).toBe(true);
+  it("allows eligible App Open immediately without a mandatory launch wait", () => {
+    expect(canShowAppOpen({ ...appOpen, now: appOpen.launchAt })).toBe(true);
+    expect(canShowAppOpen({ ...appOpen, now: appOpen.launchAt + 11_999 })).toBe(true);
+  });
+  it("limits App Open loading to 12 seconds", () => {
+    expect(APP_OPEN_LOAD_TIMEOUT_MS).toBe(12_000);
   });
   it("requires at least one completed match", () => {
     expect(canShowAppOpen({ ...appOpen, finished: 0 })).toBe(false);

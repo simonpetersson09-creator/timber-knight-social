@@ -1,5 +1,5 @@
 // Pure full-screen ad policy. Native SDK calls live in ads.ts; every timing rule is tested here.
-export const APP_OPEN_DELAY_MS = 12_000;
+export const APP_OPEN_LOAD_TIMEOUT_MS = 12_000;
 export const APP_OPEN_MAX_AGE_MS = 4 * 60 * 60 * 1000;
 export const APP_OPEN_NO_FILL_RETRY_MS = 60_000;
 export const FULLSCREEN_AD_INTERVAL_MS = 2 * 60_000;
@@ -43,7 +43,6 @@ export function canShowAppOpen(gate: AppOpenGate): boolean {
     && !gate.shownThisLaunch
     && !gate.playing
     && gate.now >= gate.launchAt
-    && gate.now - gate.launchAt >= APP_OPEN_DELAY_MS
     && gate.now >= gate.noFillRetryAt;
 }
 

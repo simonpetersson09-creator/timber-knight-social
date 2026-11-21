@@ -8,7 +8,7 @@ import { isNative, platform } from "./native";
 import { report } from "./report";
 import { getMeta } from "./meta";
 import {
-  APP_OPEN_DELAY_MS, APP_OPEN_NO_FILL_RETRY_MS,
+  APP_OPEN_LOAD_TIMEOUT_MS, APP_OPEN_NO_FILL_RETRY_MS,
   canPresentAppOpen, canShowAppOpen, canShowPostMatchInterstitial, createAdMutex, noFillRetryAt,
 } from "./ad-rules";
 
@@ -237,7 +237,7 @@ async function preloadAppOpen(): Promise<boolean> {
     try {
       if (!(await initAds()) || !current()) return false;
       const { AdMob } = await mod();
-      await withTimeout(AdMob.loadAppOpen({ adId: id }), 12_000, "app_open_load");
+      await withTimeout(AdMob.loadAppOpen({ adId: id }), APP_OPEN_LOAD_TIMEOUT_MS, "app_open_load");
       // A backgrounded, navigated or superseded load must never become a later presentation opportunity.
       if (!current()) return false;
       appOpenLoadedAt = Date.now();
@@ -258,8 +258,8 @@ async function preloadAppOpen(): Promise<boolean> {
 
 export function scheduleAppOpen(getPath: () => string) {
   if (appOpenTimer) clearTimeout(appOpenTimer);
-  const delay = Math.max(0, APP_OPEN_DELAY_MS - (Date.now() - launchAt));
-  appOpenTimer = setTimeout(() => { appOpenTimer = null; void maybeShowAppOpen(getPath()); }, delay);
+  // Next-task scheduling keeps cancellation possible without a forced launch delay.
+  appOpenTimer = setTimeout(() => { appOpenTimer = null; void maybeShowAppOpen(getPath()); }, 0);
 }
 export function cancelScheduledAppOpen() { if (appOpenTimer) clearTimeout(appOpenTimer); appOpenTimer = null; }
 

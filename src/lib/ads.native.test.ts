@@ -80,13 +80,38 @@ beforeEach(() => {
 afterEach(() => { vi.useRealTimers(); });
 
 describe("native ad lifecycle", () => {
-  it("presents App Open at 12 seconds, never at 11.999 seconds", async () => {
+  it("presents a ready App Open without waiting 12 seconds after launch", async () => {
     const ads = await import("./ads");
     ads.scheduleAppOpen(() => "/");
-    await vi.advanceTimersByTimeAsync(11_999);
-    expect(m.showAppOpen).not.toHaveBeenCalled();
-    await vi.advanceTimersByTimeAsync(1);
+    await flush();
+    expect(Date.now()).toBe(1_000_000);
     expect(m.showAppOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it("allows a load that completes before the 12-second limit", async () => {
+    m.loadAppOpen.mockImplementationOnce(() => new Promise<void>((resolve) => { setTimeout(resolve, 11_999); }));
+    const ads = await import("./ads");
+    const loading = ads.maybeShowAppOpen("/");
+    await flush();
+    await vi.advanceTimersByTimeAsync(11_999);
+    await expect(loading).resolves.toBe(true);
+    expect(m.showAppOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it("stops loading at 12 seconds and never presents its late completion", async () => {
+    let complete: (() => void) | undefined;
+    m.loadAppOpen.mockImplementationOnce(() => new Promise<void>((resolve) => { complete = resolve; }));
+    const ads = await import("./ads");
+    const loading = ads.maybeShowAppOpen("/");
+    await flush();
+    await vi.advanceTimersByTimeAsync(11_999);
+    expect(m.report).not.toHaveBeenCalledWith("ad", "app_open_load_failed", "app_open_load_timeout");
+    await vi.advanceTimersByTimeAsync(1);
+    await expect(loading).resolves.toBe(false);
+    expect(m.report).toHaveBeenCalledWith("ad", "app_open_load_failed", "app_open_load_timeout");
+    complete?.();
+    await flush();
+    expect(m.showAppOpen).not.toHaveBeenCalled();
   });
 
   it("discards a late App Open load after backgrounding and reloads on return", async () => {
