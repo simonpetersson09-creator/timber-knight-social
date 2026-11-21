@@ -92,6 +92,20 @@
       "when": 1795205461905,
       "tag": "0012_secure_deletion_statistics_and_job_leases",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1795272304042,
+      "tag": "0013_realtime_game_doorbell",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1795272319547,
+      "tag": "0014_realtime_chat_doorbell",
+      "breakpoints": true
     }
   ]
 }

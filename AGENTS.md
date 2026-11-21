@@ -52,3 +52,5 @@ use the editor.
 - Root error and not-found boundaries resolve browser language only after hydration, so SSR and initial client rendering share a safe fallback.
 - Online notifications are enqueued by database triggers into the service-only push_outbox with unique event keys, bounded retries and token-conditional invalidation, so each game commit and its outbox insert stay atomic.
 - Local saved games are validated before use and clock state uses persisted epoch anchors with idempotent lifecycle checkpoints; no progression or unlock state remains.
+
+- Online match updates use a data-free Realtime broadcast doorbell (`chess-game-<id>`, sent by database triggers) that makes clients re-read through server functions, with slow polling as fallback — keeps tables closed to clients while moves arrive instantly.

@@ -1,3 +1,4 @@
+import { supabase } from "@/integrations/supabase/client";
 import { GamePlayerCard } from "@/components/GamePlayerCard";
 import { GameClock } from "@/components/GameClock";
 import { CapturedPieces } from "@/components/CapturedPieces";
@@ -149,9 +150,14 @@ function MatchSession() {
   }, [id, game, t, navigate, notifyCheck, showNotice, fallbackLevel, fallbackClock, readGuard]);
 
   useEffect(() => {
-    const stop = startSequentialPolling(load);
-    return () => { stop(); readGuard.invalidate(); };
-  }, [load, readGuard]);
+    // Realtime doorbell: empty "changed" signal, data still read via the verified server function.
+    const stop = startSequentialPolling(load, 10_000);
+    const channel = supabase
+      .channel(`chess-game-${id}`)
+      .on("broadcast", { event: "changed" }, () => { void load(); })
+      .subscribe();
+    return () => { stop(); readGuard.invalidate(); void supabase.removeChannel(channel); };
+  }, [load, readGuard, id]);
   useEffect(() => setReviewPly(null), [id]);
   useEffect(() => () => {
     if (noticeTimer.current) clearTimeout(noticeTimer.current);
