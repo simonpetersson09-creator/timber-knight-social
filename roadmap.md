@@ -1,5 +1,11 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Matchtest och Yatzy-jämförelse 21 nov
+- [x] Yatzy har 12 sekunder som längsta App Open-laddningstid; Chess har i stället minst 12 sekunders väntetid efter appstart plus 12 sekunders laddningsgräns, alltså inte samma regel
+- [x] 40 kompletta datormatcher med appens verkliga motorer: Nybörjare 9 schackmatt + 1 korrekt tredragupprepning, Medel/Svår/Proffs 10 schackmatt vardera; inga ogiltiga drag eller avbrutna matcher
+- [x] 10 serververifierade onlinematcher mellan två separata spelaridentiteter: 5 vit- och 5 svartvinster genom schackmatt, identiskt resultat och PGN hos båda spelarna, inga server- eller klientfel
+- Avvikelse: Proffs använde lokal reservmotor vid tre drag under samtidig testbelastning; båda berörda matcherna upprepades isolerat utan reservdrag eller fel. Ett extra helt UI-styrt automationsparti räknas inte som godkänt eftersom klicket stoppades av en inaktiverad ruta
+
 ## Återställning vid misslyckad modulinläsning 21 nov
 - [x] Safari/Chromium/Firefox-modulimportfel ger en säker engångsomladdning; bestående fel visar återställningsvy utan slinga och Försök igen gör en full omladdning
 - [x] Kontrollerat engångsavbrott läkte inställningssidan, bestående avbrott stannade utan nya försök och normal startsida–inställningar-navigering gav inga fel; 279 tester, typkontroll och bygge passerar
