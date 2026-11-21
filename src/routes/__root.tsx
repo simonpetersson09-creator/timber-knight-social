@@ -13,6 +13,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { report } from "../lib/report";
+import { claimModuleReload, isModuleLoadError } from "../lib/module-recovery";
 import { I18nProvider, resolveDeviceLang, translate } from "../lib/i18n";
 import { getSettings } from "../lib/storage";
 import { Toaster } from "../components/ui/sonner";
@@ -58,6 +59,12 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
     try { reportLovableError(error, { boundary: "tanstack_root_error_component" }); } catch { /* the fallback must stay renderable */ }
     try { report("error", "app_render_error", error instanceof Error ? error.stack ?? error.message : String(error)); } catch { /* logging is isolated from recovery UI */ }
   }, [error]);
+  useEffect(() => {
+    if (!isModuleLoadError(error)) return;
+    try {
+      if (claimModuleReload(window.location.href, window.sessionStorage)) window.location.reload();
+    } catch { /* keep the recovery UI visible when storage or reload is unavailable */ }
+  }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -67,8 +74,11 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
-              router.invalidate();
-              reset();
+              if (isModuleLoadError(error)) window.location.reload();
+              else {
+                router.invalidate();
+                reset();
+              }
             }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >

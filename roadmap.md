@@ -1,5 +1,9 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Återställning vid misslyckad modulinläsning 21 nov
+- [x] Safari/Chromium/Firefox-modulimportfel ger en säker engångsomladdning; bestående fel visar återställningsvy utan slinga och Försök igen gör en full omladdning
+- [x] Kontrollerat engångsavbrott läkte inställningssidan, bestående avbrott stannade utan nya försök och normal startsida–inställningar-navigering gav inga fel; 279 tester, typkontroll och bygge passerar
+
 ## Radera data och annonsval 20 nov
 - [x] Servergodkänd radering, beständig återupptagsmarkör för avbruten rensning, säker native-identitet och rensning av lokal/session-cache utan att röra samtycke eller unrelated lagring
 - [x] Yatzy-likt Annonsval: visas när UMP kräver det, utfällbar sektion, direkt Google-formulär utan extra UMP/ATT-ruta samt förklaring i webbförhandsvisningen
