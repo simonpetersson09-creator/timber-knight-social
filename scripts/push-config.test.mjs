@@ -4,10 +4,11 @@ import { readFileSync } from 'node:fs';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 
-test('APNs success and failure are forwarded to Capacitor', () => {
+test('iOS hands the APNs token to Firebase and forwards FCM results to Capacitor', () => {
   const delegate = read('ios/App/App/AppDelegate.swift');
   assert.match(delegate, /didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data/);
-  assert.match(delegate, /post\(\s*name: \.capacitorDidRegisterForRemoteNotifications,\s*object: deviceToken\s*\)/);
+  assert.match(delegate, /Messaging\.messaging\(\)\.apnsToken = deviceToken/);
+  assert.match(delegate, /post\(\s*name: \.capacitorDidRegisterForRemoteNotifications,\s*object: token\s*\)/);
   assert.match(delegate, /didFailToRegisterForRemoteNotificationsWithError error: Error/);
   assert.match(delegate, /post\(\s*name: \.capacitorDidFailToRegisterForRemoteNotifications,\s*object: error\s*\)/);
 });

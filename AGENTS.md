@@ -47,7 +47,7 @@ use the editor.
 - Capacitor copy/sync hooks configure iOS QR camera and AdMob/ATT permissions plus Android AdMob application metadata and AD_ID automatically; shared full-screen ad policy lives in pure ad-rules.ts, with native SDK orchestration in ads.ts so consent/timing remain testable without affecting chess rules.
 - The chess board uses a flat CSS grid surface with native square hit targets and pre-shaded SVG pieces, not a continuous WebGL loop, to keep mobile rendering lightweight without changing game logic.
 - Computer levels above beginner use Stockfish 18 lite (WASM in a Web Worker: public/engine/stockfish.js, wasm via lovable-assets, src/lib/stockfish.ts); local minimax stays for beginner and as offline fallback — gives real strength without a server.
-- iOS and Android share one app identifier in Capacitor, Gradle and Xcode, matching the Firebase apps so push configuration files apply to both platforms.
+- Android uses `com.mrb.chess` in Capacitor, Gradle, MainActivity and its Firebase client; the existing iOS Xcode project and GoogleService-Info.plist retain `se.shiningdays.mrbchess`, so platform-specific Firebase configuration stays distinct.
 - Short game viewports use normal-flow profiles, trays, board and actions instead of absolute viewport-height budgeting, so scrolling preserves usable board dimensions.
 - Root error and not-found boundaries resolve browser language only after hydration, so SSR and initial client rendering share a safe fallback.
 - Online notifications are enqueued by database triggers into the service-only push_outbox with unique event keys, bounded retries and token-conditional invalidation, so each game commit and its outbox insert stay atomic.
