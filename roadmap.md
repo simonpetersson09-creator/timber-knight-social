@@ -3,6 +3,7 @@
 ## Annonsval och iPhone-notiser 23 nov
 - [ ] Annonsformuläret blockeras av Googles nekade requestConsentInfo på iOS; väntar på användarens svar om publicerat GDPR-/integritetsmeddelande för rätt iOS-app i AdMob
 - [x] Globala appnotiser använder 16 px plus env(safe-area-inset-top); mobilprov verifierade slutposition, text och inga sidfel
+- [x] Flödesgenomgång: enda Sonner i root täcker samtliga toastanrop på start, inställningar, vänner, online, match och resultatdelning; BoardNotice ligger centrerad på brädet, Modal har säkra marginaler och native push använder iOS systemnotis utan egen toppposition
 
 ## Annonsval i TestFlight 23 nov
 - [x] Verifierat iOS-fel: Googles requestConsentInfo misslyckas och inställningen dolde då Annonsval; ingången behålls vid statusfel och formuläret förnyar UMP-status samt försöker igen
