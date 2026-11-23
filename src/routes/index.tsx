@@ -83,11 +83,7 @@ function Home() {
     closingRef.current = true;
     setClosingOnline(id);
     try {
-      const r = await joinGame({ data: { ...getCred(), gameId: id } });
-      if (r.result === "ok") {
-        report("play", "online_room_joined", id);
-        await navigate({ to: "/match", search: { id: r.id } });
-      } else toast.error(t("expired"));
+      await navigate({ to: "/match", search: { id: `accept:${id}` } });
     } catch {
       toast.error(t("error"));
     } finally {

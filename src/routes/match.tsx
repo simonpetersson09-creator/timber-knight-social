@@ -20,7 +20,7 @@ import { Modal } from "@/components/Modal";
 import { PromotionPicker } from "@/components/PromotionPicker";
 import { useI18n, type Key } from "@/lib/i18n";
 import { getCred } from "@/lib/identity";
-import { abandonQuickMatch, cancelGame, gameAction, getOnlineGame, makeMove, quickMatch, sendChat } from "@/lib/online.functions";
+import { abandonQuickMatch, cancelGame, createLobby, inviteFriend, joinGame, gameAction, getOnlineGame, makeMove, quickMatch, sendChat } from "@/lib/online.functions";
 import { displayName, flagOf } from "@/lib/profile";
 import { createOnlineReadGuard, onlineGameCountsForStats, QUICK_WAIT_MS, startSequentialPolling } from "@/lib/online-rules";
 import { useBackHandler } from "@/lib/back-handler";
@@ -54,7 +54,34 @@ type Data = Awaited<ReturnType<typeof getOnlineGame>>;
 function Match() {
   const { id } = Route.useSearch();
   if (id === "new") return <QuickStarter />;
+  if (/^(invite|join|accept|lobby)(:|$)/.test(id)) return <OnlineStarter key={id} spec={id} />;
   return <MatchSession key={id} />;
+}
+
+/** Opens the match page instantly while an invite, code join, invitation accept or new lobby is confirmed by the server. */
+function OnlineStarter({ spec }: { spec: string }) {
+  const navigate = useNavigate();
+  const { t } = useI18n();
+  useEffect(() => {
+    let alive = true;
+    const [kind, arg = ""] = spec.split(/:(.*)/s) as [string, string?];
+    const leave = (key: Key) => { if (!alive) return; toast.error(t(key)); if (window.history.length > 1) window.history.back(); else void navigate({ to: "/", replace: true }); };
+    void (async () => {
+      try {
+        let gameId: string;
+        if (kind === "invite") { gameId = (await inviteFriend({ data: { ...getCred(), friend: arg } })).id; report("play", "online_room_created", gameId); }
+        else if (kind === "lobby") { gameId = (await createLobby({ data: getCred() })).id; report("play", "online_room_created", gameId); }
+        else {
+          const r = await joinGame({ data: kind === "accept" ? { ...getCred(), gameId: arg } : { ...getCred(), code: arg } });
+          if (r.result !== "ok") return leave(kind === "accept" || r.result === "expired" ? "expired" : "notFound");
+          gameId = r.id; report("play", "online_room_joined", gameId);
+        }
+        if (alive) await navigate({ to: "/match", search: { id: gameId }, replace: true });
+      } catch { leave("error"); }
+    })();
+    return () => { alive = false; };
+  }, [spec]);
+  return <main className="page-screen grid place-items-center"><div className="searching"><Piece color="w" type="n" className="size-14" /></div></main>;
 }
 
 /** Shows the search screen instantly while the quick game is created on the server. */

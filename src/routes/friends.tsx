@@ -53,7 +53,7 @@ function FriendsPage() {
   async function invite(friend: string) {
     if (actionBusy) return;
     setActionBusy(`invite:${friend}`);
-    try { const r = await inviteFriend({ data: { ...getCred(), friend } }); report("play", "online_room_created", r.id); await navigate({ to: "/match", search: { id: r.id } }); }
+    try { await navigate({ to: "/match", search: { id: `invite:${friend}` } }); }
     catch { toast.error(t("error")); }
     finally { setActionBusy(null); }
   }

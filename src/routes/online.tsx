@@ -37,16 +37,7 @@ function FriendPlay() {
     if (busy || !me) return;
     setBusy(true);
     try {
-      if (kind === "join") {
-        const r = await joinGame({ data: { ...getCred(), code } });
-        if (r.result !== "ok") { toast.error(t(r.result === "expired" ? "expired" : "notFound")); return; }
-        report("play", "online_room_joined", r.id);
-        await navigate({ to: "/match", search: { id: r.id } });
-      } else {
-        const r = await createLobby({ data: getCred() });
-        report("play", "online_room_created", r.id);
-        await navigate({ to: "/match", search: { id: r.id } });
-      }
+      await navigate({ to: "/match", search: { id: kind === "join" ? `join:${code}` : "lobby" } });
     } catch { toast.error(t("error")); } finally { setBusy(false); }
   }
   const ready = code.length === 6;
