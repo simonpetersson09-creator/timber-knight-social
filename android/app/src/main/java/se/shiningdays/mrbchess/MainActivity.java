@@ -1,4 +1,4 @@
-package com.simonpetersson.mrbchess;
+package se.shiningdays.mrbchess;
 
 import com.getcapacitor.BridgeActivity;
 

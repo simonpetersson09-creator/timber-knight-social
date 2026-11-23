@@ -8,8 +8,8 @@ describe("Native release identifiers", () => {
     expect(identifiers).toEqual(["se.shiningdays.mrbchess", "se.shiningdays.mrbchess"]);
   });
 
-  it("keeps the existing Android application identity", () => {
+  it("uses se.shiningdays.mrbchess for Android too", () => {
     const gradle = readFileSync("android/app/build.gradle", "utf8");
-    expect(gradle).toMatch(/applicationId "com\.simonpetersson\.mrbchess"/);
+    expect(gradle).toMatch(/applicationId "se\.shiningdays\.mrbchess"/);
   });
 });

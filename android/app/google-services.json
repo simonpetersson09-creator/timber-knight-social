@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "200792968276",
+    "project_id": "mr-b-chess",
+    "storage_bucket": "mr-b-chess.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:200792968276:android:205dbabb9642a1e097f1c1",
+        "android_client_info": {
+          "package_name": "se.shiningdays.mrbchess"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCBaNL1vvF_Pu9ZYwigJRSNmWjlp71qynQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
