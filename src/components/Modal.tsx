@@ -1,6 +1,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRef, type ReactNode } from "react";
+import { X } from "lucide-react";
 import { useBackHandler } from "@/lib/back-handler";
 
 export function Modal({ open, onClose, children, title = "Mr B Chess" }: {
@@ -39,14 +40,20 @@ export function Modal({ open, onClose, children, title = "Mr B Chess" }: {
                 if (returnFocus.current?.isConnected) returnFocus.current.focus({ preventScroll: true });
               }}
             >
-              <motion.div className="modal-positioner" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <motion.div className="modal-positioner" onPointerDown={(e) => { if (e.target === e.currentTarget) onClose?.(); }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <motion.div
                   className="panel modal-panel"
                   initial={{ scale: 0.88, y: 24 }}
                   animate={{ scale: 1, y: 0 }}
                   exit={{ scale: 0.92, y: 12, opacity: 0 }}
                   transition={{ type: "spring", stiffness: 280, damping: 22 }}
+                  style={{ position: "relative" }}
                 >
+                  {onClose && (
+                    <Dialog.Close aria-label="Stäng" className="absolute right-2 top-2 z-10 grid size-11 place-items-center rounded-full text-muted-foreground hover:text-foreground">
+                      <X className="size-5" />
+                    </Dialog.Close>
+                  )}
                   {children}
                 </motion.div>
               </motion.div>
