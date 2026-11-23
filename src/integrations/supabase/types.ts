@@ -374,6 +374,7 @@ export type Database = {
           notify_turn: boolean
           platform: string
           player_number: number
+          push_platform: string | null
           push_token: string | null
           secret_hash: string
           tz: string | null
@@ -397,6 +398,7 @@ export type Database = {
           notify_turn?: boolean
           platform?: string
           player_number?: never
+          push_platform?: string | null
           push_token?: string | null
           secret_hash: string
           tz?: string | null
@@ -420,6 +422,7 @@ export type Database = {
           notify_turn?: boolean
           platform?: string
           player_number?: never
+          push_platform?: string | null
           push_token?: string | null
           secret_hash?: string
           tz?: string | null

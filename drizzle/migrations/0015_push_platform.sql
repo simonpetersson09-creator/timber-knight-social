@@ -1,0 +1,1 @@
+ALTER TABLE public.players ADD COLUMN IF NOT EXISTS push_platform text CHECK (push_platform IN ('ios','android'));
