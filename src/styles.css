@@ -553,3 +553,5 @@ body { overscroll-behavior-y: contain; }
 .lb-rank[data-top="true"] { color: var(--primary); }
 .lb-avatar { width: 24px; height: 24px; font-size: 14px; flex-shrink: 0; border-radius: 9999px; overflow: hidden; }
 .lb-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 13px; }
+
+.friend-invite-btn { height: 2.25rem; border-radius: 999px; padding: 0 0.85rem; gap: 0.35rem; font-size: 0.8rem; font-weight: 700; background: oklch(0.62 0.16 150); color: var(--background); white-space: nowrap; }

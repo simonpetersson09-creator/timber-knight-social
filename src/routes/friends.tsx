@@ -109,7 +109,7 @@ function FriendsPage() {
       <Section title={t("friends")}>
         {friends.length === 0 && <p className="py-2 text-center text-sm text-muted-foreground">{t("noFriends")}</p>}
         {friends.map((r) => <PlayerRow key={r.id} r={r} showStats>
-          <Button variant="ghost" size="icon" className="icon-btn icon-ok" disabled={actionBusy !== null} aria-label={t("inviteFriend")} onClick={() => void invite(r.player.id)}><Send className="size-4" /></Button>
+          <Button size="sm" className="friend-invite-btn" disabled={actionBusy !== null} onClick={() => void invite(r.player.id)}><Send className="size-4" />{t("inviteFriend")}</Button>
           <Button variant="ghost" size="icon" className="icon-btn" disabled={actionBusy !== null} aria-label={t("remove")} onClick={() => { if (confirm(`${t("remove")} ${displayName(r.player)}?`)) void act(r.id, "remove"); }}><X className="size-4" /></Button>
         </PlayerRow>)}
       </Section>
