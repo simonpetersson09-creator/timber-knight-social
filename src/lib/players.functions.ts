@@ -8,10 +8,11 @@ export const registerPlayer = createServerFn({ method: "POST" })
     platform: z.enum(["ios", "android", "web"]).default("web"), tz: z.string().max(60).nullable().default(null), lang: z.string().max(8).default("en"), country: z.string().length(2).nullable().default(null),
   }).parse(d))
   .handler(async ({ data }) => {
-    await enforceAbuseLimit("register", requestSubject(data.id));
     const a = await db();
     const { data: existing } = await a.from("players").select("id").eq("id", data.id).maybeSingle();
     if (!existing) {
+      // Only brand-new identities consume the registration quota; returning devices re-check in on every app open.
+      await enforceAbuseLimit("register", requestSubject(data.id));
       const { error } = await a.from("players").insert({ id: data.id, secret_hash: await hash(data.secret), friend_code: friendCode() });
       if (error) throw new Error(error.message);
     }
