@@ -275,5 +275,7 @@
       <string>ydx93a7ass.skadnetwork</string>
     </dict>
   </array>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
 </dict>
 </plist>

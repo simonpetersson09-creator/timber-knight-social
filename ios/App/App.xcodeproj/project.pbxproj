@@ -17,6 +17,8 @@
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
 		9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9582B6822FE993A50072D4E8 /* SceneDelegate.swift */; };
 		C4E55A0000000000000000B2 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C4E55A0000000000000000A1 /* InfoPlist.strings */; };
+		F1B0C0DE0000000000000003 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = F1B0C0DE0000000000000002 /* GoogleService-Info.plist */; };
+		F1B0C0DE0000000000000005 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = F1B0C0DE0000000000000004 /* FirebaseMessaging */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -72,6 +74,7 @@
 		C4E55A01504E588A1455920B /* pa */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pa"; path = "pa.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		C4E55A0138453866D9F7949F /* ta */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ta"; path = "ta.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		C4E55A013C453EB272017E43 /* te */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "te"; path = "te.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		F1B0C0DE0000000000000002 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -80,6 +83,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4D22ABE92AF431CB00220026 /* CapApp-SPM in Frameworks */,
+				F1B0C0DE0000000000000005 /* FirebaseMessaging in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -114,6 +118,7 @@
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
 				504EC3131FED79650016851F /* Info.plist */,
+				F1B0C0DE0000000000000002 /* GoogleService-Info.plist */,
 				C4E55A0000000000000000A1 /* InfoPlist.strings */,
 				2FAD9762203C412B000D30F8 /* config.xml */,
 				50B271D01FEDC1A000F3C39B /* public */,
@@ -139,6 +144,7 @@
 			name = App;
 			packageProductDependencies = (
 				4D22ABE82AF431CB00220026 /* CapApp-SPM */,
+				F1B0C0DE0000000000000004 /* FirebaseMessaging */,
 			);
 			productName = App;
 			productReference = 504EC3041FED79650016851F /* App.app */;
@@ -213,6 +219,7 @@
 			mainGroup = 504EC2FB1FED79650016851F;
 			packageReferences = (
 				D4C12C0A2AAA248700AAC8A2 /* XCLocalSwiftPackageReference "CapApp-SPM" */,
+				F1B0C0DE0000000000000001 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			productRefGroup = 504EC3051FED79650016851F /* Products */;
 			projectDirPath = "";
@@ -235,6 +242,7 @@
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				C4E55A0000000000000000B2 /* InfoPlist.strings in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
+				F1B0C0DE0000000000000003 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -506,11 +514,27 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		F1B0C0DE0000000000000001 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		4D22ABE82AF431CB00220026 /* CapApp-SPM */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = D4C12C0A2AAA248700AAC8A2 /* XCLocalSwiftPackageReference "CapApp-SPM" */;
 			productName = "CapApp-SPM";
+		};
+		F1B0C0DE0000000000000004 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F1B0C0DE0000000000000001 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

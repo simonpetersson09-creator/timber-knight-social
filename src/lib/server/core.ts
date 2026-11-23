@@ -80,7 +80,7 @@ export async function deliverPushBatch(a: DB, deadline?: number): Promise<void> 
     const res = await fetch("https://connector-gateway.lovable.dev/firebase_messaging/v1/projects/_/messages:send", {
       method: "POST",
       headers: { Authorization: `Bearer ${lovable}`, "X-Connection-Api-Key": fcm, "Content-Type": "application/json" },
-      body: JSON.stringify({ message: { token: attemptedToken, notification: { title: "Mr B Chess", body: translate(p.lang, key, pushStrings(job.params)) }, data: pushStrings(job.data) } }),
+      body: JSON.stringify({ message: { token: attemptedToken, notification: { title: "Mr B Chess", body: translate(p.lang, key, pushStrings(job.params)) }, data: pushStrings(job.data), apns: { payload: { aps: { sound: "default" } } } } }),
       signal: AbortSignal.timeout(10_000),
     }).catch(() => null);
     if (res?.ok) { await settle(true); continue; }
