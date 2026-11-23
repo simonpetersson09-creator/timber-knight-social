@@ -57,6 +57,8 @@ function Match() {
   const { t } = useI18n();
   const [quickId, setQuickId] = useState<string | null>(null);
   const [quickReady, setQuickReady] = useState(false);
+  const [onlineId, setOnlineId] = useState<string | null>(null);
+  const [onlineReady, setOnlineReady] = useState(false);
   const quickCancelled = useRef(false);
   const quickLeaving = useRef(false);
   const quickCreated = useCallback((gameId: string) => {
@@ -65,6 +67,12 @@ function Match() {
     void navigate({ to: "/match", search: { id: gameId, level, clock }, replace: true });
   }, [navigate, level, clock]);
   const quickReadyToShow = useCallback(() => setQuickReady(true), []);
+  const onlineCreated = useCallback((gameId: string) => {
+    setOnlineId(gameId);
+    setOnlineReady(false);
+    void navigate({ to: "/match", search: { id: gameId }, replace: true });
+  }, [navigate]);
+  const onlineReadyToShow = useCallback(() => setOnlineReady(true), []);
   const cancelQuick = useCallback(async () => {
     if (quickLeaving.current) return;
     quickCancelled.current = true;
@@ -81,16 +89,21 @@ function Match() {
 
   if (id === "new" || quickId === id) {
     return <>
-      {id === "new" ? <QuickStarter cancelled={quickCancelled} onCreated={quickCreated} /> : <MatchSession key={id} quickManaged onQuickReady={quickReadyToShow} />}
+      {id === "new" ? <QuickStarter cancelled={quickCancelled} onCreated={quickCreated} /> : <MatchSession key={id} managed="quick" onReady={quickReadyToShow} />}
       {!quickReady && <QuickSearchScreen onCancel={() => void cancelQuick()} />}
     </>;
   }
-  if (/^(invite|join|accept|lobby)(:|$)/.test(id)) return <OnlineStarter key={id} spec={id} />;
+  if (/^(invite|join|accept|lobby)(:|$)/.test(id) || onlineId === id) {
+    return <>
+      {/^(invite|join|accept|lobby)(:|$)/.test(id) ? <OnlineStarter key={id} spec={id} onCreated={onlineCreated} /> : <MatchSession key={id} managed="online" onReady={onlineReadyToShow} />}
+      {!onlineReady && <OnlineStartingScreen />}
+    </>;
+  }
   return <MatchSession key={id} />;
 }
 
 /** Opens the match page instantly while an invite, code join, invitation accept or new lobby is confirmed by the server. */
-function OnlineStarter({ spec }: { spec: string }) {
+function OnlineStarter({ spec, onCreated }: { spec: string; onCreated: (gameId: string) => void }) {
   const navigate = useNavigate();
   const { t } = useI18n();
   useEffect(() => {
@@ -107,11 +120,15 @@ function OnlineStarter({ spec }: { spec: string }) {
           if (r.result !== "ok") return leave(kind === "accept" || r.result === "expired" ? "expired" : "notFound");
           gameId = r.id; report("play", "online_room_joined", gameId);
         }
-        if (alive) await navigate({ to: "/match", search: { id: gameId }, replace: true });
+        if (alive) onCreated(gameId);
       } catch { leave("error"); }
     })();
     return () => { alive = false; };
   }, [spec]);
+  return null;
+}
+
+function OnlineStartingScreen() {
   return <main className="page-screen grid place-items-center"><div className="searching"><Piece color="w" type="n" className="size-14" /></div></main>;
 }
 
@@ -143,7 +160,7 @@ function QuickStarter({ cancelled, onCreated }: { cancelled: { current: boolean 
   return null;
 }
 
-function MatchSession({ quickManaged = false, onQuickReady }: { quickManaged?: boolean; onQuickReady?: () => void }) {
+function MatchSession({ managed, onReady }: { managed?: "quick" | "online"; onReady?: () => void }) {
   const { id, level: fallbackLevel = "medium", clock: fallbackClock = 0 } = Route.useSearch();
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -318,11 +335,11 @@ function MatchSession({ quickManaged = false, onQuickReady }: { quickManaged?: b
     return () => setGameplayActive(false);
   }, [g?.status, id]);
   useEffect(() => {
-    if (quickManaged && g && (g.kind !== "quick" || g.status !== "waiting")) onQuickReady?.();
-  }, [quickManaged, g?.kind, g?.status, onQuickReady]);
+    if (managed && g && (managed === "online" || g.kind !== "quick" || g.status !== "waiting")) onReady?.();
+  }, [managed, g?.kind, g?.status, onReady]);
 
   const players = useMemo(() => Object.fromEntries((d?.players ?? []).map((p) => [p.id, p])), [d?.players]);
-  if (!g || !me) return quickManaged ? null : <main className="min-h-dvh" />;
+  if (!g || !me) return managed ? null : <OnlineStartingScreen />;
 
   async function goHome() {
     if (!g || leavingRef.current) return;
@@ -363,7 +380,7 @@ function MatchSession({ quickManaged = false, onQuickReady }: { quickManaged?: b
   }
 
   if (g.kind === "quick" && g.status === "waiting") {
-    if (quickManaged) return null;
+    if (managed === "quick") return null;
     return <QuickSearchScreen key={g.id} onCancel={async () => {
       if (quickCancelStarted.current) return;
       quickCancelStarted.current = true;
