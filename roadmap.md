@@ -4,6 +4,7 @@
 - [x] Skapa huvudmotiv från startsidans bonde med mörk petrolbakgrund, gulddetaljer och Mr B Chess-text i Yatzys formspråk
 - [x] Generera och kontrollera samtliga iOS-, Android- och webbikoner samt säkerställa att de följer med vid Capacitor copy/sync
 - [x] Anpassa Androids adaptiva förgrund till samma 80/108-säkra zon som Yatzy; rund/rundad launchermask och samtliga fem densiteter kontrollerade utan beskärning
+- [x] Installera den mindre ikonuppsättningen direkt i iOS-projektets Xcode-resurser; 18 poster och 15 identiska RGB-bilder i rätt storlekar verifierade, AppIcon-koppling aktiv
 
 ## Matchtest och Yatzy-jämförelse 21 nov
 - [x] App Open matchar nu Yatzy: högst 12 sekunders laddning, ingen obligatorisk väntan efter appstart; övriga samtyckes-, spel- och tvåminutersspärrar oförändrade
