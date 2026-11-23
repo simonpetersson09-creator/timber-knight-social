@@ -169,7 +169,7 @@ describe("UMP and ATT ordering", () => {
 
   it("opens existing privacy choices before any consent refresh or ATT prompt", async () => {
     const ads = await import("./ads");
-    await expect(ads.openAdChoices()).resolves.toBe(true);
+    await expect(ads.openAdChoices()).resolves.toBe("opened");
     expect(m.calls[0]).toBe("privacyForm");
   });
 
@@ -177,7 +177,7 @@ describe("UMP and ATT ordering", () => {
     m.showPrivacyOptionsForm.mockImplementationOnce(async () => { m.calls.push("privacyForm"); throw new Error("stale form"); });
     m.requestConsentInfo.mockImplementation(async () => { m.calls.push("ump"); return { ...consent(), privacyOptionsRequirementStatus: "REQUIRED" }; });
     const ads = await import("./ads");
-    await expect(ads.openAdChoices()).resolves.toBe(true);
+    await expect(ads.openAdChoices()).resolves.toBe("opened");
     expect(m.calls.slice(0, 3)).toEqual(["privacyForm", "ump", "privacyForm"]);
   });
 
@@ -185,15 +185,24 @@ describe("UMP and ATT ordering", () => {
     m.showPrivacyOptionsForm.mockImplementationOnce(async () => { m.calls.push("privacyForm"); throw new Error("not required"); });
     m.requestConsentInfo.mockImplementation(async () => { m.calls.push("ump"); return { ...consent(), status: "REQUIRED", isConsentFormAvailable: true }; });
     const ads = await import("./ads");
-    await expect(ads.openAdChoices()).resolves.toBe(true);
+    await expect(ads.openAdChoices()).resolves.toBe("opened");
     expect(m.calls.slice(0, 3)).toEqual(["privacyForm", "ump", "umpForm"]);
   });
 
   it("reports a failed privacy form to the settings button", async () => {
     m.showPrivacyOptionsForm.mockRejectedValue(new Error("not required"));
     const ads = await import("./ads");
-    await expect(ads.openAdChoices()).resolves.toBe(false);
+    await expect(ads.openAdChoices()).resolves.toBe("failed");
     expect(m.report).toHaveBeenCalledWith("ad", "privacy_form_failed", "not required");
+  });
+
+  it("marks choices unavailable when Google has no readable consent message", async () => {
+    m.showPrivacyOptionsForm.mockRejectedValue(new Error("no form"));
+    m.requestConsentInfo.mockRejectedValue(new Error("Request consent info failed"));
+    const ads = await import("./ads");
+    await expect(ads.openAdChoices()).resolves.toBe("unavailable");
+    expect(m.report).toHaveBeenCalledWith("ad", "privacy_choices_unavailable", "Request consent info failed");
+    expect(m.initialize).not.toHaveBeenCalled();
   });
 
   it("finishes UMP before ATT and records status-only evidence", async () => {
@@ -244,7 +253,7 @@ describe("UMP and ATT ordering", () => {
     await flush();
     release({ ...consent(), status: "REQUIRED", isConsentFormAvailable: true });
     await expect(obsolete).resolves.toBe(false);
-    await expect(choices).resolves.toBe(true);
+    await expect(choices).resolves.toBe("opened");
     expect(m.showConsentForm).not.toHaveBeenCalled();
     expect(m.showPrivacyOptionsForm).toHaveBeenCalledTimes(1);
   });

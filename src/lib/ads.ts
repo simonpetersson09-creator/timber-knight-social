@@ -202,8 +202,10 @@ export async function isAdPrivacyOptionsRequired(): Promise<boolean | null> {
 }
 
 /** Privacy choices remain accessible even when consent does not currently permit ads. */
-export async function openAdChoices(): Promise<boolean> {
-  if (!adAvailable()) return false;
+export type AdChoicesResult = "opened" | "unavailable" | "failed";
+
+export async function openAdChoices(): Promise<AdChoicesResult> {
+  if (!adAvailable()) return "unavailable";
   privacyChoicesOpen = true;
   invalidateAdState();
   try {
@@ -216,7 +218,12 @@ export async function openAdChoices(): Promise<boolean> {
     } catch (formError) {
       // A stale or not-yet-loaded UMP state can reject the direct form. Refresh once, then use the available Google form.
       report("ad", "privacy_form_retry", reason(formError));
-      const consent = await withTimeout(AdMob.requestConsentInfo(), 15_000, "consent_info");
+      const consent = await withTimeout(AdMob.requestConsentInfo(), 15_000, "consent_info").catch((refreshError) => {
+        // Google's consent state cannot be read at all: no message is configured for this app, or the device is offline.
+        report("ad", "privacy_choices_unavailable", reason(refreshError));
+        return null;
+      });
+      if (!consent) return "unavailable";
       if (consent.privacyOptionsRequirementStatus === "REQUIRED") {
         await withTimeout(AdMob.showPrivacyOptionsForm(), 120_000, "privacy_form_retry");
       } else if (consent.isConsentFormAvailable && consent.status === "REQUIRED") {
@@ -226,8 +233,8 @@ export async function openAdChoices(): Promise<boolean> {
       }
     }
     invalidateAdState();
-    return true;
-  } catch (error) { report("ad", "privacy_form_failed", reason(error)); return false; }
+    return "opened";
+  } catch (error) { report("ad", "privacy_form_failed", reason(error)); return "failed"; }
   finally {
     privacyChoicesOpen = false;
     initPromise = null;

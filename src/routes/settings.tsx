@@ -92,7 +92,12 @@ function SettingsPage() {
   async function adChoices() {
     if (adBusy || !isNative()) return;
     setAdBusy(true);
-    try { if (!(await openAdChoices())) toast.error(t("error")); }
+    try {
+      const result = await openAdChoices();
+      // A missing Google message is not the player's fault: say what could not open instead of a generic failure.
+      if (result === "unavailable") toast.message(t("adChoicesUnavailable"));
+      else if (result === "failed") toast.error(t("error"));
+    }
     catch { toast.error(t("error")); }
     finally { setAdBusy(false); }
   }
