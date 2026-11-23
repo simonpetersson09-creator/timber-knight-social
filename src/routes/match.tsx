@@ -52,8 +52,39 @@ export const CHAT: Key[] = ["chat0", "chat1", "chat2", "chat3", "chat4", "chat5"
 type Data = Awaited<ReturnType<typeof getOnlineGame>>;
 
 function Match() {
-  const { id } = Route.useSearch();
-  if (id === "new") return <QuickStarter />;
+  const { id, level, clock } = Route.useSearch();
+  const navigate = useNavigate();
+  const { t } = useI18n();
+  const [quickId, setQuickId] = useState<string | null>(null);
+  const [quickReady, setQuickReady] = useState(false);
+  const quickCancelled = useRef(false);
+  const quickLeaving = useRef(false);
+  const quickCreated = useCallback((gameId: string) => {
+    setQuickId(gameId);
+    setQuickReady(false);
+    void navigate({ to: "/match", search: { id: gameId, level, clock }, replace: true });
+  }, [navigate, level, clock]);
+  const quickReadyToShow = useCallback(() => setQuickReady(true), []);
+  const cancelQuick = useCallback(async () => {
+    if (quickLeaving.current) return;
+    quickCancelled.current = true;
+    if (!quickId) { await navigate({ to: "/", replace: true }); return; }
+    quickLeaving.current = true;
+    try {
+      const result = await abandonQuickMatch({ data: { ...getCred(), gameId: quickId } });
+      if (result.status === "active") setQuickReady(true);
+      else if (result.status === "expired") await navigate({ to: "/", replace: true });
+      else { quickCancelled.current = false; toast.error(t("error")); }
+    } catch { quickCancelled.current = false; toast.error(t("error")); }
+    finally { quickLeaving.current = false; }
+  }, [quickId, navigate, t]);
+
+  if (id === "new" || quickId === id) {
+    return <>
+      {id === "new" ? <QuickStarter cancelled={quickCancelled} onCreated={quickCreated} /> : <MatchSession key={id} quickManaged onQuickReady={quickReadyToShow} />}
+      {!quickReady && <QuickSearchScreen onCancel={() => void cancelQuick()} />}
+    </>;
+  }
   if (/^(invite|join|accept|lobby)(:|$)/.test(id)) return <OnlineStarter key={id} spec={id} />;
   return <MatchSession key={id} />;
 }
@@ -84,12 +115,11 @@ function OnlineStarter({ spec }: { spec: string }) {
   return <main className="page-screen grid place-items-center"><div className="searching"><Piece color="w" type="n" className="size-14" /></div></main>;
 }
 
-/** Shows the search screen instantly while the quick game is created on the server. */
-function QuickStarter() {
+/** Creates the quick game behind the persistent search screen. */
+function QuickStarter({ cancelled, onCreated }: { cancelled: { current: boolean }; onCreated: (gameId: string) => void }) {
   const { level, clock } = Route.useSearch();
   const navigate = useNavigate();
   const { t } = useI18n();
-  const cancelled = useRef(false);
   useEffect(() => {
     let alive = true;
     void (async () => {
@@ -101,7 +131,7 @@ function QuickStarter() {
         }
         if (!alive) return;
         report("play", "quick_match_search_started", JSON.stringify({ game: result.id, level, clock }));
-        await navigate({ to: "/match", search: { id: result.id, level, clock }, replace: true });
+        onCreated(result.id);
       } catch {
         if (cancelled.current) return;
         toast.error(t("error"));
@@ -110,10 +140,10 @@ function QuickStarter() {
     })();
     return () => { alive = false; };
   }, []);
-  return <QuickSearchScreen onCancel={() => { cancelled.current = true; void navigate({ to: "/", replace: true }); }} />;
+  return null;
 }
 
-function MatchSession() {
+function MatchSession({ quickManaged = false, onQuickReady }: { quickManaged?: boolean; onQuickReady?: () => void }) {
   const { id, level: fallbackLevel = "medium", clock: fallbackClock = 0 } = Route.useSearch();
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -287,9 +317,12 @@ function MatchSession() {
     setGameplayActive(g?.status === "active");
     return () => setGameplayActive(false);
   }, [g?.status, id]);
+  useEffect(() => {
+    if (quickManaged && g && (g.kind !== "quick" || g.status !== "waiting")) onQuickReady?.();
+  }, [quickManaged, g?.kind, g?.status, onQuickReady]);
 
   const players = useMemo(() => Object.fromEntries((d?.players ?? []).map((p) => [p.id, p])), [d?.players]);
-  if (!g || !me) return <main className="min-h-dvh" />;
+  if (!g || !me) return quickManaged ? null : <main className="min-h-dvh" />;
 
   async function goHome() {
     if (!g || leavingRef.current) return;
@@ -330,6 +363,7 @@ function MatchSession() {
   }
 
   if (g.kind === "quick" && g.status === "waiting") {
+    if (quickManaged) return null;
     return <QuickSearchScreen key={g.id} onCancel={async () => {
       if (quickCancelStarted.current) return;
       quickCancelStarted.current = true;
