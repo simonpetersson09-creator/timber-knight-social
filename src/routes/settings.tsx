@@ -45,7 +45,8 @@ function SettingsPage() {
   const [country, setCountry] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [adBusy, setAdBusy] = useState(false);
-  const [adRequired, setAdRequired] = useState(false);
+  // Keep the entry point available when Google's status request fails; hiding it would strand users without privacy choices.
+  const [adRequired, setAdRequired] = useState(true);
   const [adOpen, setAdOpen] = useState(false);
   const [notifyBusy, setNotifyBusy] = useState<keyof typeof prefs | null>(null);
   const [stats, setStats] = useState<ReturnType<typeof getStats> | null>(null);
@@ -54,7 +55,7 @@ function SettingsPage() {
   useEffect(() => {
     if (!isNative()) return;
     let alive = true;
-    void isAdPrivacyOptionsRequired().then((required) => { if (alive) setAdRequired(required); });
+    void isAdPrivacyOptionsRequired().then((required) => { if (alive && required !== null) setAdRequired(required); });
     return () => { alive = false; };
   }, []);
   useEffect(() => { if (me) { setName(me.name ?? ""); setAvatar(me.avatar); setCountry(me.country); setPrefs({ notify: me.notify, notify_turn: me.notify_turn, notify_reminders: me.notify_reminders, notify_play: me.notify_play }); } }, [me]);

@@ -1,5 +1,8 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Annonsval i TestFlight 23 nov
+- [x] Verifierat iOS-fel: Googles requestConsentInfo misslyckas och inställningen dolde då Annonsval; ingången behålls vid statusfel och formuläret förnyar UMP-status samt försöker igen
+
 ## Appikon 23 nov
 - [x] Skapa huvudmotiv från startsidans bonde med mörk petrolbakgrund, gulddetaljer och Mr B Chess-text i Yatzys formspråk
 - [x] Generera och kontrollera samtliga iOS-, Android- och webbikoner samt säkerställa att de följer med vid Capacitor copy/sync

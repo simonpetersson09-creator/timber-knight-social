@@ -188,8 +188,8 @@ export function initAds(): Promise<boolean> {
   return attempt;
 }
 
-/** Reads UMP's requirement without initializing AdMob or triggering an ATT prompt. */
-export async function isAdPrivacyOptionsRequired(): Promise<boolean> {
+/** Reads UMP's requirement without initializing AdMob or triggering an ATT prompt. Null keeps settings accessible on failure. */
+export async function isAdPrivacyOptionsRequired(): Promise<boolean | null> {
   if (!adAvailable()) return false;
   try {
     const { AdMob } = await mod();
@@ -197,7 +197,7 @@ export async function isAdPrivacyOptionsRequired(): Promise<boolean> {
     return consent.privacyOptionsRequirementStatus === "REQUIRED";
   } catch (error) {
     report("ad", "privacy_requirement_failed", reason(error));
-    return false;
+    return null;
   }
 }
 
@@ -211,7 +211,20 @@ export async function openAdChoices(): Promise<boolean> {
     await hideSearchBanner();
     // Match Yatzy: one tap opens Google's existing choices directly, without a consent/ATT prompt first.
     const { AdMob } = await mod();
-    await withTimeout(AdMob.showPrivacyOptionsForm(), 120_000, "privacy_form");
+    try {
+      await withTimeout(AdMob.showPrivacyOptionsForm(), 120_000, "privacy_form");
+    } catch (formError) {
+      // A stale or not-yet-loaded UMP state can reject the direct form. Refresh once, then use the available Google form.
+      report("ad", "privacy_form_retry", reason(formError));
+      const consent = await withTimeout(AdMob.requestConsentInfo(), 15_000, "consent_info");
+      if (consent.privacyOptionsRequirementStatus === "REQUIRED") {
+        await withTimeout(AdMob.showPrivacyOptionsForm(), 120_000, "privacy_form_retry");
+      } else if (consent.isConsentFormAvailable && consent.status === "REQUIRED") {
+        await withTimeout(AdMob.showConsentForm(), 120_000, "consent_form_choices");
+      } else {
+        throw formError;
+      }
+    }
     invalidateAdState();
     return true;
   } catch (error) { report("ad", "privacy_form_failed", reason(error)); return false; }

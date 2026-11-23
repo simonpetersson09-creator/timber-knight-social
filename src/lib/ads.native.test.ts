@@ -161,10 +161,32 @@ describe("UMP and ATT ordering", () => {
     expect(m.trackingAuthorizationStatus).not.toHaveBeenCalled();
   });
 
+  it("keeps the settings entry point available when Google's requirement request fails", async () => {
+    m.requestConsentInfo.mockRejectedValue(new Error("Request consent info failed"));
+    const ads = await import("./ads");
+    await expect(ads.isAdPrivacyOptionsRequired()).resolves.toBeNull();
+  });
+
   it("opens existing privacy choices before any consent refresh or ATT prompt", async () => {
     const ads = await import("./ads");
     await expect(ads.openAdChoices()).resolves.toBe(true);
     expect(m.calls[0]).toBe("privacyForm");
+  });
+
+  it("refreshes UMP and retries when the cached privacy form cannot open", async () => {
+    m.showPrivacyOptionsForm.mockImplementationOnce(async () => { m.calls.push("privacyForm"); throw new Error("stale form"); });
+    m.requestConsentInfo.mockImplementation(async () => { m.calls.push("ump"); return { ...consent(), privacyOptionsRequirementStatus: "REQUIRED" }; });
+    const ads = await import("./ads");
+    await expect(ads.openAdChoices()).resolves.toBe(true);
+    expect(m.calls.slice(0, 3)).toEqual(["privacyForm", "ump", "privacyForm"]);
+  });
+
+  it("opens the consent form when privacy options are unavailable but consent is required", async () => {
+    m.showPrivacyOptionsForm.mockImplementationOnce(async () => { m.calls.push("privacyForm"); throw new Error("not required"); });
+    m.requestConsentInfo.mockImplementation(async () => { m.calls.push("ump"); return { ...consent(), status: "REQUIRED", isConsentFormAvailable: true }; });
+    const ads = await import("./ads");
+    await expect(ads.openAdChoices()).resolves.toBe(true);
+    expect(m.calls.slice(0, 3)).toEqual(["privacyForm", "ump", "umpForm"]);
   });
 
   it("reports a failed privacy form to the settings button", async () => {
