@@ -287,7 +287,8 @@ h1, h2, h3, h4 { font-family: "Space Grotesk", system-ui, sans-serif; }
 .card-sub { display: flex; align-items: center; gap: 4px; font-size: 8px; line-height: 1; opacity: .9; white-space: nowrap; overflow: hidden; }
 .card-dot { width: 4px; height: 4px; border-radius: 9999px; background: currentColor; flex-shrink: 0; animation: pulse 2s infinite; }
 .card-pill { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: auto !important; min-height: 0; font-family: inherit; font-size: 8px !important; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; line-height: 1; padding: 4px 8px !important; border-radius: 9999px !important; background: var(--background) !important; color: var(--foreground) !important; transition: transform .15s; }
-.game-card button.card-pill { min-width: 44px; min-height: 44px; }
+.game-card button.card-pill { position: relative; }
+.game-card button.card-pill::after { content: ""; position: absolute; inset: -12px -4px; }
 .card-pill > svg { width: 10px !important; height: 10px !important; }
 .card-pill:active { transform: scale(.95); }
 .card-pill-action { background: var(--gradient-gold) !important; color: var(--primary-foreground) !important; }

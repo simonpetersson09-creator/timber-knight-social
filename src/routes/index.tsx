@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { Globe, Settings, Users, UserPlus, X, Cpu, Infinity as InfinityIcon, Trophy, ChevronDown, Gamepad2, Percent, Handshake, Flame, Play, Send, Clock, Loader2 } from "lucide-react";
+import { Globe, Settings, Users, UserPlus, Cpu, Infinity as InfinityIcon, Trophy, ChevronDown, Gamepad2, Percent, Handshake, Flame, Play, Send, Clock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getCred } from "@/lib/identity";
 import { useMe } from "@/hooks/use-me";
@@ -254,7 +254,7 @@ function OnlineCard({ g, busy, closing, onAccept, onDecline }: { g: OnlineRow; b
       <span className="card-body"><span className="card-name">{t("invitedBy", { name })}</span>
         <span className="card-sub"><span className="card-dot" />{t("inviteValid")}</span></span>
       <Button variant="ghost" className="card-pill card-pill-action" disabled={busy} onClick={onAccept}>{t("accept")}</Button>
-      <Button variant="ghost" className="card-pill" disabled={busy} aria-label={t("decline")} onClick={onDecline}>{closing ? <Loader2 className="animate-spin" /> : <X />}</Button>
+      <Button variant="ghost" className="card-pill" disabled={busy} onClick={onDecline}>{closing ? <Loader2 className="animate-spin" /> : t("decline")}</Button>
     </div>
   );
   if (g.role === "host") return (
@@ -275,7 +275,7 @@ function OnlineCard({ g, busy, closing, onAccept, onDecline }: { g: OnlineRow; b
           <span className="card-sub">♟ {g.moveNo}</span></span>
         <span className={g.myTurn ? "card-pill card-pill-action animate-pulse" : "card-pill"}>{g.myTurn ? t("yourTurn") : t("waitingShort")}</span>
       </Link>
-      <Button variant="ghost" className="card-pill" disabled={busy} aria-label={t("close")} onClick={onDecline}>{closing ? <Loader2 className="animate-spin" /> : <X />}</Button>
+      <Button variant="ghost" className="card-pill" disabled={busy} onClick={onDecline}>{closing ? <Loader2 className="animate-spin" /> : t("close")}</Button>
     </div>
   );
 }
@@ -334,7 +334,7 @@ function GameCard({ g, onDelete }: { g: SavedGame; onDelete: () => void }) {
           <span className="card-sub"><Clock className="size-2.5" />{g.clock ? clockLabel(g.clock) : t("noClock")}</span></span>
         <span className={yours ? "card-pill card-pill-action animate-pulse" : "card-pill"}>{yours ? t("yourTurn") : t("computerTurn")}</span>
       </Link>
-      <Button variant="ghost" className="card-pill" aria-label={t("delete")} onClick={onDelete}><X /></Button>
+      <Button variant="ghost" className="card-pill" onClick={onDelete}>{t("close")}</Button>
     </div>
   );
 }
