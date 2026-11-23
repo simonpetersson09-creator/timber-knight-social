@@ -4,8 +4,9 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "capacitor:sync:after": "node scripts/ios-permissions.mjs && node scripts/ios-ads.mjs && node scripts/ios-localize.mjs && node scripts/android-ads.mjs",
-    "capacitor:copy:after": "node scripts/ios-permissions.mjs && node scripts/ios-ads.mjs && node scripts/ios-localize.mjs && node scripts/android-ads.mjs",
+    "capacitor:sync:after": "node scripts/ios-permissions.mjs && node scripts/ios-ads.mjs && node scripts/ios-localize.mjs && node scripts/android-ads.mjs && node scripts/set-ios-icons.mjs && node scripts/set-android-icons.mjs",
+    "capacitor:copy:after": "node scripts/ios-permissions.mjs && node scripts/ios-ads.mjs && node scripts/ios-localize.mjs && node scripts/android-ads.mjs && node scripts/set-ios-icons.mjs && node scripts/set-android-icons.mjs",
+    "icons": "node scripts/make-icons.mjs",
     "ios:ads": "node scripts/ios-ads.mjs",
     "android:ads": "node scripts/android-ads.mjs",
     "native:ios": "bunx cap add ios && bunx cap sync ios",

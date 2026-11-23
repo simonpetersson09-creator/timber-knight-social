@@ -1,5 +1,9 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Appikon 23 nov
+- [x] Skapa huvudmotiv från startsidans bonde med mörk petrolbakgrund, gulddetaljer och Mr B Chess-text i Yatzys formspråk
+- [x] Generera och kontrollera samtliga iOS-, Android- och webbikoner samt säkerställa att de följer med vid Capacitor copy/sync
+
 ## Matchtest och Yatzy-jämförelse 21 nov
 - [x] App Open matchar nu Yatzy: högst 12 sekunders laddning, ingen obligatorisk väntan efter appstart; övriga samtyckes-, spel- och tvåminutersspärrar oförändrade
 - [x] 40 kompletta datormatcher med appens verkliga motorer: Nybörjare 9 schackmatt + 1 korrekt tredragupprepning, Medel/Svår/Proffs 10 schackmatt vardera; inga ogiltiga drag eller avbrutna matcher

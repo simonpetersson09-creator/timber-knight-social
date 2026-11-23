@@ -19,7 +19,6 @@ import { getSettings } from "../lib/storage";
 import { Toaster } from "../components/ui/sonner";
 import { NativeHost } from "../components/NativeHost";
 import { WebGate } from "../components/WebGate";
-import brandIcon from "../assets/chess-mascot.png.asset.json";
 
 function useBoundaryLanguage() {
   const [lang, setLang] = useState("sv");
@@ -117,8 +116,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: brandIcon.url, type: "image/png" },
-      { rel: "apple-touch-icon", href: brandIcon.url },
+      { rel: "icon", href: "/favicon.png", type: "image/png" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {

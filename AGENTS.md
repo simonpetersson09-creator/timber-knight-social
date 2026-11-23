@@ -54,3 +54,4 @@ use the editor.
 - Local saved games are validated before use and clock state uses persisted epoch anchors with idempotent lifecycle checkpoints; no progression or unlock state remains.
 
 - Online match updates use a data-free Realtime broadcast doorbell (`chess-game-<id>`, sent by database triggers) that makes clients re-read through server functions, with slow polling as fallback — keeps tables closed to clients while moves arrive instantly.
+- Launcher artwork has its source of truth in `resources/icon.png`; `scripts/make-icons.mjs` regenerates native/web sizes and Capacitor copy/sync hooks install them so regenerated native projects never revert to default icons.
