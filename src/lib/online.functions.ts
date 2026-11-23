@@ -114,7 +114,8 @@ export const quickMatch = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Cred.extend({ gameId: z.string().uuid().optional() }).parse(d))
   .handler(async ({ data }) => {
     const { a, me } = await auth(data);
-    await enforceAbuseLimit("quick_matches", requestSubject(me));
+    // Only starting a new search consumes the quota; re-checks of the same search happen on every refresh.
+    if (!data.gameId) await enforceAbuseLimit("quick_matches", requestSubject(me));
     const args = data.gameId ? { p_player: me, p_game: data.gameId } : { p_player: me };
     const { data: rows, error } = await a.rpc("quick_match", args);
     if (error) throw new Error("quick_match_failed");
