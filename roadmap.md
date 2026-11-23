@@ -2,6 +2,7 @@
 
 ## Annonsval i TestFlight 23 nov
 - [x] Verifierat iOS-fel: Googles requestConsentInfo misslyckas och inställningen dolde då Annonsval; ingången behålls vid statusfel och formuläret förnyar UMP-status samt försöker igen
+- [x] Flödesgenomgång: Inställningar är enda formuläringången, public webb visar endast information, NativeHost/UMP/ATT styr inte synligheten, samtliga annonsformat pausas under valet, dataradering bevarar samtycke och backend endast loggar status utan att påverka knappen
 
 ## Appikon 23 nov
 - [x] Skapa huvudmotiv från startsidans bonde med mörk petrolbakgrund, gulddetaljer och Mr B Chess-text i Yatzys formspråk
