@@ -1,5 +1,9 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Annonsval och iPhone-notiser 23 nov
+- [ ] Annonsformuläret blockeras av Googles nekade requestConsentInfo på iOS; väntar på användarens svar om publicerat GDPR-/integritetsmeddelande för rätt iOS-app i AdMob
+- [x] Globala appnotiser använder 16 px plus env(safe-area-inset-top); mobilprov verifierade slutposition, text och inga sidfel
+
 ## Annonsval i TestFlight 23 nov
 - [x] Verifierat iOS-fel: Googles requestConsentInfo misslyckas och inställningen dolde då Annonsval; ingången behålls vid statusfel och formuläret förnyar UMP-status samt försöker igen
 - [x] Flödesgenomgång: Inställningar är enda formuläringången, public webb visar endast information, NativeHost/UMP/ATT styr inte synligheten, samtliga annonsformat pausas under valet, dataradering bevarar samtycke och backend endast loggar status utan att påverka knappen

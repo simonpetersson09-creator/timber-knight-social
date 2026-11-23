@@ -155,7 +155,11 @@ function RootComponent() {
       <I18nProvider>
         <WebGate><Outlet /></WebGate>
         <NativeHost />
-        <Toaster position="top-center" />
+        <Toaster
+          position="top-center"
+          offset={{ top: "calc(16px + env(safe-area-inset-top))" }}
+          mobileOffset={{ top: "calc(16px + env(safe-area-inset-top))" }}
+        />
       </I18nProvider>
     </QueryClientProvider>
   );
