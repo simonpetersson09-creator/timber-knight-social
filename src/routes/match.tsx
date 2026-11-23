@@ -53,7 +53,37 @@ type Data = Awaited<ReturnType<typeof getOnlineGame>>;
 
 function Match() {
   const { id } = Route.useSearch();
+  if (id === "new") return <QuickStarter />;
   return <MatchSession key={id} />;
+}
+
+/** Shows the search screen instantly while the quick game is created on the server. */
+function QuickStarter() {
+  const { level, clock } = Route.useSearch();
+  const navigate = useNavigate();
+  const { t } = useI18n();
+  const cancelled = useRef(false);
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      try {
+        const result = await quickMatch({ data: getCred() });
+        if (cancelled.current) {
+          void abandonQuickMatch({ data: { ...getCred(), gameId: result.id } }).catch(() => undefined);
+          return;
+        }
+        if (!alive) return;
+        report("play", "quick_match_search_started", JSON.stringify({ game: result.id, level, clock }));
+        await navigate({ to: "/match", search: { id: result.id, level, clock }, replace: true });
+      } catch {
+        if (cancelled.current) return;
+        toast.error(t("error"));
+        await navigate({ to: "/", replace: true });
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
+  return <QuickSearchScreen onCancel={() => { cancelled.current = true; void navigate({ to: "/", replace: true }); }} />;
 }
 
 function MatchSession() {

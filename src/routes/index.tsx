@@ -125,9 +125,7 @@ function Home() {
     if (startingQuick || full) return;
     setStartingQuick(true);
     try {
-      const result = await quickMatch({ data: getCred() });
-      report("play", "quick_match_search_started", JSON.stringify({ game: result.id, level, clock }));
-      await navigate({ to: "/match", search: { id: result.id, level, clock } });
+      await navigate({ to: "/match", search: { id: "new", level, clock } });
     } catch {
       toast.error(t("error"));
     } finally {
