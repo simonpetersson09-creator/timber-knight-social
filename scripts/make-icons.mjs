@@ -39,6 +39,8 @@ for (const [dpi, size] of [["mdpi", 48], ["hdpi", 72], ["xhdpi", 96], ["xxhdpi",
   render(MASTER, join(dir, "ic_launcher.png"), size);
   render(MASTER, join(dir, "ic_launcher_round.png"), size, { circle: true, alpha: true });
 }
+// Adaptive foreground: keep the master in Android's 80/108 safe artwork area,
+// matching Mr B Yatzy, while continuing the petrol background to every edge.
 execFileSync("python3", [join(ROOT, "scripts", "make-android-foreground.py"), MASTER], { stdio: "inherit" });
 for (const name of ["ic_launcher.xml", "ic_launcher_round.xml"]) {
   const dir = join(ANDROID_RES, "mipmap-anydpi-v26");
