@@ -176,6 +176,13 @@ function PlayerRow({ r, showStats, children }: { r: Row; showStats?: boolean; ch
         <span className="block truncate text-sm font-bold">{displayName(r.player)} {r.player.country && flagOf(r.player.country)}</span>
         <span className="block text-[10px] leading-snug text-muted-foreground">
           {showStats ? `${on ? t("online") : t("offline")} · ${t("played")}: ${games}` : on ? t("online") : t("offline")}
+          {showStats && games > 0 && (() => {
+            const pct = Math.round((Math.abs(r.stats.w - r.stats.l) / games) * 100);
+            const name = displayName(r.player);
+            const cls = r.stats.w > r.stats.l ? "friend-cmp-up" : r.stats.l > r.stats.w ? "friend-cmp-down" : "";
+            const text = r.stats.w > r.stats.l ? t("friendComparisonAhead", { pct, name }) : r.stats.l > r.stats.w ? t("friendComparisonBehind", { pct, name }) : t("friendComparisonEven");
+            return <span className={`block ${cls}`}>{text}</span>;
+          })()}
         </span>
       </span>
       {showStats && (

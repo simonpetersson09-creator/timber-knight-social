@@ -561,3 +561,5 @@ body { overscroll-behavior-y: contain; }
 .friend-score { flex: none; font-family: var(--font-display, inherit); font-weight: 900; font-variant-numeric: tabular-nums; color: var(--muted-foreground); }
 .friend-score[data-trend="up"] { color: oklch(0.72 0.18 150); }
 .friend-score[data-trend="down"] { color: var(--destructive); }
+.friend-cmp-up { color: oklch(0.72 0.18 150); }
+.friend-cmp-down { color: var(--destructive); }

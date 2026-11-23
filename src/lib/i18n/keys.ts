@@ -21,6 +21,7 @@ export const KEYS = [
   "legalSupport", "legalSupportText", "legalPrivacy1", "legalPrivacy2", "legalPrivacy3",
   "legalTerms", "legalTermsText", "legalAppAdsText",
   "moveHistory", "finalPosition", "searchHint", "adChoicesUnavailable",
+  "friendComparisonAhead", "friendComparisonBehind", "friendComparisonEven",
 ] as const;
 export type Key = (typeof KEYS)[number];
 
