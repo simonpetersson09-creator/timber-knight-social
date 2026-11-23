@@ -2,7 +2,7 @@ import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
-import { Check, Copy, Send, Share2, X, UserPlus, ScanLine } from "lucide-react";
+import { Check, Copy, Share2, X, UserPlus, ScanLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/Modal";
 import { QrScanner } from "@/components/QrScanner";
@@ -109,7 +109,7 @@ function FriendsPage() {
       <Section title={t("friends")}>
         {friends.length === 0 && <p className="py-2 text-center text-sm text-muted-foreground">{t("noFriends")}</p>}
         {friends.map((r) => <PlayerRow key={r.id} r={r} showStats>
-          <Button size="sm" className="friend-invite-btn" disabled={actionBusy !== null} onClick={() => void invite(r.player.id)}><Send className="size-4" />{t("inviteFriend")}</Button>
+          <Button size="sm" className="friend-invite-btn" disabled={actionBusy !== null} onClick={() => void invite(r.player.id)}><span>{t("inviteFriend")}</span></Button>
           <Button variant="ghost" size="icon" className="icon-btn" disabled={actionBusy !== null} aria-label={t("remove")} onClick={() => { if (confirm(`${t("remove")} ${displayName(r.player)}?`)) void act(r.id, "remove"); }}><X className="size-4" /></Button>
         </PlayerRow>)}
       </Section>
@@ -168,18 +168,21 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function PlayerRow({ r, showStats, children }: { r: Row; showStats?: boolean; children: React.ReactNode }) {
   const { t } = useI18n();
   const on = isOnline(r.player.last_seen);
+  const games = r.stats.w + r.stats.l + r.stats.d;
   return (
-    <div className="friend-row">
+    <div className="friend-row" data-card={showStats ? "true" : undefined}>
       <span className="friend-avatar"><PlayerAvatar avatar={r.player.avatar} /><span className="status-dot" data-on={on} /></span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate font-semibold">{displayName(r.player)} {r.player.country && flagOf(r.player.country)}</span>
-        <span className="block text-xs text-muted-foreground">
-          {showStats ? `${on ? t("online") : t("offline")} · ${r.stats.w} ${t("wins")} · ${r.stats.l} ${t("losses")} · ${r.stats.d} ${t("draws")}` : on ? t("online") : t("offline")}
+        <span className="block truncate text-sm font-bold">{displayName(r.player)} {r.player.country && flagOf(r.player.country)}</span>
+        <span className="block text-[10px] leading-snug text-muted-foreground">
+          {showStats ? `${on ? t("online") : t("offline")} · ${t("played")}: ${games}` : on ? t("online") : t("offline")}
         </span>
-        {showStats && r.recent.length > 0 && (
-          <span className="mt-1 flex gap-1">{r.recent.map((g, i) => <span key={i} className="result-pip" data-r={g.r}>{g.r === "w" ? "✓" : g.r === "l" ? "✗" : "="}</span>)}</span>
-        )}
       </span>
+      {showStats && (
+        <span className="friend-score" data-trend={r.stats.w > r.stats.l ? "up" : r.stats.l > r.stats.w ? "down" : "even"}>
+          {r.stats.w}–{r.stats.l}{r.stats.d > 0 && <span className="text-[10px] text-muted-foreground"> +{r.stats.d}</span>}
+        </span>
+      )}
       {children}
     </div>
   );
