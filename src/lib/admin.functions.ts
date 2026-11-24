@@ -124,8 +124,9 @@ export const adminStats = createServerFn({ method: "POST" })
     const group = (kind: string) => Object.entries(periodEvents.filter((e) => e.kind === kind).reduce<Record<string, number>>((m, e) => ({ ...m, [e.name]: (m[e.name] ?? 0) + 1 }), {})).sort((x, y) => y[1] - x[1]);
     return {
       ...stats,
+      days: stats.days.filter((d) => d.day >= ADMIN_STATS_START_DAY),
+      periodStats: { ...periodStats, days: periodStats.days.filter((d) => d.day >= ADMIN_STATS_START_DAY) },
       period: data.days,
-      periodStats,
       retention: buildRetention(players.filter((p) => p.created_at >= ADMIN_STATS_START_AT), appDays, testIds),
       liveGames,
       ads: group("ad"), errors: group("error"), play: group("play"),
