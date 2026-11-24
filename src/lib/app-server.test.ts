@@ -9,7 +9,7 @@ vi.mock("@capacitor/core", () => ({
   CapacitorHttp: { request: (...args: unknown[]) => request(...args) },
 }));
 
-import { APP_SERVER_ORIGIN, appServerFetch, bundledServerUrl } from "./app-server";
+import { APP_SERVER_ORIGIN, appLink, appServerFetch, bundledServerUrl, isAppLink } from "./app-server";
 
 describe("bundled app server functions", () => {
   beforeEach(() => {
@@ -48,6 +48,18 @@ describe("bundled app server functions", () => {
 
   it("keeps the normal published native shell on same-origin browser fetch", () => {
     expect(bundledServerUrl("/_serverFn/register", APP_SERVER_ORIGIN)).toBeNull();
+  });
+
+  it("uses the published app for shared links from a bundled native app", () => {
+    expect(appLink("/join?code=ABC123", "capacitor://localhost")).toBe(`${APP_SERVER_ORIGIN}/join?code=ABC123`);
+    expect(appLink("/add?code=DEF456", "https://localhost")).toBe(`${APP_SERVER_ORIGIN}/add?code=DEF456`);
+    expect(appLink("/join?code=ABC123", APP_SERVER_ORIGIN)).toBe(`${APP_SERVER_ORIGIN}/join?code=ABC123`);
+  });
+
+  it("accepts published QR links in the bundled app and rejects other sites", () => {
+    expect(isAppLink(`${APP_SERVER_ORIGIN}/join?code=ABC123`, "capacitor://localhost")).toBe(true);
+    expect(isAppLink("capacitor://localhost/join?code=ABC123", "capacitor://localhost")).toBe(true);
+    expect(isAppLink("https://example.com/join?code=ABC123", "capacitor://localhost")).toBe(false);
   });
 
   it("never treats protocol-relative URLs as local RPC paths", () => {

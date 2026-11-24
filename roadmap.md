@@ -3,8 +3,9 @@
 ## Komplett Capacitor-offlinebygge 24 nov
 - [x] Förrendera startsidan, skapa och verifiera .output/public/index.html samt paketera Stockfish WASM och maskotbild lokalt
 - [x] Behåll CAPACITOR_OFFLINE genom både build och sync; skicka endast paketerade serverfunktionsanrop via native HTTP till publicerad backend
-- [x] native:offline, typkontroll, 295 tester och Capacitor sync passerar; Nybörjare och Medel/Stockfish gav datorsvar helt utan externa nätverksresurser
-- [ ] Bekräfta native HTTP-onlineflödet på fysisk iPhone/Android efter Xcode-/Android-bygge; enhetsbrottet kan inte köras i sandlådan
+- [x] native:offline, typkontroll, 297 tester och Capacitor sync passerar; Nybörjare och Medel/Stockfish gav datorsvar helt utan externa nätverksresurser
+- [x] Delade match-/vänkoder använder publicerad appadress och QR-läsaren accepterar den även i det lokala iOS-/Android-paketet
+- [ ] Bekräfta native HTTP-onlineflödet, delade länkar och QR på fysisk iPhone/Android efter Xcode-/Android-bygge; enhetsbrottet kan inte köras i sandlådan
 
 ## Annonsval och iPhone-notiser 23 nov
 - [ ] Annonsformuläret blockeras av Googles nekade requestConsentInfo på iOS; väntar på användarens svar om publicerat GDPR-/integritetsmeddelande för rätt iOS-app i AdMob

@@ -12,6 +12,22 @@ export function bundledServerUrl(
   return url.startsWith("/") && !url.startsWith("//") ? `${APP_SERVER_ORIGIN}${url}` : null;
 }
 
+export function appLink(path: string, currentOrigin = typeof location === "undefined" ? "" : location.origin): string {
+  const bundledNative = Capacitor.isNativePlatform() && currentOrigin !== APP_SERVER_ORIGIN;
+  return `${bundledNative ? APP_SERVER_ORIGIN : currentOrigin}${path}`;
+}
+
+export function isAppLink(value: string, currentOrigin = typeof location === "undefined" ? "" : location.origin): boolean {
+  try {
+    const url = new URL(value);
+    // Non-http native schemes report origin as "null" even though they have a real scheme and host.
+    const origin = url.origin === "null" ? `${url.protocol}//${url.host}` : url.origin;
+    return origin === currentOrigin || origin === appLink("", currentOrigin);
+  } catch {
+    return false;
+  }
+}
+
 export const appServerFetch: typeof fetch = async (input, init) => {
   const url = bundledServerUrl(input);
   if (!url) return fetch(input, init);

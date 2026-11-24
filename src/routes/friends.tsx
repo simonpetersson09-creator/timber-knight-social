@@ -17,6 +17,7 @@ import { inviteFriend } from "@/lib/online.functions";
 import { displayName, flagOf, isOnline } from "@/lib/profile";
 import { report } from "@/lib/report";
 import { copyText, shareLink } from "@/lib/share";
+import { appLink } from "@/lib/app-server";
 
 export const Route = createFileRoute("/friends")({
   validateSearch: z.object({ code: z.string().optional() }),
@@ -60,7 +61,7 @@ function FriendsPage() {
 
   const refresh = useCallback(() => { getFriends({ data: getCred() }).then(setRows).catch(() => {}); }, []);
   useEffect(() => { if (!me) return; refresh(); const i = setInterval(refresh, 30_000); return () => clearInterval(i); }, [me, refresh]);
-  const link = me ? `${typeof window !== "undefined" ? window.location.origin : ""}/add?code=${me.friend_code}` : "";
+  const link = me ? appLink(`/add?code=${me.friend_code}`) : "";
   useEffect(() => { if (link) void QRCode.toDataURL(link, { margin: 1, width: 360, color: { dark: "#0b2a2e", light: "#f5ecd7" } }).then(setQr); }, [link]);
 
   const send = useCallback(async (c: string) => {

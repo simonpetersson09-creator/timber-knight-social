@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Modal } from "@/components/Modal";
 import { useI18n } from "@/lib/i18n";
+import { isAppLink } from "@/lib/app-server";
 
 export function QrScanner({ onCode, onClose }: { onCode: (code: string) => void; onClose: () => void }) {
   const video = useRef<HTMLVideoElement>(null);
@@ -19,7 +20,7 @@ export function QrScanner({ onCode, onClose }: { onCode: (code: string) => void;
           if (!result || !alive) return;
           const text = result.getText();
           let code = text;
-          try { const url = new URL(text); if (url.origin !== window.location.origin) return; code = url.searchParams.get("code") ?? ""; } catch { /* a plain code is also accepted */ }
+          try { const url = new URL(text); if (!isAppLink(text, window.location.origin)) return; code = url.searchParams.get("code") ?? ""; } catch { /* a plain code is also accepted */ }
           if (!/^[A-Z0-9]{6}$/i.test(code)) return;
           alive = false; controls?.stop(); onCodeRef.current(code.toUpperCase());
         });

@@ -32,6 +32,7 @@ import { CLOCKS, createGame, recordResult } from "@/lib/storage";
 import { ResultShareButton } from "@/components/ResultShareButton";
 import { report, reportOnce } from "@/lib/report";
 import { shareLink } from "@/lib/share";
+import { appLink } from "@/lib/app-server";
 
 export const Route = createFileRoute("/match")({
   validateSearch: z.object({ id: z.string(), level: z.enum(["beginner", "medium", "hard", "master"]).optional(), clock: z.coerce.number().int().min(0).max(4).optional() }),
@@ -280,7 +281,7 @@ function MatchSession({ managed, onReady }: { managed?: "quick" | "online"; onRe
   const g = d?.game;
   const me = d?.me;
   const myColor: "w" | "b" = g?.black === me ? "b" : "w";
-  const link = g?.code && typeof window !== "undefined" ? `${window.location.origin}/join?code=${g.code}` : "";
+  const link = g?.code ? appLink(`/join?code=${g.code}`) : "";
   useEffect(() => { if (link) void QRCode.toDataURL(link, { margin: 1, width: 320, color: { dark: "#0b2a2e", light: "#f5ecd7" } }).then(setQr); }, [link]);
 
   // Give a late opponent precedence, then cancel once and fall back with the chosen local settings.
