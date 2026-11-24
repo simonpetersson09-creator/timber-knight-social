@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useSearch } from "@tanstack/react-router";
 import { ArrowLeft, BellRing, ChartLine, ChevronLeft, ChevronRight, Copy, LogOut, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AdminLineChart from "@/components/AdminLineChart";
@@ -29,6 +29,8 @@ const fmtDay = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString("sv-S
 type Stats = Awaited<ReturnType<typeof adminStats>>;
 
 export default function AdminDashboard({ diagram = false }: { diagram?: boolean }) {
+  const { hub_token: initialHubToken } = useSearch({ from: "/admin" });
+  const [hubToken, setHubToken] = useState(initialHubToken);
   const [adminKey, setAdminKey] = useState("");
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -80,11 +82,12 @@ export default function AdminDashboard({ diagram = false }: { diagram?: boolean 
   const load = async (selectedPeriod: 7 | 30 | 90 = period, quiet = false) => {
     setLoading(true); setError(null);
     try {
-      const result = await adminStats({ data: { days: selectedPeriod } });
+      const result = await adminStats({ data: { days: selectedPeriod, ...(hubToken ? { hubToken } : {}) } });
       setStats(result);
     } catch {
       setStats(null);
-      if (!quiet) setError("Sessionen har gått ut, eller admin kunde inte öppnas. Logga in igen.");
+      if (hubToken) setError("Hub-länken är ogiltig eller har gått ut. Öppna en ny länk från MrB. Admin.");
+      else if (!quiet) setError("Sessionen har gått ut, eller admin kunde inte öppnas. Logga in igen.");
     } finally { setLoading(false); }
   };
   const login = async () => {
@@ -102,13 +105,13 @@ export default function AdminDashboard({ diagram = false }: { diagram?: boolean 
   const logout = async () => {
     setLoading(true);
     try { await adminLogout(); } catch { /* local logout still clears sensitive data */ }
-    setAdminKey(""); setStats(null); setError(null); setLoading(false);
+    setAdminKey(""); setHubToken(""); setStats(null); setError(null); setLoading(false);
   };
   const setTestPlayer = async (isTest: boolean) => {
     if (loading || !num) return;
     setLoading(true); setError(null); setPushMessage("");
     try {
-      await adminSetTest({ data: { playerNumber: Number(num), isTest } });
+      await adminSetTest({ data: { playerNumber: Number(num), isTest, ...(hubToken ? { hubToken } : {}) } });
       setNum("");
       await load(period, true);
     } catch {
@@ -120,7 +123,7 @@ export default function AdminDashboard({ diagram = false }: { diagram?: boolean 
     if (loading || !num) return;
     setLoading(true); setError(null); setPushMessage("");
     try {
-      const response = await adminPushTest({ data: { playerNumber: Number(num) } });
+      const response = await adminPushTest({ data: { playerNumber: Number(num), ...(hubToken ? { hubToken } : {}) } });
       setPushMessage({ sent: "Testnotisen skickades.", missing_token: "Enheten har ingen registrerad notismottagare.", not_configured: "Notisleveransen är inte konfigurerad ännu.", not_found: "Spelarnumret hittades inte.", failed: "Testnotisen kunde inte skickas." }[response.result]);
     } catch {
       setError("Testnotisen kunde inte skickas. Försök igen.");
@@ -129,12 +132,17 @@ export default function AdminDashboard({ diagram = false }: { diagram?: boolean 
   useEffect(() => {
     try { localStorage.removeItem("lovable.admin.key"); } catch { /* storage unavailable */ }
     void load(30, true);
-    // Initial cookie-session restore only.
+    // Initial cookie-session or in-memory hub-token restore only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!stats) {
     if (loading) return <div className="flex min-h-screen items-center justify-center bg-background p-6 text-foreground" role="status"><RefreshCw className="mr-2 h-5 w-5 motion-safe:animate-spin" />Öppnar admin…</div>;
+    if (hubToken) return <div className="flex min-h-screen items-center justify-center bg-background p-6 text-foreground"><div className="w-full max-w-sm space-y-3 text-center" role="alert">
+      <h1 className="text-xl font-semibold">Admin</h1>
+      <p className="text-sm text-destructive">{error ?? "Hub-länken kunde inte verifieras."}</p>
+      <Button variant="outline" className="w-full" onClick={() => { setHubToken(""); setError(null); }}>Vanlig admininloggning</Button>
+    </div></div>;
     return <div className="flex min-h-screen items-center justify-center bg-background p-6 text-foreground"><form className="w-full max-w-sm space-y-3" onSubmit={(e) => { e.preventDefault(); void login(); }}>
       <h1 className="text-xl font-semibold">Admin</h1>
       <input name="admin-password" autoComplete="current-password" aria-label="Adminnyckel" type="password" value={adminKey} onChange={(e) => setAdminKey(e.target.value)} placeholder="Adminnyckel" className="w-full rounded-md border border-border bg-card px-3 py-2" />

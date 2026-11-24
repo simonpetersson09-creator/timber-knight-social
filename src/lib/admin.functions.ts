@@ -4,6 +4,7 @@ import { z } from "zod";
 import { buildAdminStats, type AdminAppDay, type AdminEvent, type AdminMatch, type AdminPlayer } from "./admin-stats";
 import { buildRetention } from "./admin-retention";
 import { ADMIN_SESSION_SECONDS, isAdminSession, type AdminSession } from "./admin-session";
+import { verifyHubToken } from "./admin-hub";
 import { db, enforceAbuseLimit, requestSubject } from "./server/core";
 
 function sessionConfig() {
@@ -33,10 +34,14 @@ async function checkPassword(pw: string) {
   }
 }
 
-async function adminClient() {
+async function adminClient(hubToken: string | undefined, hubSecret: string | undefined) {
   const subject = requestSubject("admin");
   await enforceAbuseLimit("admin_requests", subject);
   await enforceAbuseLimit("admin_failures", subject, false);
+  if (hubToken) {
+    if (!(await verifyHubToken(hubToken, hubSecret))) throw new Error("wrong_password");
+    return db();
+  }
   const session = await useSession<AdminSession>(sessionConfig());
   if (!isAdminSession(session.data)) throw new Error("wrong_password");
   return db();
@@ -57,12 +62,13 @@ export const adminLogout = createServerFn({ method: "POST" })
   });
 
 const Period = z.union([z.literal(7), z.literal(30), z.literal(90)]).default(30);
+const HubToken = z.string().max(256).optional();
 
 /** Native statistics: a fixed 30-day table plus a selectable 7/30/90-day analysis. */
 export const adminStats = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ days: Period }).parse(d))
+  .inputValidator((d: unknown) => z.object({ days: Period, hubToken: HubToken }).parse(d))
   .handler(async ({ data }) => {
-    const a = await adminClient();
+    const a = await adminClient(data.hubToken, process.env["HUB_SHARED_SECRET"]);
     const historyDays = data.days + 30;
     // Retention needs the full activity history; event and match reads stay period-bounded below.
     const since = "1970-01-01";
@@ -127,18 +133,18 @@ export const adminStats = createServerFn({ method: "POST" })
   });
 
 export const adminSetTest = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ playerNumber: z.number().int(), isTest: z.boolean() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ playerNumber: z.number().int(), isTest: z.boolean(), hubToken: HubToken }).parse(d))
   .handler(async ({ data }) => {
-    const a = await adminClient();
+    const a = await adminClient(data.hubToken, process.env["HUB_SHARED_SECRET"]);
     const { data: upd, error } = await a.from("players").update({ is_test: data.isTest }).eq("player_number", data.playerNumber).is("deleted_at", null).select("id");
     if (error) throw new Error("test_player_update_failed");
     return { ok: !!upd?.length };
   });
 
 export const adminPushTest = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ playerNumber: z.number().int() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ playerNumber: z.number().int(), hubToken: HubToken }).parse(d))
   .handler(async ({ data }) => {
-    const a = await adminClient();
+    const a = await adminClient(data.hubToken, process.env["HUB_SHARED_SECRET"]);
     const { data: player, error } = await a.from("players").select("id").eq("player_number", data.playerNumber).is("deleted_at", null).maybeSingle();
     if (error) throw new Error("test_player_read_failed");
     if (!player) return { result: "not_found" as const };

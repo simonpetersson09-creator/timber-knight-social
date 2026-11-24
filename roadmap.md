@@ -1,5 +1,10 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## MrB Admin Hub-inloggning 24 nov
+- [x] Verifiera `exp.sig` med HMAC-SHA256 och utgångstid på varje adminanrop; vanlig adminnyckel/session och statistikfrågor oförändrade
+- [x] Håll hub-token endast i minnet, skicka den med tabell-, diagram-, testenhets- och testnotisanrop samt behåll den mellan adminsidorna
+- [x] Tillåt admindokument i iframe; giltig, felaktigt signerad och utgången token testad, 302 tester och typkontroll passerar
+
 ## Plattformsoberoende native-offlinebygge 24 nov
 - [x] Låst Cloudflare-mål och dist/client för offline; prepare stöder även .output/public, medan webbbygget behåller sin tidigare målkonfiguration
 - [x] native-offline.mjs sätter CAPACITOR_OFFLINE=1 internt, städar gammal utdata och kör lokala Vite-/Capacitor-binärer genom hela kedjan

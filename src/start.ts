@@ -4,6 +4,21 @@ import { renderErrorPage } from "./lib/error-page";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 import { MAX_SERVER_REQUEST_BYTES } from "./lib/server/abuse-policy";
 import { appServerFetch } from "./lib/app-server";
+import { adminFrameHeaders, isAdminDocumentPath } from "./lib/admin-frame";
+
+const adminFrameMiddleware = createMiddleware().server(async ({ request, next }) => {
+  const result = await next();
+  if (!isAdminDocumentPath(new URL(request.url).pathname)) return result;
+  const { response } = result;
+  return {
+    ...result,
+    response: new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: adminFrameHeaders(response.headers),
+    }),
+  };
+});
 
 const requestSizeMiddleware = createMiddleware().server(async ({ request, next }) => {
   const contentLength = Number(request.headers.get("content-length") ?? "0");
@@ -43,6 +58,6 @@ const csrfMiddleware = createCsrfMiddleware({
 // project did not intentionally replace it.
 export const startInstance = createStart(() => ({
   functionMiddleware: [attachSupabaseAuth],
-  requestMiddleware: [requestSizeMiddleware, errorMiddleware, csrfMiddleware],
+  requestMiddleware: [requestSizeMiddleware, errorMiddleware, csrfMiddleware, adminFrameMiddleware],
   serverFns: { fetch: appServerFetch },
 }));
