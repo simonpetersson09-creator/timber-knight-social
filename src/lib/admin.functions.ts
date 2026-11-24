@@ -61,6 +61,9 @@ export const adminLogout = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+/** Admin statistics count from this Stockholm day; earlier activity was pre-release testing. */
+export const ADMIN_STATS_START_DAY = "2026-11-24";
+const ADMIN_STATS_START_AT = "2026-11-23T23:00:00Z";
 const Period = z.union([z.literal(7), z.literal(30), z.literal(90)]).default(30);
 const HubToken = z.string().max(256).optional();
 
@@ -71,8 +74,8 @@ export const adminStats = createServerFn({ method: "POST" })
     const a = await adminClient(data.hubToken, process.env["HUB_SHARED_SECRET"]);
     const historyDays = data.days + 30;
     // Retention needs the full activity history; event and match reads stay period-bounded below.
-    const since = "1970-01-01";
-    const eventSince = new Date(Date.now() - historyDays * 86_400_000).toISOString();
+    const since = ADMIN_STATS_START_DAY;
+    const eventSince = new Date(Math.max(Date.now() - historyDays * 86_400_000, Date.parse(ADMIN_STATS_START_AT))).toISOString();
     const { data: tests, error: testError } = await a.from("players").select("id, player_number, deleted_at").eq("is_test", true);
     if (testError) throw new Error("stats_read_failed");
     const testIds = new Set((tests ?? []).map((t) => t.id));
@@ -123,7 +126,7 @@ export const adminStats = createServerFn({ method: "POST" })
       ...stats,
       period: data.days,
       periodStats,
-      retention: buildRetention(players, appDays, testIds),
+      retention: buildRetention(players.filter((p) => p.created_at >= ADMIN_STATS_START_AT), appDays, testIds),
       liveGames,
       ads: group("ad"), errors: group("error"), play: group("play"),
       recentErrors: periodEvents.filter((e) => e.kind === "error").slice(0, 20),
