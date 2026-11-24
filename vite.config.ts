@@ -12,6 +12,15 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 const capacitorOffline = process.env["CAPACITOR_OFFLINE"] === "1";
 
 export default defineConfig({
+  // Outside Lovable, Nitro auto-detects the host and may otherwise emit .output/public instead.
+  // Pin only the native offline build; the normal hosted build keeps its existing target.
+  ...(capacitorOffline ? {
+    nitro: {
+      preset: "cloudflare-module",
+      output: { dir: "dist", serverDir: "dist/server", publicDir: "dist/client" },
+      cloudflare: { nodeCompat: true, deployConfig: true },
+    },
+  } : {}),
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this

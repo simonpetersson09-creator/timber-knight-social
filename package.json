@@ -11,7 +11,7 @@
     "android:ads": "node scripts/android-ads.mjs",
     "native:ios": "bunx cap add ios && bunx cap sync ios",
     "native:android": "bunx cap sync android",
-    "native:offline": "CAPACITOR_OFFLINE=1 bun run build && CAPACITOR_OFFLINE=1 bunx cap sync",
+    "native:offline": "node scripts/native-offline.mjs",
     "dev": "vite dev",
     "build": "vite build && node scripts/prepare-offline.mjs",
     "build:dev": "vite build --mode development",

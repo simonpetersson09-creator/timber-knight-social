@@ -1,5 +1,11 @@
 # Mr B Chess – roadmap (från genomgång av Yatzy, Ludo, Sudoku, Ord)
 
+## Plattformsoberoende native-offlinebygge 24 nov
+- [x] Låst Cloudflare-mål och dist/client för offline; prepare stöder även .output/public, medan webbbygget behåller sin tidigare målkonfiguration
+- [x] native-offline.mjs sätter CAPACITOR_OFFLINE=1 internt, städar gammal utdata och kör lokala Vite-/Capacitor-binärer genom hela kedjan
+- [x] Verifierat med och utan Lovables miljövariabler: en förrenderad sida, 49 lokala resurser och lyckad sync; webbbuild, typkontroll, 297 apptest och tre layouttester passerar
+- [ ] Återstår endast bekräftelse av samma kommando på den faktiska MacinCloud-värden och fysiskt native-onlineprov
+
 ## Komplett Capacitor-offlinebygge 24 nov
 - [x] Förrendera startsidan, skapa och verifiera .output/public/index.html samt paketera Stockfish WASM och maskotbild lokalt
 - [x] Behåll CAPACITOR_OFFLINE genom både build och sync; skicka endast paketerade serverfunktionsanrop via native HTTP till publicerad backend
