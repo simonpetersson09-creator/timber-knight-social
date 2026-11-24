@@ -12,6 +12,14 @@ export type AdminBestTimes = {
 const PLAY_EVENTS = new Set(["local_game_started", "local_game_finished", "online_game_started", "online_game_finished", "game_active", "game_finished", "move_committed"]);
 const NATIVE = new Set(["ios", "android"]);
 
+// Notification registration problems are deliberately kept out of admin statistics.
+const SILENT_ERROR_EVENTS = new Set(["push_registration", "push_permission", "push_token_update"]);
+
+/** True when an event may be counted or listed in admin. */
+export function isAdminVisibleEvent(event: AdminEvent): boolean {
+  return !(event.kind === "error" && SILENT_ERROR_EVENTS.has(event.name));
+}
+
 export function adminStockholmDay(now = new Date()): string {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Stockholm", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
 }
@@ -99,7 +107,7 @@ export function buildAdminStats(input: {
       byDay.get(day)!.add(event.player);
     }
     if (event.name === "local_game_finished") bump(day, "cpu_finished");
-    if (event.kind === "error") {
+    if (event.kind === "error" && isAdminVisibleEvent(event)) {
       bump(day, "issues");
       if (!issueDevices.has(day)) issueDevices.set(day, new Set());
       issueDevices.get(day)!.add(event.player);

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { clearSession, updateSession, useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
-import { buildAdminStats, type AdminAppDay, type AdminEvent, type AdminMatch, type AdminPlayer } from "./admin-stats";
+import { buildAdminStats, isAdminVisibleEvent, type AdminAppDay, type AdminEvent, type AdminMatch, type AdminPlayer } from "./admin-stats";
 import { buildRetention } from "./admin-retention";
 import { ADMIN_SESSION_SECONDS, isAdminSession, type AdminSession } from "./admin-session";
 import { verifyHubToken } from "./admin-hub";
@@ -93,13 +93,14 @@ export const adminStats = createServerFn({ method: "POST" })
       appDays.push(...(rows ?? []));
       if (!rows || rows.length < 1000) break;
     }
-    const events: AdminEvent[] = [];
+    const collected: AdminEvent[] = [];
     for (let from = 0; ; from += 1000) {
       const { data: rows, error } = await a.from("client_events").select("player, kind, name, platform, detail, created_at").in("platform", ["ios", "android"]).gte("created_at", eventSince).order("created_at", { ascending: false }).order("id").range(from, from + 999);
       if (error) throw new Error("event_stats_failed");
-      events.push(...(rows ?? []));
+      collected.push(...(rows ?? []));
       if (!rows || rows.length < 1000) break;
     }
+    const events = collected.filter(isAdminVisibleEvent);
     const matches: AdminMatch[] = [];
     for (let from = 0; ; from += 1000) {
       const { data: rows, error } = await a.from("matches").select("white, black, finished_at, game_id, counts").gte("finished_at", eventSince).not("game_id", "is", null).order("finished_at", { ascending: false }).order("id").range(from, from + 999);

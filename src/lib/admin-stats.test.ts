@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildAdminStats } from "./admin-stats";
+import { buildAdminStats, isAdminVisibleEvent } from "./admin-stats";
 
 const NOW = new Date("2026-11-19T12:00:00Z");
 const players = [
@@ -63,6 +63,18 @@ describe("admin statistics", () => {
       { white: "ios", black: "deleted", game_id: "preserved", counts: true, finished_at: "2026-11-19T11:00:00Z" },
     ] });
     expect(result.days[0]!).toMatchObject({ devices: 0, online_finished: 1 });
+  });
+
+  it("keeps notification problems out of admin while other errors still count", () => {
+    const events = [
+      { player: "ios", kind: "error", name: "push_registration", platform: "ios", detail: "Native registration failed", created_at: "2026-11-19T10:00:00Z" },
+      { player: "ios", kind: "error", name: "push_permission", platform: "ios", detail: "Permission or registration failed", created_at: "2026-11-19T10:01:00Z" },
+      { player: "ios", kind: "error", name: "push_token_update", platform: "ios", detail: "Token upload failed", created_at: "2026-11-19T10:02:00Z" },
+      { player: "ios", kind: "error", name: "render_failed", platform: "ios", detail: "boom", created_at: "2026-11-19T10:03:00Z" },
+    ];
+    expect(events.filter(isAdminVisibleEvent).map((event) => event.name)).toEqual(["render_failed"]);
+    const result = buildAdminStats({ players, testIds: new Set(["test"]), now: NOW, appDays: [], events, matches: [] });
+    expect(result.days[0]!).toMatchObject({ issues: 1, issue_devices: 1 });
   });
 
   it("supports a seven-day analysis without changing the native filters", () => {
