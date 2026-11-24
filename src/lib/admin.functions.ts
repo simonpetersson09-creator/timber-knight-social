@@ -83,7 +83,7 @@ export const adminStats = createServerFn({ method: "POST" })
     for (let from = 0; ; from += 1000) {
       const { data: rows, error } = await a.from("players").select("id, created_at, platform, deleted_at").in("platform", ["ios", "android"]).order("id").range(from, from + 999);
       if (error) throw new Error("stats_read_failed");
-      players.push(...(rows ?? []));
+      players.push(...(rows ?? []).filter((p) => p.created_at >= ADMIN_STATS_START_AT));
       if (!rows || rows.length < 1000) break;
     }
     const appDays: AdminAppDay[] = [];
