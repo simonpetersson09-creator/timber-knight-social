@@ -3,6 +3,7 @@ import { createStart, createCsrfMiddleware, createMiddleware } from "@tanstack/r
 import { renderErrorPage } from "./lib/error-page";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 import { MAX_SERVER_REQUEST_BYTES } from "./lib/server/abuse-policy";
+import { appServerFetch } from "./lib/app-server";
 
 const requestSizeMiddleware = createMiddleware().server(async ({ request, next }) => {
   const contentLength = Number(request.headers.get("content-length") ?? "0");
@@ -43,4 +44,5 @@ const csrfMiddleware = createCsrfMiddleware({
 export const startInstance = createStart(() => ({
   functionMiddleware: [attachSupabaseAuth],
   requestMiddleware: [requestSizeMiddleware, errorMiddleware, csrfMiddleware],
+  serverFns: { fetch: appServerFetch },
 }));

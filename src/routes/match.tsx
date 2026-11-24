@@ -134,7 +134,7 @@ function OnlineStartingScreen() {
 
 /** Creates the quick game behind the persistent search screen. */
 function QuickStarter({ cancelled, onCreated }: { cancelled: { current: boolean }; onCreated: (gameId: string) => void }) {
-  const { level, clock } = Route.useSearch();
+  const { level = "medium", clock = 0 } = Route.useSearch();
   const navigate = useNavigate();
   const { t } = useI18n();
   useEffect(() => {
@@ -150,9 +150,16 @@ function QuickStarter({ cancelled, onCreated }: { cancelled: { current: boolean 
         report("play", "quick_match_search_started", JSON.stringify({ game: result.id, level, clock }));
         onCreated(result.id);
       } catch {
-        if (cancelled.current) return;
-        toast.error(t("error"));
-        await navigate({ to: "/", replace: true });
+        if (cancelled.current || !alive) return;
+        // No server means quick play cannot search online; keep the chosen computer game available offline.
+        const local = createGame({ mode: "ai", level, human: "w", clock: CLOCKS[clock] ?? null });
+        if (local) {
+          report("play", "local_game_started", JSON.stringify({ game: local.id, level: local.level, mode: local.mode, fallback: true }));
+          await navigate({ to: "/play", search: { id: local.id, notice: PLAY_FALLBACK_NOTICE }, replace: true });
+        } else {
+          toast.error(t("maxSaved"));
+          await navigate({ to: "/", replace: true });
+        }
       }
     })();
     return () => { alive = false; };
